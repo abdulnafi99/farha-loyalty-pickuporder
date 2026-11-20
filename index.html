@@ -443,6 +443,36 @@ body[data-screen="cart"] .paybar{display:flex}
 .thumb.peach .pi-back{color:var(--brand-deep);background:rgba(255,255,255,.55)}
 .pi-back:active{transform:scale(.94)}
 
+/* ---------- Tour panduan (spotlight) ---------- */
+.tour{position:fixed;inset:0;z-index:80}
+.tour-spot{position:fixed;box-shadow:0 0 0 9999px rgba(20,0,4,.74);pointer-events:none;outline:2px solid rgba(255,255,255,.95);outline-offset:2px;
+  transition:left .35s cubic-bezier(.2,.9,.2,1),top .35s cubic-bezier(.2,.9,.2,1),width .35s cubic-bezier(.2,.9,.2,1),height .35s cubic-bezier(.2,.9,.2,1),border-radius .35s}
+.tour-spot::after{content:"";position:absolute;inset:-6px;border-radius:inherit;border:2px solid rgba(255,255,255,.65);animation:tourPulse 1.6s ease-out infinite}
+@keyframes tourPulse{from{opacity:1;transform:scale(1)}to{opacity:0;transform:scale(1.07)}}
+.tour-spot.none{left:50%!important;top:50%!important;width:0!important;height:0!important;outline:none}
+.tour-spot.none::after{display:none}
+.tour-card{position:fixed;left:16px;right:16px;max-width:380px;margin:0 auto;background:#fff;color:var(--ink);border-radius:22px;padding:18px 18px 14px;
+  box-shadow:0 24px 60px -18px rgba(0,0,0,.55);transition:top .35s cubic-bezier(.2,.9,.2,1)}
+.tour-n{font-family:var(--mono);font-size:11px;font-weight:700;color:var(--brand);margin-bottom:4px}
+.tour-card h3{margin:0 0 6px;font-size:17px;font-weight:800;padding-right:70px;letter-spacing:-.01em}
+.tour-card p{margin:0 0 14px;font-size:13.5px;color:var(--ink-2);line-height:1.5}
+.tour-skip{position:absolute;top:12px;right:12px;font-size:12.5px;font-weight:700;color:var(--ink-2);padding:8px 10px;border-radius:10px}
+.tour-foot{display:flex;align-items:center;gap:8px}
+.tour-dots{display:flex;gap:4px;flex:1;flex-wrap:wrap;min-width:0}
+.tour-dots i{width:6px;height:6px;border-radius:3px;background:rgba(191,3,17,.18);transition:width .3s}
+.tour-dots i.on{width:16px;background:var(--brand)}
+.tour-btn{padding:10px 14px;font-size:13px;border-radius:12px}
+/* panduan pasang */
+.ig-tabs{grid-template-columns:repeat(3,1fr);margin:14px 0 4px}
+.ig-tabs button{font-size:12.5px;padding:0 6px}
+.ig-steps{list-style:none;margin:10px 0 12px;padding:0;display:flex;flex-direction:column;gap:10px}
+.ig-steps li{display:flex;align-items:flex-start;gap:10px;padding:12px;border-radius:16px;background:#fff;border:1px solid rgba(191,3,17,.1)}
+.ig-num{width:24px;height:24px;border-radius:50%;background:var(--brand);color:#fff;font-size:12px;font-weight:800;display:grid;place-items:center;flex:none;margin-top:5px}
+.ig-ic{width:34px;height:34px;border-radius:10px;background:rgba(191,3,17,.08);color:var(--brand);display:grid;place-items:center;flex:none}
+.ig-ic svg.i{width:18px;height:18px}
+.ig-tx{font-size:13.5px;line-height:1.45;padding-top:2px}
+.ig-note{font-size:12px!important;color:var(--ink-2);margin:0 2px 14px!important}
+
 /* ---------- Log masuk ---------- */
 .auth{position:fixed;inset:0;z-index:90;overflow-y:auto;background:var(--bg)}
 .auth-top{text-align:center;color:#fff;padding:calc(54px + var(--safe-t)) 24px 78px;
@@ -735,6 +765,8 @@ body[data-screen="cart"] .paybar{display:flex}
         <div class="tile span2 warm list">
           <div class="row"><svg class="i" data-ic="bell"></svg><div class="txt"><b>Notifikasi push</b><span>Cap, promo &amp; ganjaran</span></div><button class="switch" data-toggle="notif" aria-label="Notifikasi"></button></div>
           <div class="row"><svg class="i" data-ic="wifiOff"></svg><div class="txt"><b>Simpan untuk luar talian</b><span>Pas &amp; sejarah dalam peranti</span></div><button class="switch" data-toggle="offline" aria-label="Luar talian"></button></div>
+          <button class="row" data-action="tour"><svg class="i" data-ic="sparkle"></svg><div class="txt"><b>Panduan app</b><span>Lawatan ringkas cara guna app</span></div><svg class="i" data-ic="chev" style="width:18px"></svg></button>
+          <button class="row" data-action="installGuide"><svg class="i" data-ic="download"></svg><div class="txt"><b>Cara pasang app</b><span>Tambah Farha ke skrin utama telefon</span></div><svg class="i" data-ic="chev" style="width:18px"></svg></button>
           <div class="row"><svg class="i" data-ic="refresh"></svg><div class="txt"><b>Versi app</b><span id="p-ver">v1.0 · terkini</span></div><span class="tag-mono">PWA</span></div>
           <button class="row" data-action="logout"><svg class="i" data-ic="logout"></svg><div class="txt"><b>Log keluar</b></div><svg class="i" data-ic="chev" style="width:18px"></svg></button>
         </div>
@@ -904,6 +936,7 @@ const IC = {
   eye:'<path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
   eyeOff:'<path d="M3 3l18 18M10.6 5.1A10.4 10.4 0 0 1 12 5c6.4 0 10 7 10 7a17.6 17.6 0 0 1-3.3 4.2M6.6 6.6A17.4 17.4 0 0 0 2 12s3.6 7 10 7a9.7 9.7 0 0 0 5.4-1.6M9.9 9.9a3 3 0 0 0 4.2 4.2"/>',
   shield:'<path d="M12 3 4 6v6c0 5 3.4 8.3 8 9 4.6-.7 8-4 8-9V6z"/><path d="m9 12 2 2 4-4"/>',
+  dots:'<circle cx="12" cy="5" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="12" cy="19" r="1.4"/>',
   share:'<path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8M16 6l-4-4-4 4M12 2v13"/>',
 };
 const icon = (n, s) => `<svg class="i" viewBox="0 0 24 24"${s?` style="${s}"`:""}>${IC[n]||""}</svg>`;
@@ -1900,7 +1933,7 @@ function enterAs(rec, quiet){
   myOrders().forEach(o=>{ seenStatus[o.no]=o.status; seenPaid[o.no]=!!o.paid; seenRej[o.no]=!!o.payRejected; });
   $("#auth").hidden = true; document.body.classList.remove("locked");
   render();
-  if(!quiet){ go("home"); toast(`Selamat datang, ${esc(firstName())}`); }
+  if(!quiet){ go("home"); toast(`Selamat datang, ${esc(firstName())}`); maybeStartTour(); }
   startLive();
 }
 async function authLogout(){
@@ -2191,6 +2224,160 @@ async function nextOrderNo(list){
   return "F-"+local+"-"+Math.random().toString(36).slice(2,5).toUpperCase();
 }
 
+/* =========================================================
+   TOUR PANDUAN (spotlight, titik ke titik) & PANDUAN PASANG APP
+   - Keluar sekali selepas log masuk pertama di peranti ini (TOUR_KEY).
+   - Boleh diulang: Profil → Panduan app.
+   ========================================================= */
+const TOUR_KEY = "farha-tour-v1";
+let TOUR = null;
+function tourSteps(){
+  const steps = [
+    { t:`Selamat datang ke ${CONFIG.brand}`, d:"Jom kami tunjukkan cara guna app ini. Ambil masa kurang dari 1 minit.", screen:"home" },
+    { sel:"#h-promos:not([hidden])", screen:"home", t:"Promosi", d:"Tawaran dan item istimewa terkini. Tekan banner untuk terus order." },
+    { sel:"#s-home .tile.dark.span2", screen:"home", t:"Point anda", d:"Setiap pembelian dapat point. Kumpul point untuk tebus ganjaran." },
+    { sel:"#s-home .tile.red", screen:"home", t:"Kad cap", d:`Dapat 1 cap untuk setiap minuman. Cukup ${CONFIG.stampTarget} cap, satu minuman percuma!` },
+    { sel:'#s-home [data-action="qr"]', screen:"home", t:"Kod ahli", d:"Tunjuk kod QR ini di kaunter supaya staf boleh rekod cap dan point anda." },
+    { sel:'#nav [data-go="order"]', screen:"home", t:"Order pickup", d:"Order dari app, bayar tunai atau DuitNow, dan ambil di kaunter tanpa beratur." },
+    { sel:"#s-order .store", screen:"order", t:"Cawangan & masa siap", d:"Lihat cawangan dan anggaran masa siap. Bila kedai terlalu sibuk, pesanan mungkin ditutup sementara." },
+    { sel:"#o-cats", screen:"order", t:"Kategori menu", d:"Leret dan tekan untuk tukar kategori." },
+    { sel:"#o-menu .mi:not(.out)", screen:"order", t:"Pilih minuman", d:"Tekan item untuk pilih perisa, kemanisan dan add-on, kemudian tambah ke troli." },
+    { sel:'#nav [data-go="rewards"]', screen:"order", t:"Ganjaran", d:"Tebus point dengan minuman percuma, diskaun dan lain-lain." },
+    { sel:'#nav [data-go="profile"]', screen:"order", t:"Profil", d:"Hidupkan notifikasi supaya tahu bila pesanan siap. Panduan ini boleh dibuka semula di sini." },
+  ];
+  if(!isStandalone) steps.push({ install:true, screen:"home", t:"Pasang app di telefon", d:`Pasang ${CONFIG.brand} di skrin utama supaya lebih pantas dibuka dan boleh terima notifikasi, macam app biasa.` });
+  return steps;
+}
+function maybeStartTour(){
+  let done = false; try{ done = !!localStorage.getItem(TOUR_KEY); }catch(e){}
+  if(done || TOUR || !$("#auth").hidden || $("#splash")) return;
+  setTimeout(()=>{ if(!TOUR && $("#auth").hidden) startTour(); }, 600);
+}
+function startTour(){
+  closeSheet();
+  TOUR = { i:0, steps:tourSteps() };
+  const el = document.createElement("div");
+  el.className = "tour"; el.id = "tour";
+  el.innerHTML = `<div class="tour-spot none" id="tourSpot"></div>
+    <div class="tour-card" id="tourCard" role="dialog" aria-modal="true" aria-labelledby="tourT" aria-describedby="tourD">
+      <button type="button" class="tour-skip" data-tour="skip">Langkau</button>
+      <div class="tour-n" id="tourN"></div><h3 id="tourT"></h3><p id="tourD"></p>
+      <div class="tour-foot"><div class="tour-dots" id="tourDots"></div>
+        <button type="button" class="btn ghost tour-btn" data-tour="prev" id="tourPrev">Kembali</button>
+        <button type="button" class="btn red tour-btn" data-tour="next" id="tourNext">Seterusnya</button></div>
+    </div>`;
+  document.body.appendChild(el);
+  showTourStep(0);
+}
+function endTour(){
+  try{ localStorage.setItem(TOUR_KEY, "1"); }catch(e){}
+  $("#tour")?.remove(); TOUR = null; go("home");
+}
+async function showTourStep(i){
+  if(!TOUR) return;
+  const steps = TOUR.steps;
+  if(i < 0) i = 0;
+  if(i >= steps.length){ endTour(); return; }
+  const dir = i >= TOUR.i ? 1 : -1; TOUR.i = i;
+  const s = steps[i];
+  if(s.screen && document.body.dataset.screen !== s.screen){ go(s.screen); await new Promise(r=>setTimeout(r, 380)); }
+  let target = null;
+  if(s.sel){
+    target = $(s.sel);
+    if(!target || !target.getClientRects().length){ showTourStep(i+dir); return; } // langkau jika tiada
+    target.scrollIntoView({ block:"center", behavior:"instant" });
+    await new Promise(r=>setTimeout(r, 60));
+  }
+  TOUR.target = target;
+  $("#tourN").textContent = `${i+1} / ${steps.length}`;
+  $("#tourT").textContent = s.t; $("#tourD").textContent = s.d;
+  $("#tourDots").innerHTML = steps.map((_,k)=>`<i class="${k===i?"on":""}"></i>`).join("");
+  $("#tourPrev").hidden = i===0;
+  $("#tourNext").textContent = s.install ? "Tunjuk cara pasang" : i===steps.length-1 ? "Selesai" : i===0 ? "Mula" : "Seterusnya";
+  $(".tour-skip").textContent = s.install ? "Nanti" : "Langkau";
+  placeTour();
+  $("#tourNext").focus({ preventScroll:true });
+}
+function placeTour(){
+  if(!TOUR) return;
+  const spot = $("#tourSpot"), card = $("#tourCard"), t = TOUR.target, pad = 8, gap = 14;
+  const sb = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--safe-b")) || 0;
+  if(!t){
+    spot.classList.add("none"); spot.removeAttribute("style");
+    card.style.top = Math.max(80, (innerHeight - card.offsetHeight)/2) + "px"; card.style.bottom = "auto";
+    return;
+  }
+  const r = t.getBoundingClientRect(), rad = Math.min(24, parseFloat(getComputedStyle(t).borderRadius)||16);
+  spot.classList.remove("none");
+  Object.assign(spot.style, { left:(r.left-pad)+"px", top:(r.top-pad)+"px", width:(r.width+pad*2)+"px", height:(r.height+pad*2)+"px", borderRadius:(rad+pad)+"px" });
+  const below = r.top + r.height/2 < innerHeight/2;
+  if(below){ card.style.top = Math.min(innerHeight - card.offsetHeight - 12 - sb, r.bottom + pad + gap) + "px"; card.style.bottom = "auto"; }
+  else { card.style.top = Math.max(12, r.top - pad - gap - card.offsetHeight) + "px"; card.style.bottom = "auto"; }
+}
+addEventListener("resize", ()=>{ if(TOUR) placeTour(); });
+document.addEventListener("click", e=>{
+  const b = e.target.closest("[data-tour]"); if(!b || !TOUR) return;
+  const a = b.dataset.tour, s = TOUR.steps[TOUR.i];
+  if(a==="skip") endTour();
+  else if(a==="prev") showTourStep(TOUR.i-1);
+  else if(a==="next"){ if(s.install){ endTour(); setTimeout(showInstallGuide, 350); } else showTourStep(TOUR.i+1); }
+});
+document.addEventListener("keydown", e=>{
+  if(!TOUR) return;
+  if(e.key==="Escape"){ e.stopPropagation(); endTour(); }
+  else if(e.key==="ArrowRight") showTourStep(TOUR.i+1);
+  else if(e.key==="ArrowLeft") showTourStep(TOUR.i-1);
+}, true);
+
+/* ---------- Panduan pasang app (ikut peranti) ---------- */
+function installPlatform(){
+  const ua = navigator.userAgent;
+  if(/iphone|ipad|ipod/i.test(ua) || (navigator.platform==="MacIntel" && navigator.maxTouchPoints>1)) return "ios";
+  if(/android/i.test(ua)) return "android";
+  return "desktop";
+}
+const IG = {
+  ios: { name:"iPhone / iPad", steps:[
+    ["share", "Buka app ini dalam <b>Safari</b>, kemudian tekan butang <b>Kongsi</b> di bawah skrin. (Chrome di iPhone: butang Kongsi di bar alamat atas.)"],
+    ["plus", "Skrol ke bawah dan pilih <b>Add to Home Screen</b> / <b>Tambah ke Skrin Utama</b>."],
+    ["check", "Tekan <b>Add</b> / <b>Tambah</b> di atas kanan. Ikon Farha akan muncul di skrin utama."],
+  ], note:"Di iPhone, notifikasi pesanan hanya berfungsi selepas app dipasang ke skrin utama (iOS 16.4 ke atas)." },
+  android: { name:"Android", steps:[
+    ["dots", "Tekan menu <b>⋮</b> di atas kanan Chrome. (Samsung Internet: menu <b>☰</b> di bawah.)"],
+    ["download", "Pilih <b>Install app</b> / <b>Pasang aplikasi</b> atau <b>Add to Home screen</b> / <b>Tambah ke skrin utama</b>."],
+    ["check", "Tekan <b>Install</b> / <b>Pasang</b>. Buka Farha dari skrin utama seperti app biasa."],
+  ], note:"" },
+  desktop: { name:"Komputer", steps:[
+    ["download", "Di Chrome atau Edge, klik ikon <b>Pasang</b> (⊕) di hujung kanan bar alamat."],
+    ["check", "Klik <b>Install</b>. Farha akan dibuka dalam tetingkap sendiri."],
+  ], note:"" },
+};
+let igPlat = null;
+function showInstallGuide(plat){
+  igPlat = plat || igPlat || installPlatform();
+  if(isStandalone){
+    openSheet(`<div class="center"><div class="icon-sq" style="background:var(--ok);margin:4px auto 14px">${icon("check")}</div>
+      <h2>App sudah dipasang</h2><p>Anda sedang guna app ${esc(CONFIG.brand)} dari skrin utama.</p><button class="btn red block" data-action="close">OK</button></div>`);
+    return;
+  }
+  const g = IG[igPlat];
+  openSheet(`
+    <div class="icon-sq" style="background:var(--brand);margin-bottom:14px">${icon("download")}</div>
+    <h2>Pasang app ${esc(CONFIG.brand)}</h2>
+    <p>Buka lebih pantas dari skrin utama, guna skrin penuh, dan terima notifikasi bila pesanan siap.</p>
+    ${deferredPrompt ? `<button class="btn red block" data-action="installNow">${icon("download","width:18px;height:18px")}Pasang sekarang</button><p class="sub center" style="margin:10px 0 4px;font-size:12px">atau ikut langkah manual:</p>` : ""}
+    <div class="seg ig-tabs" role="tablist" aria-label="Jenis peranti">${Object.entries(IG).map(([k,v])=>`<button type="button" role="tab" aria-selected="${k===igPlat}" class="${k===igPlat?"on":""}" data-ig="${k}">${v.name}</button>`).join("")}</div>
+    <ol class="ig-steps">${g.steps.map(([ic,txt],n)=>`<li><span class="ig-num">${n+1}</span><span class="ig-ic">${icon(ic)}</span><span class="ig-tx">${txt}</span></li>`).join("")}</ol>
+    ${g.note ? `<p class="ig-note">${g.note}</p>` : ""}
+    <button class="btn ghost block" data-action="close">Faham</button>`);
+}
+document.addEventListener("click", e=>{ const t = e.target.closest("[data-ig]"); if(t) showInstallGuide(t.dataset.ig); });
+async function installNow(){
+  if(!deferredPrompt){ showInstallGuide(); return; }
+  deferredPrompt.prompt(); const r = await deferredPrompt.userChoice.catch(()=>null); deferredPrompt = null;
+  closeSheet(); if(r && r.outcome==="accepted") toast("App sedang dipasang");
+}
+
 /* Delegasi klik */
 document.addEventListener("click", e=>{
   const g=e.target.closest("[data-go]"); if(g){ go(g.dataset.go); return; }
@@ -2201,6 +2388,7 @@ document.addEventListener("click", e=>{
   const a=e.target.closest("[data-action]"); if(!a) return;
   ({
     qr:showQR, close:closeSheet, claimStamp, demoBuy:()=>{ if(!CONFIG.firebase) demoBuy(); }, editName, saveName,
+    tour:startTour, installGuide:()=>showInstallGuide(), installNow,
     storeInfo, addItem, placeOrder, simStore:()=>{ if(!CONFIG.firebase) simStore(); }, enableNotif,
     backup:backupMenu, backupDownload:()=>{ const f=downloadBackup(true); closeSheet(); toast(`${f.name} dimuat turun`); },
     backupShare:async()=>{ try{ await shareBackup(true); closeSheet(); }catch(e){ if(e && e.name!=="AbortError") toast(e.message||"Tidak dapat kongsi"); } }, duitnowPaid:()=>placeOrder(true),
@@ -2246,12 +2434,7 @@ addEventListener("appinstalled", ()=>{ $("#installTile").style.display="none"; t
 $("#installBtn").addEventListener("click", async e=>{
   e.stopPropagation();
   if(deferredPrompt){ deferredPrompt.prompt(); await deferredPrompt.userChoice; deferredPrompt=null; return; }
-  openSheet(`
-    <h2>Pasang ${esc(CONFIG.brand)}</h2>
-    <p>${isIOS
-      ? `Di Safari, tekan butang <b>Kongsi</b> ${icon("share","width:16px;height:16px;vertical-align:-3px")} kemudian pilih <b>“Add to Home Screen”</b>.`
-      : `Buka menu pelayar (⋮) dan pilih <b>“Install app”</b> atau <b>“Add to Home screen”</b>.`}</p>
-    <button class="btn block" data-action="close">Faham</button>`);
+  showInstallGuide();
 });
 if("serviceWorker" in navigator && location.protocol.startsWith("http")){
   addEventListener("load", ()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
@@ -2263,7 +2446,7 @@ if("serviceWorker" in navigator && location.protocol.startsWith("http")){
 function endSplash(){
   const sp=$("#splash"); if(!sp||sp.classList.contains("out")) return;
   sp.classList.add("out"); $("#app").classList.add("enter");
-  setTimeout(()=>{ sp.remove(); $("#app").classList.remove("enter"); }, 1300);
+  setTimeout(()=>{ sp.remove(); $("#app").classList.remove("enter"); maybeStartTour(); }, 1300);
 }
 
 /* INIT */

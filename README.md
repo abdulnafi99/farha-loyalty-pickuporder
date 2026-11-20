@@ -79,6 +79,10 @@ Ubah menu, harga (harga dalam template ialah contoh), cawangan dan pilihan minum
 - Senarai **Ahli** dan **Ringkasan** di admin kini dari database (ahli sebenar yang mendaftar).
 - Selepas kemas kini, **Publish semula** peraturan dari `database.rules.json`.
 
+## Tour panduan & cara pasang app
+- **Tour panduan (spotlight)**: keluar sekali selepas log masuk pertama di setiap peranti. Menyorot satu demi satu: Promosi, Point, Kad cap, Kod ahli, Order, Cawangan, Kategori, Pilih minuman, Ganjaran dan Profil, kemudian cara pasang app. Boleh **Langkau**, **Kembali**, atau ulang dari **Profil → Panduan app**.
+- **Cara pasang app**: panduan langkah demi langkah ikut peranti (iPhone/iPad, Android, Komputer), dengan butang **Pasang sekarang** bila pelayar menyokong. Juga dari **Profil → Cara pasang app** dan butang Pasang di Home.
+
 ## Backup & eksport data
 - **Admin → Tetapan → Backup & eksport data**: muat turun semua data app dalam pelayar ini sebagai fail `.json` (pilihan: dengan / tanpa gambar), **Kongsi fail** (telefon), dan **Pulihkan dari fail**.
 - **App pelanggan → Profil → Backup data app**: muat turun / kongsi fail yang sama (berguna jika belum boleh masuk admin).
