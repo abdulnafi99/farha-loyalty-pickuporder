@@ -273,6 +273,17 @@ svg.i{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stro
 .mchips button{flex:none;padding:9px 14px;border-radius:999px;background:rgba(255,255,255,.75);border:1px solid var(--line);font-size:13px;font-weight:600}
 .mchips button span{font-family:var(--mono);font-size:11px;opacity:.7;margin-left:4px}
 .mchips button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.mchips .mc-edit{display:inline-flex;align-items:center;gap:6px;background:transparent;border-style:dashed;color:var(--brand);font-weight:700}
+.ec-list{display:flex;flex-direction:column;gap:8px}
+.ec-row{display:flex;align-items:center;gap:8px;padding:8px;border-radius:14px;background:rgba(255,255,255,.7);border:1px solid var(--line)}
+.ec-row .input{flex:1;min-width:0;margin:0}
+.ec-row.del{flex-wrap:wrap;background:rgba(191,3,17,.05);border-style:dashed}
+.ec-row.del .input{flex:1 1 140px}
+.ec-del-t{flex:1 1 100%;font-size:13px}
+.ec-mv{display:flex;flex-direction:column;gap:2px}
+.ec-mv button{width:28px;height:22px;display:grid;place-items:center;border-radius:7px;color:var(--ink-2)}
+.ec-mv button:disabled{opacity:.25}
+.ec-n{flex:none;font-size:12px;min-width:46px;text-align:right}
 .mi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
 .mcard{display:flex;flex-direction:column;gap:12px}
 .mcard.off{opacity:.62}
@@ -1189,7 +1200,8 @@ function renderMenu(){
   $("#mCats").hidden = menuTab==="groups";
   if(menuTab==="groups") return renderGroups();
   const m = readMenu(), items = Array.isArray(m.items) ? m.items : [], sold = m.soldOut || [], cats = menuCats(m);
-  $("#mCats").innerHTML = [{id:"",name:"Semua"}, ...cats].map(c=>`<button class="${menuCat===c.id?"on":""}" data-mcat="${esc(c.id)}">${esc(c.name)} <span>${c.id?items.filter(i=>i.cat===c.id).length:items.length}</span></button>`).join("");
+  $("#mCats").innerHTML = [{id:"",name:"Semua"}, ...cats].map(c=>`<button class="${menuCat===c.id?"on":""}" data-mcat="${esc(c.id)}">${esc(c.name)} <span>${c.id?items.filter(i=>i.cat===c.id).length:items.length}</span></button>`).join("")
+    + `<button class="mc-edit" data-action="editCats">${icon("edit","width:14px;height:14px")}Urus kategori</button>`;
   const list = items.filter(i=>!menuCat || i.cat===menuCat);
   $("#menuCount").textContent = `${items.filter(i=>!i.hidden).length} item dijual · ${items.length} jumlah`;
   if(!items.length){ $("#miGrid").innerHTML = `<div class="tile empty" style="grid-column:1/-1">Menu belum dimuat. Buka app pelanggan (index.html) sekali dalam pelayar ini, atau tekan <b>Tambah item</b>.</div>`; return; }
@@ -1302,6 +1314,70 @@ function deleteItem(id){
   m.items = m.items.filter(x=>x.id!==id); m.soldOut = (m.soldOut||[]).filter(x=>x!==id); saveMenu(m);
   closeSheet(); renderScreen(); toast(`${it.name} dibuang dari menu`);
 }
+/* ---------- Urus kategori (nama, susunan, tambah, buang) ---------- */
+let EC = null;
+function editCats(){
+  const m = readMenu(), items = m.items || [];
+  EC = menuCats(m).map(c=>({ id:c.id, name:c.name, n:items.filter(i=>i.cat===c.id).length, del:false, moveTo:"" }));
+  openSheet(`<h2>Urus kategori</h2><p class="sub">Tukar nama, susun semula, tambah atau buang kategori menu. Kategori <b>Popular</b> diurus automatik (item bertanda Popular).</p>
+    <div id="ecList" class="ec-list"></div>
+    <button type="button" class="btn ghost sm" data-ecadd style="margin-top:10px">${icon("plus","width:16px;height:16px")}Tambah kategori</button>
+    <div class="row" style="margin-top:20px"><button class="btn red grow" data-action="saveCats">${icon("check")}Simpan kategori</button></div>`);
+  renderEC();
+}
+const ecKey = c => c.id || "#" + EC.indexOf(c);
+function ecSync(){
+  $$("#ecList [data-ecn]").forEach(inp=>{ const c = EC[+inp.dataset.ecn]; if(c) c.name = inp.value; });
+  $$("#ecList [data-ecm]").forEach(s=>{ const c = EC[+s.dataset.ecm]; if(c) c.moveTo = s.value; });
+}
+function renderEC(){
+  const live = EC.filter(c=>!c.del);
+  $("#ecList").innerHTML = EC.map((c,i)=> c.del ? (c.n ? `<div class="ec-row del"><span class="ec-del-t">Buang <b>${esc(c.name||"(tanpa nama)")}</b> · pindah ${c.n} item ke</span>
+      <select class="input" data-ecm="${i}" aria-label="Pindah item ke">${live.map(x=>`<option value="${esc(ecKey(x))}" ${c.moveTo===ecKey(x)?"selected":""}>${esc(x.name||"(kategori baru)")}</option>`).join("")}</select>
+      <button type="button" class="btn ghost sm" data-ecundo="${i}">Batal</button></div>` : "")
+    : `<div class="ec-row">
+      <div class="ec-mv"><button type="button" data-ecup="${i}" aria-label="Naik" ${live[0]===c?"disabled":""}>${icon("up","width:15px;height:15px")}</button><button type="button" data-ecdn="${i}" aria-label="Turun" ${live[live.length-1]===c?"disabled":""}>${icon("up","width:15px;height:15px;transform:rotate(180deg)")}</button></div>
+      <input class="input" data-ecn="${i}" maxlength="24" value="${esc(c.name)}" placeholder="Nama kategori" aria-label="Nama kategori">
+      <span class="ec-n note">${c.n} item</span>
+      <button type="button" class="btn ghost sm" data-ecrm="${i}" aria-label="Buang ${esc(c.name)}" ${live.length<=1?"disabled":""}>${icon("trash","width:16px;height:16px")}</button></div>`).join("");
+}
+function saveCats(){
+  ecSync();
+  const live = EC.filter(c=>!c.del);
+  if(!live.length){ toast("Mesti ada sekurang-kurangnya satu kategori"); return; }
+  if(live.some(c=>!c.name.trim())){ toast("Isi nama semua kategori"); return; }
+  const names = live.map(c=>c.name.trim().toLowerCase());
+  if(new Set(names).size!==names.length){ toast("Nama kategori tidak boleh sama"); return; }
+  if(names.includes("popular")){ toast("Nama Popular dikhaskan untuk item popular"); return; }
+  const slug = s => s.toLowerCase().normalize("NFD").replace(/[^a-z0-9]+/g,"").slice(0,20) || "kat";
+  const used = new Set(EC.filter(c=>c.id).map(c=>c.id).concat("popular"));
+  const idOf = {};
+  EC.forEach((c,i)=>{ if(!c.id && !c.del){ const base = slug(c.name); let id = base, k = 2; while(used.has(id)) id = base + (k++); used.add(id); idOf["#"+i] = id; c.id = id; } });
+  const m = readMenu(); m.items = m.items || [];
+  let moved = 0;
+  EC.filter(c=>c.del && c.id).forEach(c=>{
+    let to = idOf[c.moveTo] || c.moveTo; if(!live.some(x=>x.id===to)) to = live[0].id;
+    m.items.forEach(it=>{ if(it.cat===c.id){ it.cat = to; moved++; } });
+  });
+  m.cats = live.map(c=>({ id:c.id, name:c.name.trim() }));
+  const known = new Set(m.cats.map(c=>c.id));
+  m.items.forEach(it=>{ if(!known.has(it.cat)){ it.cat = m.cats[0].id; moved++; } });
+  if(menuCat && !known.has(menuCat)) menuCat = "";
+  saveMenu(m); EC = null; closeSheet(); renderScreen(); toast(`Kategori disimpan${moved?` · ${moved} item dipindah`:""}`);
+}
+document.addEventListener("click", e=>{
+  if(!EC) return;
+  const g = a => { const b = e.target.closest(`[${a}]`); return b ? +b.getAttribute(a) : null; };
+  if(e.target.closest("[data-ecadd]")){ ecSync(); EC.push({ id:"", name:"", n:0, del:false, moveTo:"" }); renderEC(); const ins = $$("#ecList [data-ecn]"); ins[ins.length-1]?.focus(); return; }
+  const swap = (i, dir)=>{ ecSync(); const live = EC.map((c,k)=>k).filter(k=>!EC[k].del), p = live.indexOf(i), q = live[p+dir]; if(q===undefined) return; [EC[i], EC[q]] = [EC[q], EC[i]]; renderEC(); };
+  let i;
+  if((i=g("data-ecup"))!==null) return swap(i, -1);
+  if((i=g("data-ecdn"))!==null) return swap(i, 1);
+  if((i=g("data-ecrm"))!==null){ ecSync(); const c = EC[i];
+    if(!c.id) EC.splice(i,1); else { c.del = true; const o = EC.find(x=>!x.del); c.moveTo = o ? ecKey(o) : ""; }
+    renderEC(); return; }
+  if((i=g("data-ecundo"))!==null){ ecSync(); EC[i].del = false; renderEC(); return; }
+});
 document.addEventListener("change", async e=>{
   if(e.target.id==="miFile"){ const f=e.target.files&&e.target.files[0]; if(!f) return;
     try{ EDIT_PHOTO = await compressImage(f); refreshPhotoPreview(); }catch(x){ toast(x.message); } e.target.value=""; }
@@ -2096,7 +2172,7 @@ document.addEventListener("click",e=>{
     deleteReward:()=>deleteReward(d.r), toggleReward:()=>toggleReward(d.r),
     saveHours, hrCopy,
     saveSettings, resetDemo, clearDemo, exportData, shareData,
-    menuAdd:()=>menuTab==="groups"?editGroup("","one"):editItem(""), editGroup:()=>editGroup(d.id), saveGroup, deleteGroup:()=>deleteGroup(d.id),
+    menuAdd:()=>menuTab==="groups"?editGroup("","one"):editItem(""), editGroup:()=>editGroup(d.id), saveGroup, editCats, saveCats, deleteGroup:()=>deleteGroup(d.id),
     gAdd:()=>{syncChoices();EG.choices.push({n:"",p:0});renderGroupForm();const r=$$("#gChoices .gc-n");r[r.length-1]?.focus();},
     gAllDrinks:()=>$$("#gItems input").forEach(x=>{ if(x.dataset.drink==="1") x.checked=true; }), gNone:()=>$$("#gItems input").forEach(x=>x.checked=false),
     toGroups:()=>{closeSheet();menuTab="groups";renderMenu();},
