@@ -1018,13 +1018,16 @@ let S;
 /* Data dikongsi dengan admin.html (pelayar sama, mod demo) */
 const SHARED = { rewards:"farha-rewards-v1", settings:"farha-settings-v1", vouchers:"farha-vouchers-v1", menu:"farha-menu-v1", orders:"farha-orders-v1", promos:"farha-promos-v1" };
 const DEFAULT_REWARDS = CONFIG.rewards;
-const DEFAULT_MENU = CONFIG.menu;
+const DEFAULT_MENU = CONFIG.menu, DEFAULT_CATS = CONFIG.categories.filter(c=>c.id!=="popular"), POPULAR_CAT = CONFIG.categories.find(c=>c.id==="popular") || { id:"popular", name:"Popular" };
 function applyShared(){
   try{ const r=JSON.parse(localStorage.getItem(SHARED.rewards)); CONFIG.rewards = (Array.isArray(r)&&r.length) ? r.filter(x=>x.active!==false) : DEFAULT_REWARDS; }catch(e){}
   try{ const st=JSON.parse(localStorage.getItem(SHARED.settings)); if(st){ if(st.stampTarget) CONFIG.stampTarget=+st.stampTarget; if(st.pointsPerPurchase) CONFIG.pointsPerPurchase=+st.pointsPerPurchase; if(st.prepMins) CONFIG.order.prepMins=+st.prepMins; if(st.hours) CONFIG.order.hours=st.hours; if(st.slotMins) CONFIG.order.slotMins=+st.slotMins; if(st.maxAheadMins) CONFIG.order.maxAheadMins=+st.maxAheadMins; if(st.allowSchedule!==undefined) CONFIG.order.allowSchedule=st.allowSchedule!==false; if(st.preorder!==undefined) CONFIG.order.preorder=st.preorder!==false; if(st.pointsMultiplier) CONFIG.order.pointsMultiplier=+st.pointsMultiplier; SHOP.open = st.orderOpen!==false; } }catch(e){}
   try{ const mn=JSON.parse(localStorage.getItem(SHARED.menu)); SOLD = (mn&&Array.isArray(mn.soldOut)) ? mn.soldOut : [];
     CONFIG.menu = (mn && mn.v>=2 && Array.isArray(mn.items)) ? mn.items.filter(i=>!i.hidden) : DEFAULT_MENU;
-    GROUPS = (mn && Array.isArray(mn.groups)) ? mn.groups : null; }catch(e){}
+    GROUPS = (mn && Array.isArray(mn.groups)) ? mn.groups : null;
+    /* Kategori diedit di admin → Menu → Urus kategori */
+    const cs = (mn && Array.isArray(mn.cats)) ? mn.cats.filter(c=>c && c.id && c.id!=="popular" && c.name) : [];
+    CONFIG.categories = [POPULAR_CAT, ...(cs.length ? cs : DEFAULT_CATS)]; }catch(e){}
 }
 function load(){
   try{ S = JSON.parse(localStorage.getItem(CONFIG.storageKey)); }catch(e){ S=null; }
@@ -1359,7 +1362,7 @@ const cartCount = id => CART.filter(l=>!id||l.id===id).reduce((a,l)=>a+l.qty,0);
 function publishMenu(){
   try{
     const cur = JSON.parse(localStorage.getItem(SHARED.menu)) || {};
-    const cats = CONFIG.categories.filter(c=>c.id!=="popular");
+    const cats = structuredClone(DEFAULT_CATS);
     if(cur.v>=2 && Array.isArray(cur.items)){
       let ch = false;
       if(!cur.cats){ cur.cats=cats; ch=true; }

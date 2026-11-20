@@ -49,6 +49,7 @@ Ubah menu, harga (harga dalam template ialah contoh), cawangan dan pilihan minum
 
 ## Menu (admin → Menu)
 - **Tambah, edit dan buang item jualan**: nama, penerangan, harga, kategori, gambar (dimampatkan), pilihan untuk pelanggan (kopi / susu / teh / pastri / tiada), lencana (cth. TERLARIS), Popular, dapat cap, dan suis **Dijual dalam app**.
+- **Urus kategori** (butang di hujung baris kategori): tukar nama, susun semula (naik/turun), tambah kategori baru, atau buang kategori. Buang kategori yang ada item akan minta pilih kategori lain untuk pindahkan item tersebut. Kategori **Popular** kekal automatik. App pelanggan ikut susunan dan nama ini.
 - **Varian & Add-on** (tab dalam skrin Menu): bina sendiri kumpulan pilihan dan sambungkan ke item.
   - **Varian** = pelanggan pilih satu (wajib), cth. Saiz: Biasa / Besar +RM2.00. Tetapkan pilihan asal.
     - **Harga varian = harga penuh**: masukkan harga jualan sebenar (cth. Biasa RM12, Besar RM14). Kosongkan jika sama dengan harga item (cth. Ais / Panas).
