@@ -1,6 +1,6 @@
 /* Service worker — cache app shell supaya boleh dibuka luar talian.
    Naikkan VERSION setiap kali anda kemas kini index.html. */
-const VERSION = "farha-v1.3.1";
+const VERSION = "farha-v1.4.0";
 const SHELL = ["./", "./index.html", "./admin.html", "./manifest.webmanifest",
   "./icons/icon-192.png", "./icons/icon-512.png", "./icons/apple-touch-icon.png"];
 
@@ -12,6 +12,27 @@ self.addEventListener("activate", e => {
     .then(keys => Promise.all(keys.filter(k => k !== VERSION).map(k => caches.delete(k))))
     .then(() => self.clients.claim()));
 });
+/* Notifikasi: klik → buka / fokus app di skrin yang betul */
+self.addEventListener("notificationclick", e => {
+  e.notification.close();
+  const d = e.notification.data || {}, url = new URL(d.url || "./", self.registration.scope).href, page = url.split("#")[0];
+  e.waitUntil(self.clients.matchAll({ type: "window", includeUncontrolled: true }).then(list => {
+    const c = list.find(w => w.url.split("#")[0] === page);
+    if (c) { c.postMessage({ type: "open", order: d.order || null, url }); return c.focus(); }
+    return self.clients.openWindow(url);
+  }));
+});
+/* Push dari server (Firebase Cloud Messaging / Web Push). Payload: { title, body, url, order, tag } */
+self.addEventListener("push", e => {
+  let d = {};
+  try { d = e.data ? e.data.json() : {}; } catch (_) { d = { body: e.data ? e.data.text() : "" }; }
+  const n = d.notification || d, data = d.data || d;
+  e.waitUntil(self.registration.showNotification(n.title || "Farha", {
+    body: n.body || "", icon: "icons/icon-192.png", badge: "icons/icon-192.png", tag: n.tag || data.tag,
+    data: { url: data.url || "./", order: data.order || null },
+  }));
+});
+
 self.addEventListener("fetch", e => {
   const req = e.request;
   if (req.method !== "GET") return;
