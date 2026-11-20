@@ -39,7 +39,9 @@ Ubah menu, harga (harga dalam template ialah contoh), cawangan dan pilihan minum
 - Skrin **Log masuk / Daftar** selepas splash. Pelanggan guna **no. telefon Malaysia** (cth. `012-345 6789`) dan **password** (minimum 6 aksara).
 - Firebase Authentication guna **e-mel + password**, jadi no. telefon ditukar kepada e-mel dalaman: `60123456789@phone.farha.app` (ubah domain di `CONFIG.auth.emailDomain`). Pelanggan tidak nampak e-mel ini.
 - **ID ahli = no. telefon** (cth. `60123456789`), jadi staf boleh cari ahli di kaunter dengan no. telefon.
-- **Mod demo** (`CONFIG.firebase = null`): akaun disimpan dalam peranti. Akaun demo: `012-345 6789` / `demo123`.
+- **Firebase sudah disambung** (projek `farha-apporder`, Email/Password dihidupkan). Pelanggan daftar dan log masuk melalui Firebase Authentication.
+- Tetapkan `CONFIG.firebase = null` untuk kembali ke **mod demo** (akaun dalam peranti; akaun demo `012-345 6789` / `demo123`).
+- Pastikan domain hosting (cth. `nama-app.vercel.app`) ditambah di Firebase console → *Authentication → Settings → Authorized domains*.
 - **Sambung Firebase:** di Firebase console, hidupkan *Authentication → Sign-in method → Email/Password*, daftar web app, kemudian tampal `firebaseConfig` ke `CONFIG.firebase` dalam `index.html`. Tambah domain hosting anda di *Authentication → Settings → Authorized domains*.
 - **Lupa password:** e-mel dalaman tidak boleh terima e-mel reset, jadi pelanggan diminta hubungi kedai. Staf/owner reset password di Firebase console (*Authentication → Users*).
 - Nota: buat masa ini Firebase digunakan untuk log masuk sahaja. Point, cap dan pesanan masih disimpan dalam peranti sehingga Firestore disambung.
@@ -56,6 +58,12 @@ Ubah menu, harga (harga dalam template ialah contoh), cawangan dan pilihan minum
 - Suis **Ada stok** untuk tanda item habis sementara. Perubahan terus muncul dalam app pelanggan.
 - Menu asal dalam `CONFIG.menu` hanya dimasukkan kali pertama app dibuka. Selepas itu menu diurus di admin.
 
+## Promosi (Home)
+- Seksyen **Promosi** di skrin Home app pelanggan: slider banner (bertukar sendiri setiap 5 saat) dengan gambar atau kad warna, lencana, tajuk, keterangan dan butang.
+- **Admin → Promosi**: tambah, edit, buang, susun (naik / turun), tunjuk / sembunyi, dan jadualkan tarikh mula & tamat. Ada pratonton terus semasa edit.
+- Bila ditekan, banner boleh: buka **item istimewa** (terus ke halaman item), buka **kategori**, buka **menu Order**, atau tiada tindakan (banner sahaja).
+- Gambar dimampatkan secara automatik. Saiz disyorkan: landskap, cth. 1200×600. Jika gambar sudah ada tulisan, kosongkan tajuk.
+
 ## Notifikasi push
 - **Pelanggan**: notifikasi bila pesanan diterima, siap, selesai, dibatalkan, bayaran DuitNow disahkan atau bukti ditolak. Hidupkan dari skrin status pesanan atau Profil → Notifikasi push.
 - **Admin**: notifikasi bila pesanan baru masuk atau pelanggan hantar semula bukti DuitNow. Tekan **Hidupkan notifikasi** di skrin Pesanan.
@@ -63,7 +71,10 @@ Ubah menu, harga (harga dalam template ialah contoh), cawangan dan pilihan minum
 - **Had mod demo**: notifikasi keluar bila app/tab terbuka di latar belakang (pelayar yang sama). Untuk notifikasi bila app **ditutup sepenuhnya** dan antara peranti, sambung **Firebase Cloud Messaging** (service worker `sw.js` sudah ada pengendali `push`) dengan Cloud Function yang menghantar push bila status pesanan berubah. iPhone: notifikasi web hanya untuk app yang dipasang ke skrin utama (iOS 16.4+).
 
 ## Admin dashboard (`admin.html`, demo)
-Buka `/admin` atau `admin.html` dan masukkan PIN demo **1234**.
+Buka `/admin` atau `admin.html` dan log masuk dengan **e-mel admin** melalui Firebase Authentication.
+- E-mel yang dibenarkan: `ADMIN.adminEmails` dalam `admin.html` (kini `admin@farha.app`). Akaun pelanggan biasa tidak boleh masuk admin.
+- **Password tidak disimpan dalam kod.** Cipta akaun admin di Firebase console → *Authentication → Users → Add user*. Tukar password di situ juga, atau guna butang **Lupa password?** (pautan reset dihantar ke e-mel admin).
+- Mod demo (`ADMIN.firebase = null`): PIN **1234**.
 - **Ringkasan**: KPI (ahli, pembelian hari ini, point dikeluarkan, tebusan), carta pembelian 14 hari, ganjaran popular, aktiviti terkini dan ahli teratas.
 - **Kaunter**: imbas QR pelanggan dengan kamera (BarcodeDetector, atau jsQR sebagai fallback) atau taip ID ahli. Kemudian rekod pembelian (+cap, +point), tebus kad cap penuh, tebus ganjaran, dan sahkan kod baucar.
 - **Ahli**: cari, tapis ikut tahap, susun. Lihat butiran dan sejarah, laraskan point, eksport CSV.

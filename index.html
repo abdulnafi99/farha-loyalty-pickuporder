@@ -402,6 +402,32 @@ body[data-screen="cart"] .paybar{display:flex}
 
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 
+/* ---------- Promosi (banner Home) ---------- */
+.promo-wrap{display:flex;flex-direction:column;gap:8px;min-width:0}
+.promo-head{display:flex;justify-content:space-between;align-items:baseline;margin:2px 4px 0}
+.promo-head b{font-size:15px;font-weight:800}
+.promo-head span{font-size:12px;color:var(--ink-2);font-weight:600}
+.promo-track{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;border-radius:var(--radius);-webkit-overflow-scrolling:touch}
+.promo-track::-webkit-scrollbar{display:none}
+.pcard{position:relative;flex:0 0 100%;scroll-snap-align:start;height:176px;border-radius:var(--radius);overflow:hidden;text-align:left;color:#fff;
+  background:radial-gradient(90% 90% at 0% 0%,rgba(255,255,255,.25),transparent 60%),linear-gradient(150deg,#E3192B,#BF0311);box-shadow:0 10px 30px -14px rgba(120,10,20,.35);display:block;width:100%}
+.pcard.dark{background:radial-gradient(120% 140% at 100% 0%,rgba(227,25,43,.85),transparent 55%),linear-gradient(140deg,#2E070C,#5A0710 55%,#8E0712)}
+.pcard.peach{background:linear-gradient(150deg,#FFE6DA,#FFB49F);color:#5A0710}
+.pcard img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+.pcard .pshade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(20,0,4,0) 25%,rgba(20,0,4,.75))}
+.pcard .pdeco{position:absolute;right:-18px;top:-18px;opacity:.16;pointer-events:none}
+.pcard .pdeco svg.i{width:150px;height:150px;stroke-width:1.2}
+.pbody{position:absolute;left:0;right:0;bottom:0;padding:16px 18px;display:flex;flex-direction:column;gap:4px;align-items:flex-start}
+.pbadge{font-size:10.5px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;padding:4px 9px;border-radius:99px;background:rgba(255,255,255,.22);border:1px solid rgba(255,255,255,.35)}
+.pcard.peach .pbadge{background:rgba(90,7,16,.08);border-color:rgba(90,7,16,.16)}
+.pbody b{font-size:19px;font-weight:800;line-height:1.2;letter-spacing:-.01em;text-shadow:0 1px 8px rgba(0,0,0,.12)}
+.pbody small{font-size:12.5px;opacity:.94;line-height:1.35}
+.pcta{margin-top:6px;font-size:12.5px;font-weight:800;padding:7px 13px;border-radius:99px;background:#fff;color:#BF0311}
+.pcard.peach .pcta{background:#BF0311;color:#fff}
+.promo-dots{display:flex;justify-content:center;gap:6px;min-height:6px}
+.promo-dots i{width:6px;height:6px;border-radius:3px;background:rgba(191,3,17,.22);transition:width .3s,background .3s}
+.promo-dots i.on{width:18px;background:#BF0311}
+
 /* ---------- Sheet: butang tutup & mod skrin penuh (produk) ---------- */
 .sheet-x{position:absolute;top:12px;right:max(14px, var(--safe-r));z-index:3;width:40px;height:40px;border-radius:12px;display:grid;place-items:center;background:rgba(191,3,17,.07);color:var(--ink)}
 .sheet-x svg.i{width:20px;height:20px}
@@ -557,6 +583,11 @@ body[data-screen="cart"] .paybar{display:flex}
       </header>
       <div class="bento">
         <div class="span2" id="h-order" hidden></div>
+        <section class="span2 promo-wrap" id="h-promos" aria-label="Promosi" hidden>
+          <div class="promo-head"><b>Promosi</b><span id="promoCount"></span></div>
+          <div class="promo-track" id="promoTrack"></div>
+          <div class="promo-dots" id="promoDots" aria-hidden="true"></div>
+        </section>
         <div class="tile dark span2 press" data-go="cap">
           <div class="points-row"><span class="label">Point</span><span class="chip" id="h-tier">Gold</span></div>
           <div class="points-row">
@@ -760,7 +791,23 @@ const CONFIG = {
   },
   // Tampal firebaseConfig dari Firebase console di sini untuk guna Firebase Auth.
   // null = mod demo (akaun disimpan dalam peranti ini sahaja).
-  firebase: null,
+  firebase: {
+    apiKey: "AIzaSyD1s1bZUN4hp6qMLbsF49TbGCJYSV7T3Cc",
+    authDomain: "farha-apporder.firebaseapp.com",
+    databaseURL: "https://farha-apporder-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "farha-apporder",
+    storageBucket: "farha-apporder.firebasestorage.app",
+    messagingSenderId: "647737113340",
+    appId: "1:647737113340:web:63517cde2cd0b5b6b93579",
+    measurementId: "G-F2VFDX70XW",
+  },
+  /* ---------- PROMOSI (Home) ----------
+     Promosi asal. Selepas app dibuka kali pertama, promosi diurus di admin.html → Promosi.
+     link.type: "none" | "order" (buka menu) | "item" (link.id = id item) | "cat" (link.id = id kategori) */
+  promos: [
+    { id:"p-2x",  title:"Order dalam app, dapat 2× point", subtitle:"Untuk setiap pesanan pickup", badge:"Promosi", tone:"dark", icon:"sparkle", link:{type:"order"}, cta:"Order sekarang", active:true },
+    { id:"p-sig", title:"Farha Signature", subtitle:"Minuman paling laris kami. Cuba hari ini!", badge:"Item istimewa", tone:"", icon:"cup", link:{type:"item",id:"signature"}, cta:"Order sekarang", active:true },
+  ],
   /* ---------- ORDER PICKUP ---------- */
   store: {                         // cawangan untuk pickup
     name: "Farha — Cawangan Utama",
@@ -923,7 +970,7 @@ const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
 let S;
 /* Data dikongsi dengan admin.html (pelayar sama, mod demo) */
-const SHARED = { rewards:"farha-rewards-v1", settings:"farha-settings-v1", vouchers:"farha-vouchers-v1", menu:"farha-menu-v1", orders:"farha-orders-v1" };
+const SHARED = { rewards:"farha-rewards-v1", settings:"farha-settings-v1", vouchers:"farha-vouchers-v1", menu:"farha-menu-v1", orders:"farha-orders-v1", promos:"farha-promos-v1" };
 const DEFAULT_REWARDS = CONFIG.rewards;
 const DEFAULT_MENU = CONFIG.menu;
 function applyShared(){
@@ -1022,7 +1069,8 @@ function render(){
   $("#p-tier-txt").textContent = tier.next ? `${fmt(tier.need)} ke ${tier.next.name}` : "Tahap tertinggi";
   $("#p-redeemed").textContent = S.redeemed;
   $$("[data-toggle]").forEach(b=>b.classList.toggle("on", !!S[b.dataset.toggle]));
-  // ORDER
+  // PROMOSI & ORDER
+  renderPromos();
   renderOrder();
   const sc=document.body.dataset.screen;
   if(sc==="cart") renderCart(); if(sc==="track") renderTrack();
@@ -1669,6 +1717,7 @@ function storeInfo(){
 function orderClick(e){
   const q = s => e.target.closest(s);
   let el;
+  if((el=q("[data-promo]"))){ openPromo(el.dataset.promo); return true; }
   if((el=q("[data-item]"))){ openItem(el.dataset.item); return true; }
   if((el=q("[data-opt]"))){ const [g,i]=el.dataset.opt.split(":"); piPick(g,+i); return true; }
   if((el=q("[data-pq]"))){ if(PI){ PI.qty=Math.max(1,Math.min(20,PI.qty+ +el.dataset.pq)); piUpdate(); } return true; }
@@ -1737,6 +1786,9 @@ function authMsg(x){
   if(/weak-password/.test(c)) return "Password terlalu lemah. Guna sekurang-kurangnya 6 aksara.";
   if(/too-many-requests/.test(c)) return "Terlalu banyak cubaan. Cuba lagi sebentar.";
   if(/network-request-failed/.test(c)) return "Tiada sambungan internet. Cuba lagi.";
+  if(/operation-not-allowed/.test(c)) return "Log masuk belum dihidupkan oleh kedai (Firebase: Email/Password).";
+  if(/unauthorized-domain|operation-not-supported/.test(c)) return "Domain ini belum dibenarkan dalam Firebase (Authorized domains).";
+  if(/invalid-api-key|app-not-authorized/.test(c)) return "Tetapan Firebase tidak sah. Hubungi kedai.";
   return "Tidak berjaya. Cuba lagi.";
 }
 async function authLogin(phone, pw){
@@ -1852,6 +1904,61 @@ async function authBoot(){
   showAuth();
 }
 
+/* =========================================================
+   PROMOSI — banner slider di Home (diurus di admin.html → Promosi)
+   Disimpan dalam SHARED.promos. Pautan: none | order | item | cat
+   ========================================================= */
+const todayStr = () => { const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; };
+function readPromos(){ try{ const v=JSON.parse(localStorage.getItem(SHARED.promos)); if(Array.isArray(v)) return v; }catch(e){} return null; }
+function seedPromos(){ if(readPromos()===null){ try{ localStorage.setItem(SHARED.promos, JSON.stringify(CONFIG.promos)); }catch(e){} } }
+function livePromos(){
+  const t = todayStr();
+  return (readPromos() || CONFIG.promos).filter(p=>p.active!==false && (!p.start || t>=p.start) && (!p.end || t<=p.end));
+}
+function promoCard(p){
+  const l = p.link || {}, cta = l.type && l.type!=="none" ? (p.cta || "Order sekarang") : "", txt = p.title || p.subtitle || p.badge || cta;
+  return `<button class="pcard ${p.image?"":(p.tone||"")}" data-promo="${esc(p.id)}" aria-label="${esc(p.title||"Promosi")}">
+    ${p.image ? `<img src="${esc(p.image)}" alt="">` : `<span class="pdeco">${icon(p.icon||"sparkle")}</span>`}
+    ${p.image && txt ? '<span class="pshade"></span>' : ""}
+    <span class="pbody">${p.badge?`<span class="pbadge">${esc(p.badge)}</span>`:""}${p.title?`<b>${esc(p.title)}</b>`:""}${p.subtitle?`<small>${esc(p.subtitle)}</small>`:""}${cta?`<span class="pcta">${esc(cta)} ›</span>`:""}</span>
+  </button>`;
+}
+let promoTimer = null, promoIdx = 0;
+function renderPromos(){
+  const box = $("#h-promos"), list = livePromos();
+  box.hidden = !list.length;
+  if(!list.length){ clearInterval(promoTimer); return; }
+  $("#promoTrack").innerHTML = list.map(promoCard).join("");
+  $("#promoCount").textContent = list.length>1 ? `${list.length} tawaran` : "";
+  $("#promoDots").innerHTML = list.length>1 ? list.map((_,i)=>`<i class="${i===0?"on":""}"></i>`).join("") : "";
+  promoIdx = 0; $("#promoTrack").scrollLeft = 0; startPromoTimer(list.length);
+}
+function startPromoTimer(n){
+  clearInterval(promoTimer); if(n<2) return;
+  promoTimer = setInterval(()=>{
+    if(document.hidden || document.body.dataset.screen!=="home") return;
+    const tr = $("#promoTrack"); promoIdx = (promoIdx+1) % n;
+    tr.scrollTo({ left:promoIdx*(tr.clientWidth+10), behavior:"smooth" });
+  }, 5000);
+}
+$("#promoTrack").addEventListener("scroll", ()=>{
+  const tr = $("#promoTrack"), i = Math.round(tr.scrollLeft/(tr.clientWidth+10)); promoIdx = i;
+  $$("#promoDots i").forEach((d,k)=>d.classList.toggle("on", k===i));
+}, { passive:true });
+$("#promoTrack").addEventListener("pointerdown", ()=>startPromoTimer($$("#promoDots i").length));
+function openPromo(id){
+  const p = (readPromos() || CONFIG.promos).find(x=>x.id===id); if(!p) return;
+  const l = p.link || {};
+  if(l.type==="item"){
+    const m = menuItem(l.id); go("order");
+    if(!m) toast("Item ini tiada dalam menu buat masa ini");
+    else if(SOLD.includes(m.id)) toast(`${esc(m.name)} habis buat masa ini`);
+    else setTimeout(()=>openItem(m.id), 120);
+  }
+  else if(l.type==="cat"){ O.cat = CONFIG.categories.some(c=>c.id===l.id) ? l.id : "popular"; go("order"); }
+  else if(l.type==="order") go("order");
+}
+
 /* Delegasi klik */
 document.addEventListener("click", e=>{
   const g=e.target.closest("[data-go]"); if(g){ go(g.dataset.go); return; }
@@ -1885,6 +1992,7 @@ addEventListener("storage", e=>{
     if(e.key===CONFIG.storageKey && before!==S.stamps+"/"+S.points) toast("Kad anda dikemas kini di kaunter");
   }
   if(e.key===SHARED.menu){ applyShared(); render(); }
+  if(e.key===SHARED.promos) renderPromos();
   if(e.key===SHARED.orders){ myOrders().forEach(orderNotice); render(); }
   if(e.key===SHARED.vouchers && currentVoucher){
     try{ const v=JSON.parse(e.newValue||"[]").find(x=>x.code===currentVoucher); const el=$("#vtimer");
@@ -1927,7 +2035,7 @@ function endSplash(){
 /* INIT */
 $$("img.wm").forEach(i=>{ if(!i.src) i.src=WORDMARK; });
 hydrateIcons();
-applyShared(); load(); save(); publishMenu(); myOrders().forEach(o=>{ seenStatus[o.no]=o.status; seenPaid[o.no]=!!o.paid; seenRej[o.no]=!!o.payRejected; }); render(); net(); authBoot();
+applyShared(); load(); save(); publishMenu(); seedPromos(); myOrders().forEach(o=>{ seenStatus[o.no]=o.status; seenPaid[o.no]=!!o.paid; seenRej[o.no]=!!o.payRejected; }); render(); net(); authBoot();
 go((location.hash||"#home").slice(1).replace(/[^a-z]/g,"") || "home");
 if(!$(".screen.active")) go("home");
 const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
