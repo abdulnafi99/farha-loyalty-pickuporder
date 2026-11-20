@@ -65,6 +65,13 @@ Ubah menu, harga (harga dalam template ialah contoh), cawangan dan pilihan minum
 - Bila ditekan, banner boleh: buka **item istimewa** (terus ke halaman item), buka **kategori**, buka **menu Order**, atau tiada tindakan (banner sahaja).
 - Gambar dimampatkan secara automatik. Saiz disyorkan: landskap, cth. 1200×600. Jika gambar sudah ada tulisan, kosongkan tajuk.
 
+## Realtime Database (langkah 1: menu, promosi, tetapan, ganjaran)
+- Data **menu & varian, promosi, tetapan dan ganjaran** disimpan di Firebase Realtime Database (`/shop/...`). Admin ubah → semua telefon pelanggan dikemas kini secara langsung (cth. item habis, tutup pesanan, promosi baru).
+- Kali pertama admin log masuk, data dari pelayar admin itu dimuat naik jika database masih kosong.
+- Status segerak dipapar di bawah sidebar admin ("Disegerak dengan database").
+- **Pasang peraturan keselamatan (wajib):** Firebase console → *Realtime Database → Rules* → tampal isi fail [`database.rules.json`](database.rules.json) → **Publish**. Semua orang boleh membaca menu; hanya `admin@farha.app` boleh menulis.
+- Belum disegerak (langkah 2): pesanan, point/cap ahli, baucar dan bukti bayaran — masih dalam peranti.
+
 ## Backup & eksport data
 - **Admin → Tetapan → Backup & eksport data**: muat turun semua data app dalam pelayar ini sebagai fail `.json` (pilihan: dengan / tanpa gambar), **Kongsi fail** (telefon), dan **Pulihkan dari fail**.
 - **App pelanggan → Profil → Backup data app**: muat turun / kongsi fail yang sama (berguna jika belum boleh masuk admin).
