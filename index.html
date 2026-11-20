@@ -1221,7 +1221,7 @@ const menuItem = id => CONFIG.menu.find(m=>m.id===id);
 function groupsFor(m){
   if(!m) return [];
   if(GROUPS && Array.isArray(m.groups)) return m.groups.map(id=>GROUPS.find(g=>g.id===id)).filter(g=>g && g.choices && g.choices.length)
-    .map(g=>({ id:g.id, name:g.name, multi:g.type==="many", def:Math.min(g.def||0, g.choices.length-1), max:g.max||0, choices:g.choices }))
+    .map(g=>({ id:g.id, name:g.name, multi:g.type==="many", set:g.type!=="many"&&g.mode==="set", def:Math.min(g.def||0, g.choices.length-1), max:g.max||0, choices:g.choices }))
     .sort((a,b)=>a.multi-b.multi); // varian dahulu, kemudian add-on
   return OPTION_SETS[m.opts] || [];
 }
@@ -1285,7 +1285,7 @@ function menuRow(m){
     <span class="txt">
       <span class="nm">${esc(m.name)}${m.badge?`<span class="badge-s">${esc(m.badge)}</span>`:""}${out?`<span class="badge-s">HABIS</span>`:""}</span>
       <span class="ds">${esc(m.desc)}</span>
-      <span class="pr">${money(m.price)}</span>
+      <span class="pr">${priceLabel(m)}</span>
     </span>
     ${out?"":`<span class="add" aria-hidden="true">${icon("plus")}</span>`}
   </button>`;
@@ -1331,11 +1331,11 @@ function openItem(id){
   const m = menuItem(id); if(!m || SOLD.includes(id)) return;
   const sel = {}; groupsFor(m).forEach(g=>{ sel[g.id] = g.multi ? [] : (g.def||0); });
   PI = { id, sel, qty:1 };
-  const optBtn = (g,c,i) => `<button type="button" class="opt ${sel[g.id]===i?"on":""}" data-opt="${g.id}:${i}" aria-pressed="${sel[g.id]===i}">${esc(c.n)}${(c.s||c.p)?`<small>${[c.s,c.p?"+"+money(c.p):""].filter(Boolean).join(" · ")}</small>`:""}</button>`;
+  const optBtn = (g,c,i) => `<button type="button" class="opt ${sel[g.id]===i?"on":""}" data-opt="${g.id}:${i}" aria-pressed="${sel[g.id]===i}">${esc(c.n)}${(c.s||c.p)?`<small>${[c.s,c.p?(g.set?money(c.p):"+"+money(c.p)):""].filter(Boolean).join(" · ")}</small>`:""}</button>`;
   const addBtn = (g,c,i) => `<button type="button" class="addon" data-opt="${g.id}:${i}" aria-pressed="false"><span class="bx">${icon("check")}</span><span class="t">${esc(c.n)}</span><span class="p">+${money(c.p||0)}</span></button>`;
   openSheet(`
     <div class="thumb pi-hero ${m.tone||""}"><button type="button" class="pi-back" data-action="close" aria-label="Kembali ke menu">${icon("back")}</button>${thumbInner(m)}</div>
-    <div class="pi-head"><h2>${esc(m.name)}</h2><span class="mono">${money(m.price)}</span></div>
+    <div class="pi-head"><h2>${esc(m.name)}</h2><span class="mono">${priceLabel(m)}</span></div>
     <p style="margin:4px 0 10px">${esc(m.desc)}</p>
     <span class="chip light">+${fmt(ptsFor(1))} point${m.stamp===false?"":" · +1 cap"}</span>
     ${groupsFor(m).map(g=>`<div class="opt-g"><div class="gh"><b>${esc(g.name)}</b><span>${g.multi?(g.max?`Pilih hingga ${g.max}`:"Pilihan"):"Wajib"}</span></div>
@@ -1348,10 +1348,23 @@ function openItem(id){
     </div>`, { full:true });
   piUpdate();
 }
-function piUnit(){
-  const m = menuItem(PI.id); let p = m.price;
-  groupsFor(m).forEach(g=>{ const s=PI.sel[g.id]; (g.multi?s:[s]).forEach(i=>{ p += g.choices[i]?.p || 0; }); });
-  return p;
+/* Harga seunit. Varian "harga penuh" (g.set) menggantikan harga item; pilihan lain ditambah. */
+function unitFor(m, sel){
+  let base = m.price, extra = 0, setDone = false;
+  groupsFor(m).forEach(g=>{
+    const s = sel[g.id];
+    if(g.set && !setDone){ const c=g.choices[s]; if(c){ base = +c.p||0; setDone = true; } return; }
+    (g.multi?s:[s]).forEach(i=>{ extra += g.choices[i]?.p || 0; });
+  });
+  return { base, unit:base+extra };
+}
+function piUnit(){ return unitFor(menuItem(PI.id), PI.sel).unit; }
+/* Harga dipapar dalam menu: "RM 12.00" atau "dari RM 12.00" bila harga ikut varian */
+function priceLabel(m){
+  const sg = groupsFor(m).find(g=>g.set);
+  if(!sg) return money(m.price);
+  const ps = sg.choices.map(c=>+c.p||0), lo = Math.min(...ps);
+  return (Math.max(...ps)>lo ? "dari " : "") + money(lo);
 }
 function piPick(gid, i){
   if(!PI) return;
@@ -1372,7 +1385,7 @@ function addItem(){
   const note = ($("#piNote")?.value||"").trim(); if(note) labels.push(`Nota: ${note}`);
   const key = PI.id+"|"+labels.join("|"), ex = CART.find(l=>l.key===key);
   if(ex) ex.qty = Math.min(20, ex.qty+PI.qty);
-  else CART.push({ key, id:m.id, name:m.name, opts:labels, unit:+piUnit().toFixed(2), base:m.price, qty:PI.qty, stamp:m.stamp!==false, icon:m.icon, tone:m.tone });
+  else CART.push({ key, id:m.id, name:m.name, opts:labels, unit:+piUnit().toFixed(2), base:unitFor(m, PI.sel).base, qty:PI.qty, stamp:m.stamp!==false, icon:m.icon, tone:m.tone });
   saveCart(); closeSheet(); PI = null; renderOrder(); toast(`${esc(m.name)} ditambah ke troli`);
 }
 
