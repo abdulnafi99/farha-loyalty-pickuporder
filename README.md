@@ -5,13 +5,35 @@ Ditulis sepenuhnya dalam **HTML, CSS dan JavaScript vanilla**, dalam satu fail `
 
 ## Ciri-ciri
 - **Splash screen beranimasi**: huruf "f" muncul, zoom, kemudian logo penuh **farha** terbuka dengan percikan dari cawan.
-- **4 skrin**: Home · Cap & Point · Ganjaran · Profil, dengan bottom nav berbentuk pil.
+- **5 skrin**: Home · Order · Cap & Point · Ganjaran · Profil, dengan bottom nav berbentuk pil.
 - **Kod QR ahli yang boleh diimbas betul-betul**, dijana dalam JS tanpa library (format: `FARHA:<memberId>`).
 - **Kad cap 10 petak**: bila penuh, petak hadiah boleh ditekan untuk tebus minuman percuma.
 - **Tebus ganjaran**: point ditolak, keluar kod baucar 6 aksara dengan pemasa 10 minit, dan animasi konfeti.
 - **Tahap ahli** (Silver / Gold / Platinum) ikut jumlah point terkumpul.
 - **PWA**: boleh dipasang ke skrin utama (Android & iOS) dan dibuka luar talian melalui service worker.
 - **Mod demo**: butang "Simulasi pembelian" dan "Set semula data". Data disimpan dalam `localStorage`.
+
+## Order pickup (baharu)
+Pelanggan boleh order terus dari app dan ambil di kaunter, macam app kopi berantai.
+- **Tab Order** dalam bottom nav: pilih cawangan, kategori menu (Popular, Kopi, Bukan Kopi, Teh, Pastri) dan item.
+- **Pilih minuman**: suhu, saiz, kemanisan, tambahan (extra shot, susu oat), nota untuk barista dan kuantiti.
+- **Troli & bayar**: ambil secepat mungkin atau jadualkan masa, edit kuantiti, **guna ganjaran loyalti semasa checkout** (Diskaun RM5, Minuman Percuma), pilih cara bayar: **Tunai di kaunter** atau **QR DuitNow** (pelanggan imbas QR kedai, bayar, kemudian **wajib muat naik screenshot resit** sebelum pesanan dihantar).
+- **Status pesanan**: nombor pesanan, bar progres (Dihantar → Disediakan → Siap diambil), anggaran masa siap, kod QR pickup dan notifikasi bila pesanan siap.
+- Order dalam app dapat **2× point** (boleh ubah). Point & cap dikreditkan bila staf tandakan pesanan "Sudah diambil".
+
+**Admin → Pesanan** (`admin.html`):
+- Papan 3 lajur: **Baru → Sedang disediakan → Siap diambil**, dengan bunyi "ding" dan lencana bila pesanan baru masuk.
+- Butang Terima / Tolak / Tanda siap / Sudah diambil. Tolak pesanan akan memulangkan point ganjaran yang digunakan.
+- Pesanan DuitNow ditanda **"semak bukti"**. Staf buka pesanan, lihat gambar bukti, semak duit masuk dalam app bank kedai, kemudian tekan **Sahkan bayaran** atau **Bukti tidak sah** (pelanggan diminta hantar bukti baru atau bayar di kaunter). Pesanan tunai: tekan **Terima tunai & serah** bila pelanggan ambil.
+- Suis **Terima pesanan** (tutup sementara bila sibuk), dan **Menu & stok** untuk tanda item habis.
+- Di **Kaunter**, imbas QR pesanan atau taip no. pesanan (cth. `F-101`) untuk buka pesanan.
+- **Tetapan**: anggaran masa sediakan dan gandaan point order app.
+
+**QR DuitNow kedai:** simpan gambar QR DuitNow kedai sebagai `icons/duitnow-qr.png` (atau tukar `CONFIG.order.duitnowQr`) dan isi `CONFIG.order.duitnowName`.
+
+Ubah menu, harga (harga dalam template ialah contoh), cawangan dan pilihan minuman dalam `CONFIG.store`, `CONFIG.menu`, `CONFIG.categories` dan `OPTION_SETS` dalam `index.html`. Demo tanpa admin: tekan "Demo: simulasi kedai proses pesanan" pada skrin status.
+
+> Untuk produksi: sambung pesanan ke backend (cth. Firebase) supaya pesanan sampai ke tablet kedai. Dalam mod demo, pesanan disimpan dalam `localStorage` (`farha-orders-v1`).
 
 ## Admin dashboard (`admin.html`, demo)
 Buka `/admin` atau `admin.html` dan masukkan PIN demo **1234**.
