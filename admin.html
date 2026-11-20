@@ -316,6 +316,16 @@ svg.i{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stro
 .chk span{font-size:13.5px;font-weight:600;min-width:0}
 .chk small{display:block;font-size:11.5px;font-weight:500;color:var(--ink-2);margin-top:1px}
 .link-btn{font-size:12.5px;font-weight:700;color:var(--brand)}
+.hr-row{display:grid;grid-template-columns:80px auto 1fr;align-items:center;gap:12px;padding:10px 0;border-top:1px solid var(--line)}
+.hr-row:first-child{border-top:0}
+.hr-row b{font-size:14px}
+.hr-times{display:flex;align-items:center;gap:8px;min-width:0}
+.hr-times .input{margin:0;padding:10px;font-size:14px;min-width:0}
+.hr-closed{display:none;color:var(--ink-2);font-size:13px;font-weight:600}
+.hr-row.off .hr-times{display:none}
+.hr-row.off .hr-closed{display:block}
+#hrPreview{margin-top:4px;padding:12px 14px;border-radius:14px;background:rgba(20,164,77,.07);font-size:13px;line-height:1.6}
+@media (max-width:480px){ .hr-row{grid-template-columns:62px auto 1fr;gap:8px} .hr-times .input{padding:8px 4px;font-size:13px} }
 .vp{border:1px solid var(--line);border-radius:14px;background:#fff;padding:10px 12px;margin-bottom:8px}
 .vp>b{display:block;font-size:13px;margin-bottom:6px}
 .vp-more summary{cursor:pointer;font-size:12.5px;font-weight:600;color:var(--ink-2);padding:6px 2px 10px}
@@ -419,6 +429,7 @@ svg.i{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stro
     <button class="nav-btn" data-go="orders"><svg class="i" data-ic="bag"></svg>Pesanan<span class="nbadge" data-ordbadge hidden>0</span></button>
     <button class="nav-btn" data-go="menu"><svg class="i" data-ic="cup"></svg>Menu</button>
     <button class="nav-btn" data-go="promos"><svg class="i" data-ic="sparkle"></svg>Promosi</button>
+    <button class="nav-btn" data-go="hours"><svg class="i" data-ic="clock"></svg>Waktu Pickup</button>
     <button class="nav-btn" data-go="counter"><svg class="i" data-ic="scan"></svg>Kaunter</button>
     <button class="nav-btn" data-go="members"><svg class="i" data-ic="users"></svg>Ahli</button>
     <button class="nav-btn" data-go="rewards"><svg class="i" data-ic="gift"></svg>Ganjaran</button>
@@ -485,6 +496,30 @@ svg.i{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stro
       <div class="seg" role="tablist" aria-label="Bahagian menu"><button role="tab" data-mtab="items" class="on" aria-selected="true">Item</button><button role="tab" data-mtab="groups" aria-selected="false">Varian &amp; Add-on</button></div>
       <div class="mchips" id="mCats" role="toolbar" aria-label="Tapis kategori"></div>
       <div class="mi-grid" id="miGrid"></div>
+    </section>
+
+    <!-- ========== WAKTU PICKUP ========== -->
+    <section class="screen" data-screen="hours">
+      <div class="topbar">
+        <div><small id="hrNow">—</small><h1>Waktu Pickup</h1></div>
+        <div class="top-actions"><div class="open-tg"><span>Terima pesanan</span><button class="switch on" data-open-sw data-action="toggleOpen" aria-label="Terima pesanan dari app"></button></div></div>
+      </div>
+      <div class="grid g2">
+        <div class="tile">
+          <h3>Waktu operasi <button class="btn ghost sm" data-action="hrCopy">Salin Isnin ke semua hari</button></h3>
+          <div id="hrDays"></div>
+          <p class="note" style="margin:10px 0 0">Waktu tutup lebih awal dari waktu buka bermaksud buka hingga lepas tengah malam (cth. 6:00 PTG – 2:00 PG).</p>
+        </div>
+        <div class="tile">
+          <h3>Tetapan pickup</h3>
+          <label class="field"><span>Anggaran masa sediakan (minit)</span><input class="input mono" type="number" min="1" max="120" id="hrPrep"></label>
+          <label class="field"><span>Selang masa slot ambil</span><select class="input" id="hrSlot"><option value="10">10 minit</option><option value="15">15 minit</option><option value="20">20 minit</option><option value="30">30 minit</option></select></label>
+          <label class="field"><span>Pelanggan boleh jadualkan sehingga</span><select class="input" id="hrAhead"><option value="60">1 jam ke depan</option><option value="120">2 jam ke depan</option><option value="240">4 jam ke depan</option><option value="480">8 jam ke depan</option><option value="1440">24 jam ke depan</option></select></label>
+          <div class="row field" style="justify-content:space-between"><span style="margin:0">Benarkan pelanggan jadualkan masa ambil</span><button type="button" class="switch on" data-tgl="hrSched" aria-label="Benarkan jadual"></button></div>
+          <div id="hrPreview"></div>
+          <button class="btn red block" data-action="saveHours" style="margin-top:14px"><svg class="i" data-ic="check"></svg>Simpan waktu pickup</button>
+        </div>
+      </div>
     </section>
 
     <!-- ========== PROMOSI ========== -->
@@ -573,7 +608,7 @@ svg.i{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stro
         <div class="tile">
           <h3>Order pickup (app)</h3>
           <div class="row field" style="justify-content:space-between"><span style="margin:0">Terima pesanan dari app</span><button type="button" class="switch" data-open-sw data-action="toggleOpen" aria-label="Terima pesanan dari app"></button></div>
-          <label class="field"><span>Anggaran masa sediakan (minit)</span><input class="input mono" type="number" min="1" max="120" id="setPrep"></label>
+          <p class="note" style="margin:0 0 14px">Masa sediakan, waktu operasi &amp; slot ambil diurus di <button type="button" class="link-btn" data-go="hours">Waktu Pickup</button>.</p>
           <label class="field"><span>Gandaan point untuk order dalam app</span><input class="input mono" type="number" min="1" max="5" id="setMult"></label>
           <button class="btn red" data-action="saveSettings">Simpan tetapan</button>
           <p class="note" style="margin-top:12px">Point order = bilangan item × point setiap minuman × gandaan. Cap hanya untuk minuman.</p>
@@ -639,7 +674,7 @@ const ADMIN = {
     promos: "farha-promos-v1",      // banner promosi di Home app pelanggan
   },
   tiers: [{name:"Silver",min:0},{name:"Gold",min:1000},{name:"Platinum",min:2000}],
-  defaultSettings: { stampTarget: 10, pointsPerPurchase: 20, prepMins: 10, pointsMultiplier: 2, orderOpen: true },
+  defaultSettings: { stampTarget: 10, pointsPerPurchase: 20, prepMins: 10, pointsMultiplier: 2, orderOpen: true, slotMins: 15, maxAheadMins: 120, allowSchedule: true },
   defaultRewards: [
     { id:"drink",  name:"Minuman Percuma", desc:"Sebarang minuman saiz biasa", pts:500,  icon:"cup",     featured:true, active:true },
     { id:"pastry", name:"Pastri Percuma",  desc:"Pilihan pastri harian",       pts:400,  icon:"cake",    active:true },
@@ -819,7 +854,7 @@ function go(name){
   history.replaceState(null,"","#"+name);
 }
 function renderScreen(){
-  ({overview:renderOverview,orders:renderOrders,menu:renderMenu,promos:renderPromoList,counter:()=>{},members:renderMembers,rewards:renderRewards,settings:renderSettings})[current]?.();
+  ({overview:renderOverview,orders:renderOrders,menu:renderMenu,promos:renderPromoList,hours:renderHours,counter:()=>{},members:renderMembers,rewards:renderRewards,settings:renderSettings})[current]?.();
 }
 
 /* =========================================================
@@ -1098,7 +1133,7 @@ function cancelOrder(no){
 }
 function toggleOpen(){
   SETTINGS.orderOpen = SETTINGS.orderOpen===false; write(ADMIN.keys.settings, SETTINGS);
-  renderOrders(); renderSettings(); toast(SETTINGS.orderOpen?"Kedai terima pesanan dari app":"Pesanan app ditutup sementara");
+  renderOrders(); renderSettings(); if(current==="hours") renderHoursPreview(false); toast(SETTINGS.orderOpen?"Kedai terima pesanan dari app":"Pesanan app ditutup sementara");
 }
 function toggleStock(id){
   const mn = read(ADMIN.keys.menu,{}); const sold = new Set(mn.soldOut||[]);
@@ -1780,6 +1815,92 @@ function maybeFetchProof(o){
   }).catch(()=>{ delete LIVEA.proofAt[o.no]; });
 }
 
+/* ---------- Waktu operasi & slot pickup (dikongsi admin.html & index.html) ----------
+   hours[0..6] (0 = Ahad) = { open:"08:00", close:"22:00", closed:false }. Tutup <= buka bermaksud hingga lepas tengah malam. */
+const HR_DAYS = ["Ahad","Isnin","Selasa","Rabu","Khamis","Jumaat","Sabtu"];
+const HR_DEFAULT = () => Object.fromEntries([0,1,2,3,4,5,6].map(d=>[d, { open:"08:00", close:"22:00", closed:false }]));
+function hrTime(ts){ return new Date(ts).toLocaleTimeString("ms-MY",{ hour:"numeric", minute:"2-digit" }); }
+function hrWindows(cfg, from){
+  const out = [], base = new Date(from); base.setHours(0,0,0,0);
+  for(let d=-1; d<=7; d++){
+    const day = new Date(base); day.setDate(base.getDate()+d);
+    const h = (cfg.hours||{})[day.getDay()] || { open:"08:00", close:"22:00" };
+    if(h.closed || !h.open || !h.close) continue;
+    const [oh,om] = h.open.split(":").map(Number), [ch,cm] = h.close.split(":").map(Number);
+    const s = new Date(day); s.setHours(oh,om,0,0);
+    const e = new Date(day); e.setHours(ch,cm,0,0); if(e <= s) e.setDate(e.getDate()+1);
+    out.push([s.getTime(), e.getTime()]);
+  }
+  return out.sort((a,b)=>a[0]-b[0]);
+}
+/* cfg = { open, hours, prepMins, slotMins, maxAheadMins, allowSchedule } */
+function hrState(cfg, now=Date.now()){
+  const w = hrWindows(cfg, now), cur = w.find(([s,e])=>now>=s && now<e), next = w.find(([s])=>s>now);
+  const prep = (cfg.prepMins||10)*60e3;
+  const asap = !!(cfg.open && cur && now+prep <= cur[1]);
+  return { manualOpen:!!cfg.open, inHours:!!cur, closeAt:cur?cur[1]:null, nextOpen:next?next[0]:null, asap, open:!!(cfg.open && cur) };
+}
+function hrSlots(cfg, now=Date.now()){
+  if(!cfg.open || cfg.allowSchedule===false) return [];
+  const step = (cfg.slotMins||15)*60e3, prep = (cfg.prepMins||10)*60e3, limit = now + (cfg.maxAheadMins||120)*60e3, out = [];
+  for(const [s,e] of hrWindows(cfg, now)){
+    if(s > limit) break;
+    let t = Math.ceil(Math.max(now + prep + 5*60e3, s + prep)/step)*step;
+    for(; t <= e && t <= limit && out.length < 48; t += step) out.push(t);
+  }
+  return out;
+}
+function hrWhen(ts, now=Date.now()){
+  const a = new Date(now); a.setHours(0,0,0,0); const b = new Date(ts); b.setHours(0,0,0,0);
+  const diff = Math.round((b-a)/864e5);
+  return (diff===0 ? "" : diff===1 ? "esok " : HR_DAYS[new Date(ts).getDay()]+" ") + hrTime(ts);
+}
+function hrWeekText(cfg){
+  return [1,2,3,4,5,6,0].map(d=>{ const h=(cfg.hours||{})[d]; return { day:HR_DAYS[d], txt: !h || h.closed ? "Tutup" : `${hrTime(new Date(`2000-01-01T${h.open}`))} – ${hrTime(new Date(`2000-01-01T${h.close}`))}` }; });
+}
+/* ---------- Admin → Waktu Pickup ---------- */
+const admCfg = () => ({ open:SETTINGS.orderOpen!==false, hours:SETTINGS.hours, prepMins:SETTINGS.prepMins||10, slotMins:SETTINGS.slotMins||15, maxAheadMins:SETTINGS.maxAheadMins||120, allowSchedule:SETTINGS.allowSchedule!==false });
+function renderHours(){
+  const h = SETTINGS.hours || HR_DEFAULT();
+  $("#hrDays").innerHTML = [1,2,3,4,5,6,0].map(d=>{ const x = h[d] || { open:"08:00", close:"22:00" }, on = !x.closed;
+    return `<div class="hr-row ${on?"":"off"}"><b>${HR_DAYS[d]}</b>
+      <button type="button" class="switch ${on?"on":""}" data-hrday="${d}" aria-label="${HR_DAYS[d]} buka" aria-pressed="${on}"></button>
+      <span class="hr-times"><input class="input mono" type="time" id="hrO${d}" value="${x.open||"08:00"}" aria-label="${HR_DAYS[d]} buka jam"><span>–</span><input class="input mono" type="time" id="hrC${d}" value="${x.close||"22:00"}" aria-label="${HR_DAYS[d]} tutup jam"></span>
+      <span class="hr-closed">Tutup sepanjang hari</span></div>`; }).join("");
+  $("#hrPrep").value = SETTINGS.prepMins||10; $("#hrSlot").value = String(SETTINGS.slotMins||15); $("#hrAhead").value = String(SETTINGS.maxAheadMins||120);
+  const sw = $('[data-tgl="hrSched"]'); sw.classList.toggle("on", SETTINGS.allowSchedule!==false); sw.setAttribute("aria-pressed", SETTINGS.allowSchedule!==false);
+  renderHoursPreview(false);
+}
+function readHoursForm(){
+  const hours = {};
+  [0,1,2,3,4,5,6].forEach(d=>{ hours[d] = { open:$("#hrO"+d).value||"08:00", close:$("#hrC"+d).value||"22:00", closed:!$(`[data-hrday="${d}"]`).classList.contains("on") }; });
+  return { hours, prepMins:parseInt($("#hrPrep").value,10), slotMins:+$("#hrSlot").value, maxAheadMins:+$("#hrAhead").value, allowSchedule:$('[data-tgl="hrSched"]').classList.contains("on") };
+}
+function renderHoursPreview(fromForm=true){
+  const cfg = fromForm ? { ...admCfg(), ...readHoursForm() } : admCfg(), hs = hrState(cfg), sl = hrSlots(cfg);
+  const status = !cfg.open ? "Pesanan app ditutup (suis Terima pesanan)" : hs.asap ? `Buka sekarang · tutup ${hrTime(hs.closeAt)}` : hs.inHours ? `Hampir tutup (${hrTime(hs.closeAt)}) · pesanan segera tidak diterima` : `Tutup sekarang · buka ${hs.nextOpen?hrWhen(hs.nextOpen):"—"}`;
+  $("#hrNow").textContent = status;
+  $("#hrPreview").innerHTML = `<b>Pelanggan nampak sekarang:</b> ${esc(status)}<br><b>Slot jadual:</b> ${sl.length ? esc(sl.slice(0,8).map(t=>hrWhen(t)).join(", ")) + (sl.length>8?` … (${sl.length} slot)`:"") : (cfg.allowSchedule ? "Tiada slot dalam tempoh ini" : "Jadual dimatikan")}${fromForm?'<br><span class="note">Belum disimpan</span>':""}`;
+}
+function saveHours(){
+  const f = readHoursForm();
+  if(!(f.prepMins>=1 && f.prepMins<=120)){ toast("Masa sediakan mesti 1–120 minit"); return; }
+  if(Object.values(f.hours).some(h=>!h.closed && h.open===h.close)){ toast("Waktu buka dan tutup tidak boleh sama"); return; }
+  if(Object.values(f.hours).every(h=>h.closed) && !confirm("Semua hari ditanda tutup. Pelanggan tidak boleh order langsung. Teruskan?")) return;
+  SETTINGS = { ...SETTINGS, ...f }; write(ADMIN.keys.settings, SETTINGS); renderHours(); toast("Waktu pickup disimpan");
+}
+function hrCopy(){
+  const o = $("#hrO1").value, c = $("#hrC1").value, on = $('[data-hrday="1"]').classList.contains("on");
+  [0,2,3,4,5,6].forEach(d=>{ $("#hrO"+d).value = o; $("#hrC"+d).value = c; const sw = $(`[data-hrday="${d}"]`); sw.classList.toggle("on", on); sw.setAttribute("aria-pressed", on); sw.closest(".hr-row").classList.toggle("off", !on); });
+  renderHoursPreview(); toast("Waktu Isnin disalin ke semua hari. Tekan Simpan.");
+}
+document.addEventListener("click", e=>{
+  const sw = e.target.closest("[data-hrday]"); if(sw){ const on = !sw.classList.contains("on"); sw.classList.toggle("on", on); sw.setAttribute("aria-pressed", on); sw.closest(".hr-row").classList.toggle("off", !on); renderHoursPreview(); return; }
+  if(e.target.closest('[data-tgl="hrSched"]')) setTimeout(renderHoursPreview, 0);
+});
+document.addEventListener("input", e=>{ if(e.target.closest && e.target.closest('[data-screen="hours"]')) renderHoursPreview(); });
+setInterval(()=>{ if(current==="hours" && !$('[data-screen="hours"] .hr-dirty')) renderHoursPreview(false); }, 60000);
+
 /* Imbas QR: BarcodeDetector (Chrome/Android) atau jsQR (fallback, dimuat bila perlu) */
 let stream=null, scanRAF=null;
 async function startScan(){
@@ -1916,9 +2037,9 @@ function toggleReward(id){ const r=REWARDS.find(x=>x.id===id); r.active=r.active
 /* =========================================================
    TETAPAN
    ========================================================= */
-function renderSettings(){ renderBackup(); $("#resetDemoBtn").hidden=!!ADMIN.firebase; $("#demoNote").textContent=(DB.members||[]).length?`Ada ${DB.members.length} ahli contoh (data palsu untuk demo) dalam dashboard. Buang sebelum guna sebenar. Ahli sebenar muncul bila pelanggan daftar.`:"Tiada ahli contoh. Ahli sebenar muncul bila pelanggan daftar dan order."; $("#setStamp").value=SETTINGS.stampTarget; $("#setPts").value=SETTINGS.pointsPerPurchase; $("#setPrep").value=SETTINGS.prepMins; $("#setMult").value=SETTINGS.pointsMultiplier; $$("[data-open-sw]").forEach(b=>b.classList.toggle("on",SETTINGS.orderOpen!==false)); }
+function renderSettings(){ renderBackup(); $("#resetDemoBtn").hidden=!!ADMIN.firebase; $("#demoNote").textContent=(DB.members||[]).length?`Ada ${DB.members.length} ahli contoh (data palsu untuk demo) dalam dashboard. Buang sebelum guna sebenar. Ahli sebenar muncul bila pelanggan daftar.`:"Tiada ahli contoh. Ahli sebenar muncul bila pelanggan daftar dan order."; $("#setStamp").value=SETTINGS.stampTarget; $("#setPts").value=SETTINGS.pointsPerPurchase; $("#setMult").value=SETTINGS.pointsMultiplier; $$("[data-open-sw]").forEach(b=>b.classList.toggle("on",SETTINGS.orderOpen!==false)); }
 function saveSettings(){
-  const s=parseInt($("#setStamp").value,10), p=parseInt($("#setPts").value,10), pr=parseInt($("#setPrep").value,10), mu=parseInt($("#setMult").value,10);
+  const s=parseInt($("#setStamp").value,10), p=parseInt($("#setPts").value,10), pr=SETTINGS.prepMins||10, mu=parseInt($("#setMult").value,10);
   if(!(s>=4&&s<=20)||!(p>=1)||!(pr>=1&&pr<=120)||!(mu>=1&&mu<=5)){toast("Nilai tidak sah");return;}
   SETTINGS={...SETTINGS,stampTarget:s,pointsPerPurchase:p,prepMins:pr,pointsMultiplier:mu}; write(ADMIN.keys.settings,SETTINGS); toast("Tetapan disimpan");
 }
@@ -1960,6 +2081,7 @@ document.addEventListener("click",e=>{
     adjust:()=>adjust(d.id), toCounter:()=>{closeSheet();go("counter");findMember(d.id);},
     exportCSV, newReward:()=>editReward(""), editReward:()=>editReward(d.r), saveReward:()=>saveReward(d.r),
     deleteReward:()=>deleteReward(d.r), toggleReward:()=>toggleReward(d.r),
+    saveHours, hrCopy,
     saveSettings, resetDemo, clearDemo, exportData, shareData,
     menuAdd:()=>menuTab==="groups"?editGroup("","one"):editItem(""), editGroup:()=>editGroup(d.id), saveGroup, deleteGroup:()=>deleteGroup(d.id),
     gAdd:()=>{syncChoices();EG.choices.push({n:"",p:0});renderGroupForm();const r=$$("#gChoices .gc-n");r[r.length-1]?.focus();},
@@ -2129,7 +2251,7 @@ function enter(){
   if(u && FB.db){ startShopSync(true, u.email); startLiveAdmin(); } else if(u) onSyncStatus("err", "Database tidak dapat dimuat");
   readOrders().forEach(o=>{ knownProof[o.no]=o.proofAt||null; }); renderNotifBtn();
   knownNos=new Set(readOrders().map(o=>o.no)); updateOrderBadge();
-  const h=(location.hash||"").slice(1); go(["overview","orders","menu","promos","counter","members","rewards","settings"].includes(h)?h:"overview");
+  const h=(location.hash||"").slice(1); go(["overview","orders","menu","promos","hours","counter","members","rewards","settings"].includes(h)?h:"overview");
 }
 async function bootAdmin(){
   if(!ADMIN.firebase){
