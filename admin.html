@@ -258,24 +258,50 @@ svg.i{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stro
 @media (max-width:1100px){ .kanban{grid-template-columns:1fr 1fr} }
 @media (max-width:900px){ .kanban{grid-template-columns:1fr} .open-tg span{display:none} }
 
+/* ---------- Menu (item jualan) ---------- */
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.mchips{display:flex;gap:8px;overflow-x:auto;margin-bottom:14px;padding-bottom:2px;scrollbar-width:none}
+.mchips::-webkit-scrollbar{display:none}
+.mchips button{flex:none;padding:9px 14px;border-radius:999px;background:rgba(255,255,255,.75);border:1px solid var(--line);font-size:13px;font-weight:600}
+.mchips button span{font-family:var(--mono);font-size:11px;opacity:.7;margin-left:4px}
+.mchips button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.mi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
+.mcard{display:flex;flex-direction:column;gap:12px}
+.mcard.off{opacity:.62}
+.mname{display:block;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.m-thumb{flex:none;border-radius:14px;display:grid;place-items:center;overflow:hidden}
+.m-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.mfoot{border-top:1px solid var(--line);padding-top:10px}
+.notif-btn.on{color:var(--ok);background:rgba(20,164,77,.1)}
+
+/* ---------- Sidebar telefon ---------- */
+.mbar,.side-x,.side-scrim{display:none}
+
 /* ---------- Responsif ---------- */
 @media (max-width:1100px){ .g4{grid-template-columns:repeat(2,1fr)} }
 @media (max-width:900px){
-  .layout{grid-template-columns:1fr}
-  .side{display:none}
-  .main{padding:calc(20px + var(--safe-t)) 16px calc(110px + var(--safe-b))}
+  .layout{grid-template-columns:1fr;z-index:auto}
+  .side{display:flex;position:fixed;left:0;top:0;bottom:0;z-index:46;width:min(290px,84vw);height:100%;
+    padding:calc(18px + var(--safe-t)) 14px calc(18px + var(--safe-b)) 14px;background:rgba(255,250,250,.98);
+    transform:translateX(-105%);transition:transform .35s cubic-bezier(.2,.9,.2,1);box-shadow:20px 0 50px -20px rgba(60,0,8,.35);overflow-y:auto}
+  .side.open{transform:none}
+  .side-x{display:grid;place-items:center;margin-left:auto;width:40px;height:40px;border-radius:12px;background:rgba(191,3,17,.07);color:var(--brand);flex:none}
+  .side-scrim{display:block;position:fixed;inset:0;z-index:45;background:rgba(42,11,16,.35);opacity:0;visibility:hidden;transition:opacity .3s,visibility 0s .3s}
+  .side-scrim.show{opacity:1;visibility:visible;transition:opacity .3s}
+  .mbar{display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:30;margin:calc(-20px - var(--safe-t)) -16px 16px;padding:calc(10px + var(--safe-t)) 16px 10px;
+    background:rgba(255,248,248,.9);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-bottom:1px solid var(--line)}
+  .mbar b{font-size:15px}
+  .mbar .brand-dot{width:34px;height:34px}
+  .mbar .nbadge{margin-left:auto}
+  .mbar-btn{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;background:#fff;border:1px solid var(--line);flex:none}
+  .main{padding:calc(20px + var(--safe-t)) 16px calc(40px + var(--safe-b))}
   .g-2-1,.g2{grid-template-columns:1fr}
   .topbar h1{font-size:22px}
   .search{min-width:0;width:100%}
   .hide-m{display:none}
-  .mob-nav{display:flex;position:fixed;left:50%;bottom:calc(14px + var(--safe-b));transform:translateX(-50%);z-index:30;gap:2px;padding:6px;border-radius:999px;background:rgba(255,255,255,.82);border:1px solid var(--glass-line);backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);box-shadow:0 14px 34px -14px rgba(120,10,20,.35)}
-  .mob-nav button{height:46px;min-width:46px;border-radius:999px;display:flex;align-items:center;justify-content:center;gap:6px;padding:0 12px;color:var(--ink-2);font-size:12.5px;font-weight:700}
-  .mob-nav button span{display:none}
-  .mob-nav button.active{background:var(--brand);color:#fff;padding:0 16px}
-  .mob-nav button.active span{display:inline}
   .table .hide-m{display:none}
 }
-@media (max-width:480px){ .g4{gap:10px} .kpi{font-size:24px} .tile{padding:16px} }
+@media (max-width:480px){ .g4{gap:10px} .kpi{font-size:24px} .tile{padding:16px} .notif-btn span{display:none} }
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
 </style>
 </head>
@@ -298,9 +324,10 @@ svg.i{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stro
 
 <div class="layout" id="layout" hidden>
   <aside class="side">
-    <div class="brand"><div class="brand-dot"><img class="wm" alt="farha"></div><div><b>Farha Admin</b><span>Program loyalti</span></div></div>
+    <div class="brand"><div class="brand-dot"><img class="wm" alt="farha"></div><div><b>Farha Admin</b><span>Program loyalti</span></div><button class="side-x" data-action="closeSide" aria-label="Tutup menu"><svg class="i" data-ic="x"></svg></button></div>
     <button class="nav-btn active" data-go="overview"><svg class="i" data-ic="chart"></svg>Ringkasan</button>
     <button class="nav-btn" data-go="orders"><svg class="i" data-ic="bag"></svg>Pesanan<span class="nbadge" data-ordbadge hidden>0</span></button>
+    <button class="nav-btn" data-go="menu"><svg class="i" data-ic="cup"></svg>Menu</button>
     <button class="nav-btn" data-go="counter"><svg class="i" data-ic="scan"></svg>Kaunter</button>
     <button class="nav-btn" data-go="members"><svg class="i" data-ic="users"></svg>Ahli</button>
     <button class="nav-btn" data-go="rewards"><svg class="i" data-ic="gift"></svg>Ganjaran</button>
@@ -312,6 +339,7 @@ svg.i{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stro
   </aside>
 
   <main class="main">
+    <div class="mbar"><button class="mbar-btn" id="menuBtn" data-action="openSide" aria-label="Buka menu navigasi" aria-expanded="false"><svg class="i" data-ic="menu"></svg></button><div class="brand-dot"><img class="wm" alt="farha"></div><b>Farha Admin</b><span class="nbadge" data-ordbadge hidden>0</span></div>
     <!-- ========== RINGKASAN ========== -->
     <section class="screen active" data-screen="overview">
       <div class="topbar">
@@ -344,7 +372,7 @@ svg.i{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stro
     <section class="screen" data-screen="orders">
       <div class="topbar">
         <div><small>Pickup dari app pelanggan</small><h1>Pesanan</h1></div>
-        <div class="top-actions"><div class="open-tg"><span id="openLbl">Terima pesanan</span><button class="switch on" data-open-sw data-action="toggleOpen" aria-label="Terima pesanan dari app"></button></div></div>
+        <div class="top-actions"><button class="btn ghost sm notif-btn" id="notifBtn" data-action="enableNotif"></button><div class="open-tg"><span id="openLbl">Terima pesanan</span><button class="switch on" data-open-sw data-action="toggleOpen" aria-label="Terima pesanan dari app"></button></div></div>
       </div>
       <div class="kanban">
         <div class="col"><h3><i></i>Baru<span class="cnt" id="cNew">0</span></h3><div class="col-list" id="colNew"></div></div>
@@ -353,8 +381,18 @@ svg.i{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stro
       </div>
       <div class="grid g2" style="margin-top:14px">
         <div class="tile"><h3>Selesai hari ini <small id="doneSum">—</small></h3><div class="feed" id="doneList"></div></div>
-        <div class="tile"><h3>Menu &amp; stok <small>Tutup suis bila item habis</small></h3><div class="feed" id="menuList"></div></div>
+        <div class="tile"><h3>Menu &amp; stok <button class="btn ghost sm" data-go="menu">Urus menu</button></h3><div class="feed" id="menuList"></div></div>
       </div>
+    </section>
+
+    <!-- ========== MENU (item jualan) ========== -->
+    <section class="screen" data-screen="menu">
+      <div class="topbar">
+        <div><small id="menuCount">—</small><h1>Menu</h1></div>
+        <div class="top-actions"><button class="btn red" data-action="newItem"><svg class="i" data-ic="plus"></svg>Tambah item</button></div>
+      </div>
+      <div class="mchips" id="mCats" role="toolbar" aria-label="Tapis kategori"></div>
+      <div class="mi-grid" id="miGrid"></div>
     </section>
 
     <!-- ========== KAUNTER ========== -->
@@ -451,14 +489,7 @@ svg.i{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stro
   </main>
 </div>
 
-<nav class="mob-nav" id="mobNav" hidden>
-  <button data-go="overview" class="active"><svg class="i" data-ic="chart"></svg><span>Ringkasan</span></button>
-  <button data-go="orders"><svg class="i" data-ic="bag"></svg><span>Pesanan</span><b class="nbadge" data-ordbadge hidden>0</b></button>
-  <button data-go="counter"><svg class="i" data-ic="scan"></svg><span>Kaunter</span></button>
-  <button data-go="members"><svg class="i" data-ic="users"></svg><span>Ahli</span></button>
-  <button data-go="rewards"><svg class="i" data-ic="gift"></svg><span>Ganjaran</span></button>
-  <button data-go="settings"><svg class="i" data-ic="settings"></svg><span>Tetapan</span></button>
-</nav>
+<div class="side-scrim" id="sideScrim" data-action="closeSide"></div>
 
 <div class="scrim" id="scrim"></div>
 <aside class="sheet" id="sheet" role="dialog" aria-modal="true"><button class="x" data-action="close" aria-label="Tutup"><svg class="i" data-ic="x"></svg></button><div id="sheetBody"></div></aside>
@@ -532,6 +563,7 @@ const IC = {
   bag:'<path d="M6 8h12l-1.2 11.2a2 2 0 0 1-2 1.8H9.2a2 2 0 0 1-2-1.8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/>',
   clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
   bell:'<path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.94 1.94 0 0 0 3.4 0"/>',
+  menu:'<path d="M4 6h16M4 12h16M4 18h16"/>',
   ticket:'<path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2zM13 5v2M13 17v2M13 11v2"/>',
 };
 const REWARD_ICONS = ["cup","cake","tag","sparkle","bean","gift","ticket"];
@@ -646,13 +678,13 @@ let current="overview";
 function go(name){
   current=name;
   $$(".screen").forEach(s=>s.classList.toggle("active",s.dataset.screen===name));
-  $$("[data-go]").forEach(b=>{ if(b.classList.contains("nav-btn")||b.closest("#mobNav")) b.classList.toggle("active",b.dataset.go===name); });
+  $$(".nav-btn[data-go]").forEach(b=>b.classList.toggle("active",b.dataset.go===name)); closeSide();
   if(name!=="counter") stopScan();
   renderScreen(); window.scrollTo({top:0,behavior:"instant"});
   history.replaceState(null,"","#"+name);
 }
 function renderScreen(){
-  ({overview:renderOverview,orders:renderOrders,counter:()=>{},members:renderMembers,rewards:renderRewards,settings:renderSettings})[current]?.();
+  ({overview:renderOverview,orders:renderOrders,menu:renderMenu,counter:()=>{},members:renderMembers,rewards:renderRewards,settings:renderSettings})[current]?.();
 }
 
 /* =========================================================
@@ -867,7 +899,7 @@ function renderOrders(){
     <div class="av" ${o.status==="cancelled"?'style="background:rgba(110,74,80,.3)"':""}>${icon(o.status==="cancelled"?"x":"check","width:16px;height:16px")}</div>
     <div class="t"><b>${esc(o.no)} · ${esc(o.name)}</b><span>${esc(o.items.map(i=>`${i.qty}× ${i.name}`).join(", "))}</span></div>
     <span class="pts">${o.status==="cancelled"?"Batal":rm(o.total)}</span></div>`).join("") || `<div class="empty">Belum ada pesanan selesai hari ini</div>`;
-  const mn = read(ADMIN.keys.menu,{}), items = Array.isArray(mn.items)?mn.items:[], sold = mn.soldOut||[];
+  const mn = read(ADMIN.keys.menu,{}), items = (Array.isArray(mn.items)?mn.items:[]).filter(i=>!i.hidden), sold = mn.soldOut||[];
   $("#menuList").innerHTML = items.length ? items.map(m=>{ const out=sold.includes(m.id); return `<div class="feed-row">
     <div class="t"><b>${esc(m.name)}</b><span class="mono">${rm(m.price)}</span></div>
     <span class="status ${out?"bad":"ok"}" style="min-width:58px">${out?"Habis":"Ada"}</span>
@@ -935,7 +967,7 @@ function toggleOpen(){
 function toggleStock(id){
   const mn = read(ADMIN.keys.menu,{}); const sold = new Set(mn.soldOut||[]);
   if(sold.has(id)) sold.delete(id); else sold.add(id);
-  mn.soldOut = [...sold]; write(ADMIN.keys.menu, mn); renderOrders();
+  mn.soldOut = [...sold]; write(ADMIN.keys.menu, mn); renderScreen();
   const it = (mn.items||[]).find(m=>m.id===id); toast(`${it?it.name:id}: ${sold.has(id)?"ditanda habis":"ada semula"}`);
 }
 /* Bunyi "ding" bila pesanan baru masuk */
@@ -952,10 +984,175 @@ function beep(){
 function checkNewOrders(){
   const list = readOrders(); let added = [];
   list.forEach(o=>{ if(!knownNos.has(o.no)){ knownNos.add(o.no); if(o.status==="new"){ added.push(o.no); freshNos.add(o.no); } } });
-  if(added.length){ beep(); toast(`Pesanan baru: ${added.join(", ")}`); if(navigator.vibrate) navigator.vibrate(60); }
+  if(added.length){ beep(); toast(`Pesanan baru: ${added.join(", ")}`); if(navigator.vibrate) navigator.vibrate(60);
+    added.forEach(no=>{ const o=list.find(x=>x.no===no); if(o && document.hidden) pushNotify(`Pesanan baru · ${no}`, `${o.name} · ${o.items.reduce((a,i)=>a+i.qty,0)} item · ${rm(o.total)}${o.pay==="duitnow"?" · DuitNow (semak bukti)":" · Tunai"}`, { tag:"ord-"+no, order:no }); }); }
   updateOrderBadge();
 }
 setInterval(()=>{ if(current==="orders") renderOrders(); }, 30000);
+
+/* =========================================================
+   MENU — tambah, edit, buang item jualan (dipaparkan dalam app pelanggan)
+   Disimpan dalam ADMIN.keys.menu: { v:2, items:[...], soldOut:[...], cats:[...] }
+   ========================================================= */
+const OPT_SETS = {
+  coffee:"Kopi — suhu, saiz, kemanisan, extra shot / susu oat",
+  milk:"Susu — suhu, saiz, kemanisan, susu oat / krim",
+  tea:"Teh — suhu, saiz, kemanisan",
+  pastry:"Pastri — biasa / panaskan",
+  none:"Tiada pilihan",
+};
+const TONES = { "":"Merah", peach:"Peach", dark:"Gelap" };
+const DEFAULT_CATS = [{id:"kopi",name:"Kopi"},{id:"bukankopi",name:"Bukan Kopi"},{id:"teh",name:"Teh"},{id:"pastri",name:"Pastri"}];
+let menuCat = "", EDIT_PHOTO = null;
+const readMenu = () => { const m = read(ADMIN.keys.menu, {}); return m && typeof m==="object" ? m : {}; };
+const menuCats = m => (Array.isArray(m.cats) && m.cats.length ? m.cats : DEFAULT_CATS).filter(c=>c.id!=="popular");
+function saveMenu(m){ m.v = 2; write(ADMIN.keys.menu, m); }
+function itemThumb(it, size=56){
+  const tone = it.tone==="peach" ? "background:linear-gradient(160deg,#FFD9C8,#FFB49F);color:var(--brand-deep)" : it.tone==="dark" ? "background:linear-gradient(160deg,var(--brand-deep),#2E070C);color:#fff" : "background:linear-gradient(160deg,var(--brand-2),var(--brand));color:#fff";
+  return `<div class="m-thumb" style="width:${size}px;height:${size}px;${it.photo?"":tone}">${it.photo?`<img src="${esc(it.photo)}" alt="">`:icon(it.icon==="cake"?"cake":"cup","width:"+Math.round(size*.46)+"px;height:"+Math.round(size*.46)+"px")}</div>`;
+}
+function renderMenu(){
+  const m = readMenu(), items = Array.isArray(m.items) ? m.items : [], sold = m.soldOut || [], cats = menuCats(m);
+  $("#mCats").innerHTML = [{id:"",name:"Semua"}, ...cats].map(c=>`<button class="${menuCat===c.id?"on":""}" data-mcat="${esc(c.id)}">${esc(c.name)} <span>${c.id?items.filter(i=>i.cat===c.id).length:items.length}</span></button>`).join("");
+  const list = items.filter(i=>!menuCat || i.cat===menuCat);
+  $("#menuCount").textContent = `${items.filter(i=>!i.hidden).length} item dijual · ${items.length} jumlah`;
+  if(!items.length){ $("#miGrid").innerHTML = `<div class="tile empty" style="grid-column:1/-1">Menu belum dimuat. Buka app pelanggan (index.html) sekali dalam pelayar ini, atau tekan <b>Tambah item</b>.</div>`; return; }
+  $("#miGrid").innerHTML = list.map(it=>{
+    const out = sold.includes(it.id), cat = cats.find(c=>c.id===it.cat);
+    return `<div class="tile mcard ${it.hidden?"off":""}">
+      <div class="row" style="align-items:flex-start">${itemThumb(it)}
+        <div class="grow" style="min-width:0"><b class="mname">${esc(it.name)}</b><div class="note">${esc(cat?cat.name:it.cat)}</div><div class="mono" style="font-weight:700;margin-top:4px">RM ${(+it.price).toFixed(2)}</div></div>
+        <button class="btn ghost sm" data-action="editItem" data-id="${esc(it.id)}" aria-label="Edit ${esc(it.name)}">${icon("edit","width:16px;height:16px")}</button></div>
+      <div class="row" style="flex-wrap:wrap;gap:6px">${it.hidden?'<span class="badge" style="background:rgba(110,74,80,.12);color:var(--ink-2)">Tidak dijual</span>':""}${it.popular?'<span class="badge">Popular</span>':""}${it.badge?`<span class="badge">${esc(it.badge)}</span>`:""}${out?'<span class="badge" style="background:rgba(191,3,17,.12)">Habis</span>':""}</div>
+      <div class="row mfoot"><span class="note grow">${out?"Habis stok":"Ada stok"}</span><button class="switch ${out?"":"on"}" data-action="toggleStock" data-id="${esc(it.id)}" aria-label="${esc(it.name)}: ada stok" aria-pressed="${!out}"></button></div>
+    </div>`;
+  }).join("") || `<div class="tile empty" style="grid-column:1/-1">Tiada item dalam kategori ini</div>`;
+}
+function editItem(id){
+  const m = readMenu(), cats = menuCats(m);
+  const it = (m.items||[]).find(x=>x.id===id) || { id:"", name:"", desc:"", price:"", cat:menuCat||cats[0]?.id||"", opts:"coffee", icon:"cup", tone:"", popular:false, stamp:true, badge:"", hidden:false };
+  EDIT_PHOTO = it.photo || null;
+  openSheet(`
+    <h2>${id?"Edit item":"Item baru"}</h2><p class="sub">Dipaparkan dalam skrin Order app pelanggan.</p>
+    <div class="field"><span>Gambar</span>
+      <div class="row"><div id="miPhoto">${itemThumb({...it, photo:EDIT_PHOTO}, 72)}</div>
+        <div class="grow"><label class="btn ghost sm" for="miFile">${icon("camera","width:16px;height:16px")}${EDIT_PHOTO?"Tukar gambar":"Muat naik gambar"}</label><input type="file" id="miFile" accept="image/*" class="sr">
+          <button type="button" class="btn ghost sm" data-action="clearPhoto" id="miClear" ${EDIT_PHOTO?"":"hidden"} style="margin-left:6px">Buang</button>
+          <div class="note" style="margin-top:6px">Tiada gambar? Ikon dan warna di bawah digunakan.</div></div></div></div>
+    <label class="field"><span>Nama item</span><input class="input" id="miName" maxlength="40" value="${esc(it.name)}" placeholder="cth. Kopi Gula Apong"></label>
+    <label class="field"><span>Penerangan</span><input class="input" id="miDesc" maxlength="70" value="${esc(it.desc||"")}" placeholder="cth. Espresso, susu segar, gula apong"></label>
+    <div class="grid g2" style="grid-template-columns:1fr 1fr;gap:10px">
+      <label class="field"><span>Harga (RM)</span><input class="input mono" id="miPrice" type="number" min="0.5" max="999" step="0.10" inputmode="decimal" value="${it.price===""?"":(+it.price).toFixed(2)}"></label>
+      <label class="field"><span>Kategori</span><select class="input" id="miCat">${cats.map(c=>`<option value="${esc(c.id)}" ${c.id===it.cat?"selected":""}>${esc(c.name)}</option>`).join("")}</select></label>
+    </div>
+    <label class="field"><span>Pilihan untuk pelanggan</span><select class="input" id="miOpts">${Object.entries(OPT_SETS).map(([k,v])=>`<option value="${k}" ${k===(it.opts||"none")?"selected":""}>${v}</option>`).join("")}</select></label>
+    <div class="grid g2" style="grid-template-columns:1fr 1fr;gap:10px">
+      <label class="field"><span>Ikon</span><select class="input" id="miIcon"><option value="cup" ${it.icon!=="cake"?"selected":""}>Minuman</option><option value="cake" ${it.icon==="cake"?"selected":""}>Pastri / makanan</option></select></label>
+      <label class="field"><span>Warna</span><select class="input" id="miTone">${Object.entries(TONES).map(([k,v])=>`<option value="${k}" ${k===(it.tone||"")?"selected":""}>${v}</option>`).join("")}</select></label>
+    </div>
+    <label class="field"><span>Lencana (pilihan)</span><input class="input" id="miBadge" maxlength="12" value="${esc(it.badge||"")}" placeholder="cth. TERLARIS, BARU"></label>
+    <div class="row field" style="justify-content:space-between"><span style="margin:0">Dijual dalam app</span><button type="button" class="switch ${it.hidden?"":"on"}" data-tgl="miSale" aria-label="Dijual dalam app"></button></div>
+    <div class="row field" style="justify-content:space-between"><span style="margin:0">Tunjuk dalam Popular</span><button type="button" class="switch ${it.popular?"on":""}" data-tgl="miPop" aria-label="Tunjuk dalam Popular"></button></div>
+    <div class="row field" style="justify-content:space-between"><span style="margin:0">Dapat cap (minuman)</span><button type="button" class="switch ${it.stamp!==false?"on":""}" data-tgl="miStamp" aria-label="Dapat cap"></button></div>
+    <div class="row" style="margin-top:20px">
+      ${id?`<button class="btn ghost" data-action="deleteItem" data-id="${esc(id)}" aria-label="Buang item">${icon("trash")}Buang</button>`:""}
+      <button class="btn red grow" data-action="saveItem" data-id="${esc(id)}">${icon("check")}Simpan item</button>
+    </div>`);
+}
+function compressImage(file, max=640, q=.78){
+  return new Promise((ok,no)=>{
+    if(!file || !/^image\//.test(file.type)){ no(new Error("Bukan gambar")); return; }
+    const url = URL.createObjectURL(file), img = new Image();
+    img.onload = ()=>{ const k=Math.min(1,max/Math.max(img.width,img.height)), c=document.createElement("canvas");
+      c.width=Math.round(img.width*k); c.height=Math.round(img.height*k); c.getContext("2d").drawImage(img,0,0,c.width,c.height);
+      URL.revokeObjectURL(url); ok(c.toDataURL("image/jpeg",q)); };
+    img.onerror = ()=>{ URL.revokeObjectURL(url); no(new Error("Gambar tidak dapat dibaca")); };
+    img.src = url;
+  });
+}
+function refreshPhotoPreview(){
+  $("#miPhoto").innerHTML = itemThumb({ photo:EDIT_PHOTO, icon:$("#miIcon").value, tone:$("#miTone").value }, 72);
+  $("#miClear").hidden = !EDIT_PHOTO;
+}
+function saveItem(id){
+  const name = $("#miName").value.trim(), price = Math.round(parseFloat($("#miPrice").value)*100)/100;
+  if(!name){ toast("Masukkan nama item"); return; }
+  if(!(price>0 && price<=999)){ toast("Masukkan harga yang sah"); return; }
+  const m = readMenu(); m.items = Array.isArray(m.items) ? m.items : []; m.cats = menuCats(m);
+  let it = m.items.find(x=>x.id===id);
+  if(!it){ it = { id:"it"+Date.now().toString(36) }; m.items.push(it); }
+  const on = k => $(`[data-tgl="${k}"]`).classList.contains("on");
+  Object.assign(it, { name, desc:$("#miDesc").value.trim(), price, cat:$("#miCat").value, opts:$("#miOpts").value, icon:$("#miIcon").value, tone:$("#miTone").value,
+    badge:$("#miBadge").value.trim().toUpperCase(), hidden:!on("miSale"), popular:on("miPop"), stamp:on("miStamp"), photo:EDIT_PHOTO||undefined });
+  if(!it.photo) delete it.photo;
+  try{ localStorage.setItem(ADMIN.keys.menu, JSON.stringify({...m, v:2})); }catch(e){ toast("Storan penuh. Guna gambar yang lebih kecil."); return; }
+  closeSheet(); renderScreen(); toast(`${name} disimpan`);
+}
+function deleteItem(id){
+  const m = readMenu(), it = (m.items||[]).find(x=>x.id===id); if(!it) return;
+  if(!confirm(`Buang "${it.name}" dari menu? Item ini tidak lagi dijual dalam app.`)) return;
+  m.items = m.items.filter(x=>x.id!==id); m.soldOut = (m.soldOut||[]).filter(x=>x!==id); saveMenu(m);
+  closeSheet(); renderScreen(); toast(`${it.name} dibuang dari menu`);
+}
+document.addEventListener("change", async e=>{
+  if(e.target.id==="miFile"){ const f=e.target.files&&e.target.files[0]; if(!f) return;
+    try{ EDIT_PHOTO = await compressImage(f); refreshPhotoPreview(); }catch(x){ toast(x.message); } e.target.value=""; }
+  if(e.target.id==="miIcon"||e.target.id==="miTone") refreshPhotoPreview();
+});
+document.addEventListener("click", e=>{
+  const t = e.target.closest("[data-tgl]"); if(t){ t.classList.toggle("on"); t.setAttribute("aria-pressed", t.classList.contains("on")); return; }
+  const c = e.target.closest("[data-mcat]"); if(c){ menuCat = c.dataset.mcat; renderMenu(); }
+});
+
+/* =========================================================
+   NOTIFIKASI PUSH (admin)
+   Dipaparkan melalui service worker bila tab admin di latar belakang.
+   Untuk push bila pelayar ditutup: sambung Firebase Cloud Messaging (lihat README).
+   ========================================================= */
+const knownProof = {};
+async function pushNotify(title, body, opts={}){
+  if(!("Notification" in window) || Notification.permission!=="granted") return false;
+  const o = { body, icon:"icons/icon-192.png", badge:"icons/icon-192.png", tag:opts.tag, renotify:!!opts.tag, vibrate:[90,50,90], data:{ url:opts.url||"admin.html#orders", order:opts.order||null } };
+  try{ const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); if(reg){ await reg.showNotification(title, o); return true; } }catch(e){}
+  try{ const n = new Notification(title, o); n.onclick = ()=>{ focus(); if(opts.order){ go("orders"); openOrder(opts.order); } n.close(); }; return true; }catch(e){ return false; }
+}
+function notifState(){
+  if(!("Notification" in window)) return "unsupported";
+  return Notification.permission;
+}
+function renderNotifBtn(){
+  const st = notifState(), b = $("#notifBtn"); if(!b) return;
+  b.innerHTML = icon("bell","width:16px;height:16px") + `<span>${st==="granted"?"Notifikasi hidup":st==="denied"?"Notifikasi disekat":st==="unsupported"?"Tiada notifikasi":"Hidupkan notifikasi"}</span>`;
+  b.classList.toggle("on", st==="granted");
+}
+async function enableNotif(){
+  const st = notifState();
+  if(st==="unsupported"){ toast("Pelayar ini tidak menyokong notifikasi"); return; }
+  if(st==="denied"){ toast("Notifikasi disekat. Benarkan dalam tetapan pelayar untuk laman ini."); return; }
+  if(st==="granted"){ pushNotify("Notifikasi aktif", "Anda akan dimaklumkan bila pesanan baru masuk.", { tag:"test" }); return; }
+  try{ const p = await Notification.requestPermission(); renderNotifBtn();
+    if(p==="granted"){ toast("Notifikasi dihidupkan"); pushNotify("Notifikasi aktif", "Anda akan dimaklumkan bila pesanan baru masuk.", { tag:"test" }); }
+    else toast("Kebenaran notifikasi tidak diberi");
+  }catch(e){}
+}
+function notifyOrders(){
+  const list = readOrders();
+  list.forEach(o=>{
+    if(o.pay==="duitnow" && o.proofAt && knownProof[o.no] && o.proofAt!==knownProof[o.no] && !o.paid){
+      toast(`Bukti DuitNow baru untuk ${o.no}`); beep();
+      if(document.hidden) pushNotify(`Bukti DuitNow baru · ${o.no}`, `${o.name} hantar semula bukti bayaran ${rm(o.total)}. Sila semak.`, { tag:"proof-"+o.no, order:o.no });
+    }
+    knownProof[o.no] = o.proofAt || null;
+  });
+}
+if("serviceWorker" in navigator){
+  navigator.serviceWorker.addEventListener("message", e=>{ const d=e.data||{}; if(d.type==="open"){ go("orders"); if(d.order) openOrder(d.order); } });
+  if(location.protocol.startsWith("http")) navigator.serviceWorker.register("sw.js").catch(()=>{});
+}
+
+/* ---------- Sidebar (telefon / tablet kecil) ---------- */
+function openSide(){ $(".side").classList.add("open"); $("#sideScrim").classList.add("show"); $("#menuBtn").setAttribute("aria-expanded","true"); }
+function closeSide(){ $(".side").classList.remove("open"); $("#sideScrim").classList.remove("show"); $("#menuBtn")?.setAttribute("aria-expanded","false"); }
 
 /* Imbas QR: BarcodeDetector (Chrome/Android) atau jsQR (fallback, dimuat bila perlu) */
 let stream=null, scanRAF=null;
@@ -1129,12 +1326,14 @@ document.addEventListener("click",e=>{
     exportCSV, newReward:()=>editReward(""), editReward:()=>editReward(d.r), saveReward:()=>saveReward(d.r),
     deleteReward:()=>deleteReward(d.r), toggleReward:()=>toggleReward(d.r),
     saveSettings, resetDemo,
+    newItem:()=>editItem(""), editItem:()=>editItem(d.id), saveItem:()=>saveItem(d.id), deleteItem:()=>deleteItem(d.id),
+    clearPhoto:()=>{EDIT_PHOTO=null;refreshPhotoPreview();}, enableNotif, openSide, closeSide,
     ordSet:()=>setOrderStatus(d.no,d.st), ordPaid:()=>markPaid(d.no), ordProof:()=>openOrder(d.no), ordReject:()=>rejectProof(d.no), ordCancel:()=>cancelOrder(d.no), toggleOpen, toggleStock:()=>toggleStock(d.id),
     logout:()=>{sessionStorage.removeItem("farha-admin-auth");location.reload();},
   })[d.action]?.();
 });
 $("#scrim").addEventListener("click",closeSheet);
-document.addEventListener("keydown",e=>{if(e.key==="Escape")closeSheet();});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"){closeSheet();closeSide();}});
 $("#memberIn").addEventListener("keydown",e=>{if(e.key==="Enter")findMember();});
 $("#voucherIn").addEventListener("keydown",e=>{if(e.key==="Enter")checkVoucher();});
 $("#q").addEventListener("input",renderMembers);
@@ -1142,7 +1341,7 @@ $("#tierFilter").addEventListener("change",renderMembers);
 /* Segerak langsung dengan app pelanggan (tab lain, pelayar sama) */
 addEventListener("storage",e=>{
   if(!Object.values(ADMIN.keys).includes(e.key)) return;
-  if(e.key===ADMIN.keys.orders) checkNewOrders();
+  if(e.key===ADMIN.keys.orders){ checkNewOrders(); notifyOrders(); }
   load(); renderScreen(); if(current==="counter"&&counterId) renderCounterMember();
 });
 
@@ -1160,9 +1359,10 @@ $("#loginForm").addEventListener("submit",e=>{
   else{const c=$(".login-card");c.classList.remove("shake");void c.offsetWidth;c.classList.add("shake");pins.forEach(p=>p.value="");pins[0].focus();}
 });
 function enter(){
-  $("#login").remove(); $("#layout").hidden=false; $("#mobNav").hidden=false;
+  $("#login").remove(); $("#layout").hidden=false;
+  readOrders().forEach(o=>{ knownProof[o.no]=o.proofAt||null; }); renderNotifBtn();
   knownNos=new Set(readOrders().map(o=>o.no)); updateOrderBadge();
-  const h=(location.hash||"").slice(1); go(["overview","orders","counter","members","rewards","settings"].includes(h)?h:"overview");
+  const h=(location.hash||"").slice(1); go(["overview","orders","menu","counter","members","rewards","settings"].includes(h)?h:"overview");
 }
 
 /* INIT */

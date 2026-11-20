@@ -44,6 +44,17 @@ Ubah menu, harga (harga dalam template ialah contoh), cawangan dan pilihan minum
 - **Lupa password:** e-mel dalaman tidak boleh terima e-mel reset, jadi pelanggan diminta hubungi kedai. Staf/owner reset password di Firebase console (*Authentication → Users*).
 - Nota: buat masa ini Firebase digunakan untuk log masuk sahaja. Point, cap dan pesanan masih disimpan dalam peranti sehingga Firestore disambung.
 
+## Menu (admin → Menu)
+- **Tambah, edit dan buang item jualan**: nama, penerangan, harga, kategori, gambar (dimampatkan), pilihan untuk pelanggan (kopi / susu / teh / pastri / tiada), lencana (cth. TERLARIS), Popular, dapat cap, dan suis **Dijual dalam app**.
+- Suis **Ada stok** untuk tanda item habis sementara. Perubahan terus muncul dalam app pelanggan.
+- Menu asal dalam `CONFIG.menu` hanya dimasukkan kali pertama app dibuka. Selepas itu menu diurus di admin.
+
+## Notifikasi push
+- **Pelanggan**: notifikasi bila pesanan diterima, siap, selesai, dibatalkan, bayaran DuitNow disahkan atau bukti ditolak. Hidupkan dari skrin status pesanan atau Profil → Notifikasi push.
+- **Admin**: notifikasi bila pesanan baru masuk atau pelanggan hantar semula bukti DuitNow. Tekan **Hidupkan notifikasi** di skrin Pesanan.
+- Klik notifikasi membuka app di pesanan berkenaan.
+- **Had mod demo**: notifikasi keluar bila app/tab terbuka di latar belakang (pelayar yang sama). Untuk notifikasi bila app **ditutup sepenuhnya** dan antara peranti, sambung **Firebase Cloud Messaging** (service worker `sw.js` sudah ada pengendali `push`) dengan Cloud Function yang menghantar push bila status pesanan berubah. iPhone: notifikasi web hanya untuk app yang dipasang ke skrin utama (iOS 16.4+).
+
 ## Admin dashboard (`admin.html`, demo)
 Buka `/admin` atau `admin.html` dan masukkan PIN demo **1234**.
 - **Ringkasan**: KPI (ahli, pembelian hari ini, point dikeluarkan, tebusan), carta pembelian 14 hari, ganjaran popular, aktiviti terkini dan ahli teratas.
