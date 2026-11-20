@@ -791,7 +791,16 @@ const CONFIG = {
   },
   // Tampal firebaseConfig dari Firebase console di sini untuk guna Firebase Auth.
   // null = mod demo (akaun disimpan dalam peranti ini sahaja).
-  firebase: null,
+  firebase: {
+    apiKey: "AIzaSyD1s1bZUN4hp6qMLbsF49TbGCJYSV7T3Cc",
+    authDomain: "farha-apporder.firebaseapp.com",
+    databaseURL: "https://farha-apporder-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "farha-apporder",
+    storageBucket: "farha-apporder.firebasestorage.app",
+    messagingSenderId: "647737113340",
+    appId: "1:647737113340:web:63517cde2cd0b5b6b93579",
+    measurementId: "G-F2VFDX70XW",
+  },
   /* ---------- PROMOSI (Home) ----------
      Promosi asal. Selepas app dibuka kali pertama, promosi diurus di admin.html → Promosi.
      link.type: "none" | "order" (buka menu) | "item" (link.id = id item) | "cat" (link.id = id kategori) */
@@ -1777,6 +1786,9 @@ function authMsg(x){
   if(/weak-password/.test(c)) return "Password terlalu lemah. Guna sekurang-kurangnya 6 aksara.";
   if(/too-many-requests/.test(c)) return "Terlalu banyak cubaan. Cuba lagi sebentar.";
   if(/network-request-failed/.test(c)) return "Tiada sambungan internet. Cuba lagi.";
+  if(/operation-not-allowed/.test(c)) return "Log masuk belum dihidupkan oleh kedai (Firebase: Email/Password).";
+  if(/unauthorized-domain|operation-not-supported/.test(c)) return "Domain ini belum dibenarkan dalam Firebase (Authorized domains).";
+  if(/invalid-api-key|app-not-authorized/.test(c)) return "Tetapan Firebase tidak sah. Hubungi kedai.";
   return "Tidak berjaya. Cuba lagi.";
 }
 async function authLogin(phone, pw){

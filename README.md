@@ -39,7 +39,9 @@ Ubah menu, harga (harga dalam template ialah contoh), cawangan dan pilihan minum
 - Skrin **Log masuk / Daftar** selepas splash. Pelanggan guna **no. telefon Malaysia** (cth. `012-345 6789`) dan **password** (minimum 6 aksara).
 - Firebase Authentication guna **e-mel + password**, jadi no. telefon ditukar kepada e-mel dalaman: `60123456789@phone.farha.app` (ubah domain di `CONFIG.auth.emailDomain`). Pelanggan tidak nampak e-mel ini.
 - **ID ahli = no. telefon** (cth. `60123456789`), jadi staf boleh cari ahli di kaunter dengan no. telefon.
-- **Mod demo** (`CONFIG.firebase = null`): akaun disimpan dalam peranti. Akaun demo: `012-345 6789` / `demo123`.
+- **Firebase sudah disambung** (projek `farha-apporder`, Email/Password dihidupkan). Pelanggan daftar dan log masuk melalui Firebase Authentication.
+- Tetapkan `CONFIG.firebase = null` untuk kembali ke **mod demo** (akaun dalam peranti; akaun demo `012-345 6789` / `demo123`).
+- Pastikan domain hosting (cth. `nama-app.vercel.app`) ditambah di Firebase console → *Authentication → Settings → Authorized domains*.
 - **Sambung Firebase:** di Firebase console, hidupkan *Authentication → Sign-in method → Email/Password*, daftar web app, kemudian tampal `firebaseConfig` ke `CONFIG.firebase` dalam `index.html`. Tambah domain hosting anda di *Authentication → Settings → Authorized domains*.
 - **Lupa password:** e-mel dalaman tidak boleh terima e-mel reset, jadi pelanggan diminta hubungi kedai. Staf/owner reset password di Firebase console (*Authentication → Users*).
 - Nota: buat masa ini Firebase digunakan untuk log masuk sahaja. Point, cap dan pesanan masih disimpan dalam peranti sehingga Firestore disambung.
