@@ -516,6 +516,7 @@ svg.i{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stro
           <label class="field"><span>Selang masa slot ambil</span><select class="input" id="hrSlot"><option value="10">10 minit</option><option value="15">15 minit</option><option value="20">20 minit</option><option value="30">30 minit</option></select></label>
           <label class="field"><span>Pelanggan boleh jadualkan sehingga</span><select class="input" id="hrAhead"><option value="60">1 jam ke depan</option><option value="120">2 jam ke depan</option><option value="240">4 jam ke depan</option><option value="480">8 jam ke depan</option><option value="1440">24 jam ke depan</option></select></label>
           <div class="row field" style="justify-content:space-between"><span style="margin:0">Benarkan pelanggan jadualkan masa ambil</span><button type="button" class="switch on" data-tgl="hrSched" aria-label="Benarkan jadual"></button></div>
+          <div class="row field" style="justify-content:space-between;align-items:flex-start;gap:12px"><span style="margin:0">Benarkan pre-order bila kedai tutup<small class="note" style="display:block;font-weight:500;margin-top:2px">Pelanggan boleh tempah untuk hari buka seterusnya</small></span><button type="button" class="switch on" data-tgl="hrPre" aria-label="Benarkan pre-order"></button></div>
           <div id="hrPreview"></div>
           <button class="btn red block" data-action="saveHours" style="margin-top:14px"><svg class="i" data-ic="check"></svg>Simpan waktu pickup</button>
         </div>
@@ -674,7 +675,7 @@ const ADMIN = {
     promos: "farha-promos-v1",      // banner promosi di Home app pelanggan
   },
   tiers: [{name:"Silver",min:0},{name:"Gold",min:1000},{name:"Platinum",min:2000}],
-  defaultSettings: { stampTarget: 10, pointsPerPurchase: 20, prepMins: 10, pointsMultiplier: 2, orderOpen: true, slotMins: 15, maxAheadMins: 120, allowSchedule: true },
+  defaultSettings: { stampTarget: 10, pointsPerPurchase: 20, prepMins: 10, pointsMultiplier: 2, orderOpen: true, slotMins: 15, maxAheadMins: 120, allowSchedule: true, preorder: true },
   defaultRewards: [
     { id:"drink",  name:"Minuman Percuma", desc:"Sebarang minuman saiz biasa", pts:500,  icon:"cup",     featured:true, active:true },
     { id:"pastry", name:"Pastri Percuma",  desc:"Pilihan pastri harian",       pts:400,  icon:"cake",    active:true },
@@ -1049,7 +1050,7 @@ function orderCard(o){
   else meta=`<span class="note">${ago(o.ts)}</span>`;
   return `<div class="tile oc ${freshNos.has(o.no)?"fresh":""}" data-order="${esc(o.no)}">
     <div class="oc-h"><b>${esc(o.no)}</b>${meta}</div>
-    <div class="oc-who">${esc(o.name)} · ${o.pickupAt?`<span class="pickup-t">${icon("clock","width:13px;height:13px")}Ambil ${hmA(o.pickupAt)}</span>`:"Secepat mungkin"}</div>
+    <div class="oc-who">${esc(o.name)} · ${o.pickupAt?`<span class="pickup-t">${icon("clock","width:13px;height:13px")}${o.preorder?"PRE-ORDER · ":""}Ambil ${hrWhen(o.pickupAt)}</span>`:"Secepat mungkin"}</div>
     <ul class="oc-items">${orderItems(o)}</ul>
     <div class="oc-f"><span class="mono">${rm(o.total)}</span>${payBadge(o)}</div>
     <div class="row">${orderActs(o)}</div>
@@ -1094,7 +1095,7 @@ function openOrder(no){
   maybeFetchProof(o);
   openSheet(`
     <h2 class="mono" style="font-size:30px">${esc(o.no)}</h2>
-    <p class="sub">${esc(o.name)} · <span class="mono">${fmtId(o.memberId)}</span><br>Dibuat ${hmA(o.ts)} (${ago(o.ts)}) · ${o.pickupAt?`ambil jam ${hmA(o.pickupAt)}`:"secepat mungkin"}</p>
+    <p class="sub">${esc(o.name)} · <span class="mono">${fmtId(o.memberId)}</span><br>Dibuat ${hmA(o.ts)} (${ago(o.ts)}) · ${o.pickupAt?`${o.preorder?"<b>pre-order</b> · ":""}ambil ${hrWhen(o.pickupAt)}`:"secepat mungkin"}</p>
     <div class="row" style="margin-bottom:14px;flex-wrap:wrap"><span class="tier">${ORD_LABEL[o.status]}</span>${payBadge(o)}</div>
     <div class="tile" style="margin-bottom:14px">
       <ul class="oc-items">${orderItems(o)}</ul>
@@ -1840,16 +1841,27 @@ function hrState(cfg, now=Date.now()){
   const asap = !!(cfg.open && cur && now+prep <= cur[1]);
   return { manualOpen:!!cfg.open, inHours:!!cur, closeAt:cur?cur[1]:null, nextOpen:next?next[0]:null, asap, open:!!(cfg.open && cur) };
 }
+/* Pre-order: bila kedai tutup / hampir tutup (cfg.preorder !== false), semua slot hari buka seterusnya dibuka walaupun melebihi had "jadualkan sehingga". */
 function hrSlots(cfg, now=Date.now()){
   if(!cfg.open || cfg.allowSchedule===false) return [];
   const step = (cfg.slotMins||15)*60e3, prep = (cfg.prepMins||10)*60e3, limit = now + (cfg.maxAheadMins||120)*60e3, out = [];
-  for(const [s,e] of hrWindows(cfg, now)){
-    if(s > limit) break;
+  const wins = hrWindows(cfg, now), cur = wins.find(([s,e])=>now>=s && now<e);
+  const pre = cfg.preorder!==false && !(cur && now+prep <= cur[1]) ? wins.find(([s])=>s>now) : null;
+  for(const [s,e] of wins){
+    if(e <= now) continue;
+    const lim = pre && s===pre[0] ? e : limit;
+    if(s > lim) continue;
     let t = Math.ceil(Math.max(now + prep + 5*60e3, s + prep)/step)*step;
-    for(; t <= e && t <= limit && out.length < 48; t += step) out.push(t);
+    for(; t <= e && t <= lim && out.length < 120; t += step) out.push(t);
   }
   return out;
 }
+function hrDayLabel(ts, now=Date.now()){
+  const a = new Date(now); a.setHours(0,0,0,0); const b = new Date(ts); b.setHours(0,0,0,0);
+  const diff = Math.round((b-a)/864e5), day = HR_DAYS[new Date(ts).getDay()];
+  return diff===0 ? "Hari ini" : diff===1 ? `Esok · ${day}` : day;
+}
+const hrIsPre = (ts, now=Date.now()) => !!ts && new Date(ts).toDateString() !== new Date(now).toDateString();
 function hrWhen(ts, now=Date.now()){
   const a = new Date(now); a.setHours(0,0,0,0); const b = new Date(ts); b.setHours(0,0,0,0);
   const diff = Math.round((b-a)/864e5);
@@ -1859,7 +1871,7 @@ function hrWeekText(cfg){
   return [1,2,3,4,5,6,0].map(d=>{ const h=(cfg.hours||{})[d]; return { day:HR_DAYS[d], txt: !h || h.closed ? "Tutup" : `${hrTime(new Date(`2000-01-01T${h.open}`))} – ${hrTime(new Date(`2000-01-01T${h.close}`))}` }; });
 }
 /* ---------- Admin → Waktu Pickup ---------- */
-const admCfg = () => ({ open:SETTINGS.orderOpen!==false, hours:SETTINGS.hours, prepMins:SETTINGS.prepMins||10, slotMins:SETTINGS.slotMins||15, maxAheadMins:SETTINGS.maxAheadMins||120, allowSchedule:SETTINGS.allowSchedule!==false });
+const admCfg = () => ({ open:SETTINGS.orderOpen!==false, hours:SETTINGS.hours, prepMins:SETTINGS.prepMins||10, slotMins:SETTINGS.slotMins||15, maxAheadMins:SETTINGS.maxAheadMins||120, allowSchedule:SETTINGS.allowSchedule!==false, preorder:SETTINGS.preorder!==false });
 function renderHours(){
   const h = SETTINGS.hours || HR_DEFAULT();
   $("#hrDays").innerHTML = [1,2,3,4,5,6,0].map(d=>{ const x = h[d] || { open:"08:00", close:"22:00" }, on = !x.closed;
@@ -1869,18 +1881,19 @@ function renderHours(){
       <span class="hr-closed">Tutup sepanjang hari</span></div>`; }).join("");
   $("#hrPrep").value = SETTINGS.prepMins||10; $("#hrSlot").value = String(SETTINGS.slotMins||15); $("#hrAhead").value = String(SETTINGS.maxAheadMins||120);
   const sw = $('[data-tgl="hrSched"]'); sw.classList.toggle("on", SETTINGS.allowSchedule!==false); sw.setAttribute("aria-pressed", SETTINGS.allowSchedule!==false);
+  const pw = $('[data-tgl="hrPre"]'); pw.classList.toggle("on", SETTINGS.preorder!==false); pw.setAttribute("aria-pressed", SETTINGS.preorder!==false);
   renderHoursPreview(false);
 }
 function readHoursForm(){
   const hours = {};
   [0,1,2,3,4,5,6].forEach(d=>{ hours[d] = { open:$("#hrO"+d).value||"08:00", close:$("#hrC"+d).value||"22:00", closed:!$(`[data-hrday="${d}"]`).classList.contains("on") }; });
-  return { hours, prepMins:parseInt($("#hrPrep").value,10), slotMins:+$("#hrSlot").value, maxAheadMins:+$("#hrAhead").value, allowSchedule:$('[data-tgl="hrSched"]').classList.contains("on") };
+  return { hours, prepMins:parseInt($("#hrPrep").value,10), slotMins:+$("#hrSlot").value, maxAheadMins:+$("#hrAhead").value, allowSchedule:$('[data-tgl="hrSched"]').classList.contains("on"), preorder:$('[data-tgl="hrPre"]').classList.contains("on") };
 }
 function renderHoursPreview(fromForm=true){
   const cfg = fromForm ? { ...admCfg(), ...readHoursForm() } : admCfg(), hs = hrState(cfg), sl = hrSlots(cfg);
   const status = !cfg.open ? "Pesanan app ditutup (suis Terima pesanan)" : hs.asap ? `Buka sekarang · tutup ${hrTime(hs.closeAt)}` : hs.inHours ? `Hampir tutup (${hrTime(hs.closeAt)}) · pesanan segera tidak diterima` : `Tutup sekarang · buka ${hs.nextOpen?hrWhen(hs.nextOpen):"—"}`;
   $("#hrNow").textContent = status;
-  $("#hrPreview").innerHTML = `<b>Pelanggan nampak sekarang:</b> ${esc(status)}<br><b>Slot jadual:</b> ${sl.length ? esc(sl.slice(0,8).map(t=>hrWhen(t)).join(", ")) + (sl.length>8?` … (${sl.length} slot)`:"") : (cfg.allowSchedule ? "Tiada slot dalam tempoh ini" : "Jadual dimatikan")}${fromForm?'<br><span class="note">Belum disimpan</span>':""}`;
+  $("#hrPreview").innerHTML = `<b>Pelanggan nampak sekarang:</b> ${esc(status)}<br><b>Slot jadual:</b> ${sl.length ? esc(sl.slice(0,8).map(t=>hrWhen(t)).join(", ")) + (sl.length>8?` … hingga ${hrWhen(sl[sl.length-1])} (${sl.length} slot)`:"") + (sl.some(t=>hrIsPre(t))?" · <b>pre-order dibuka</b>":"") : (cfg.allowSchedule ? "Tiada slot dalam tempoh ini" : "Jadual dimatikan")}${fromForm?'<br><span class="note">Belum disimpan</span>':""}`;
 }
 function saveHours(){
   const f = readHoursForm();
@@ -1896,7 +1909,7 @@ function hrCopy(){
 }
 document.addEventListener("click", e=>{
   const sw = e.target.closest("[data-hrday]"); if(sw){ const on = !sw.classList.contains("on"); sw.classList.toggle("on", on); sw.setAttribute("aria-pressed", on); sw.closest(".hr-row").classList.toggle("off", !on); renderHoursPreview(); return; }
-  if(e.target.closest('[data-tgl="hrSched"]')) setTimeout(renderHoursPreview, 0);
+  if(e.target.closest('[data-tgl="hrSched"],[data-tgl="hrPre"]')) setTimeout(renderHoursPreview, 0);
 });
 document.addEventListener("input", e=>{ if(e.target.closest && e.target.closest('[data-screen="hours"]')) renderHoursPreview(); });
 setInterval(()=>{ if(current==="hours" && !$('[data-screen="hours"] .hr-dirty')) renderHoursPreview(false); }, 60000);

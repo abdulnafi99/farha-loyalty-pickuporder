@@ -81,6 +81,7 @@ Ubah menu, harga (harga dalam template ialah contoh), cawangan dan pilihan minum
 
 ## Waktu Pickup (admin)
 - **Admin → Waktu Pickup**: waktu operasi setiap hari (buka / tutup / cuti, boleh hingga lepas tengah malam), anggaran masa sediakan, selang slot (10–30 minit), had jadual (1–24 jam ke depan), suis benarkan jadual, dan suis **Terima pesanan**. Pratonton menunjukkan status & slot yang pelanggan nampak.
+- **Pre-order bila kedai tutup** (suis di Waktu Pickup, lalai: hidup): di luar waktu operasi atau bila hampir tutup, pelanggan boleh pilih slot ambil untuk hari buka seterusnya (semua slot hari itu, tidak terhad kepada had jadual). Pesanan ditanda **PRE-ORDER** di kanban admin. Suis **Terima pesanan** yang dimatikan tetap menghalang semua pesanan.
 - App pelanggan ikut waktu ini secara automatik: status "Buka · tutup 10:00 MLM" / "Tutup · buka esok 8:00 PG", "Secepat mungkin" hanya bila kedai buka dan sempat disediakan, slot "Jadualkan" hanya dalam waktu operasi, dan senarai waktu operasi dalam maklumat cawangan.
 - Disegerak ke semua telefon melalui Realtime Database (`/shop/settings`).
 - Pilihan Delivery dibuang (pickup sahaja).
