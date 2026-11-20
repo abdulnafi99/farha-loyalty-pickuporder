@@ -734,14 +734,14 @@ body[data-screen="cart"] .paybar{display:flex}
           <div class="row"><svg class="i" data-ic="refresh"></svg><div class="txt"><b>Versi app</b><span id="p-ver">v1.0 · terkini</span></div><span class="tag-mono">PWA</span></div>
           <button class="row" data-action="logout"><svg class="i" data-ic="logout"></svg><div class="txt"><b>Log keluar</b></div><svg class="i" data-ic="chev" style="width:18px"></svg></button>
         </div>
-        <div class="tile span2 list rose">
+        <div class="tile span2 list rose" id="demoTools">
           <button class="row" data-action="demoBuy"><svg class="i" data-ic="cup"></svg><div class="txt"><b>Simulasi pembelian</b><span>+1 cap &amp; +20 point (mod demo)</span></div><svg class="i" data-ic="chev" style="width:18px"></svg></button>
           <button class="row" data-action="backup"><svg class="i" data-ic="download"></svg><div class="txt"><b>Backup data app</b><span>Muat turun / kongsi semua data dalam telefon ini</span></div><svg class="i" data-ic="chev" style="width:18px"></svg></button>
           <button class="row" data-action="reset"><svg class="i" data-ic="refresh"></svg><div class="txt"><b>Set semula data demo</b><span>Kembali ke data asal</span></div><svg class="i" data-ic="chev" style="width:18px"></svg></button>
           <a class="row" href="admin.html" target="_blank" rel="noopener"><svg class="i" data-ic="chart"></svg><div class="txt"><b>Admin dashboard</b><span>Kaunter staf &amp; laporan (demo · PIN 1234)</span></div><svg class="i" data-ic="chev" style="width:18px"></svg></a>
         </div>
       </div>
-      <p class="demo-note">Data disimpan dalam peranti (localStorage). Sambung ke backend anda untuk produksi.</p>
+      <p class="demo-note" id="demoFoot">Data disimpan dalam peranti (localStorage). Sambung ke backend anda untuk produksi.</p>
     </section>
   </main>
 
@@ -1070,6 +1070,8 @@ function render(){
   $("#p-tier-txt").textContent = tier.next ? `${fmt(tier.need)} ke ${tier.next.name}` : "Tahap tertinggi";
   $("#p-redeemed").textContent = S.redeemed;
   $$("[data-toggle]").forEach(b=>b.classList.toggle("on", !!S[b.dataset.toggle]));
+  // Alat demo hanya dalam mod demo
+  $("#demoTools").hidden = !!CONFIG.firebase; $("#demoFoot").hidden = !!CONFIG.firebase;
   // PROMOSI & ORDER
   renderPromos();
   renderOrder();
@@ -1372,7 +1374,10 @@ function renderOrder(){
   $("#o-promo").hidden = !(mult>1);
   $("#o-promo-h").innerHTML = `Dapat ${mult}× point untuk<br>setiap pesanan`;
   $("#o-promo-x").textContent = `${mult}×`;
-  $("#o-cats").innerHTML = CONFIG.categories.map(c=>`<button role="tab" aria-selected="${c.id===O.cat}" class="${c.id===O.cat?"on":""}" data-cat="${c.id}">${esc(c.name)}</button>`).join("");
+  const hasItems = c => c.id==="popular" ? CONFIG.menu.some(m=>m.popular) : CONFIG.menu.some(m=>m.cat===c.id);
+  const cats = CONFIG.categories.filter(hasItems);
+  if(cats.length && !cats.some(c=>c.id===O.cat)) O.cat = cats[0].id;
+  $("#o-cats").innerHTML = cats.map(c=>`<button role="tab" aria-selected="${c.id===O.cat}" class="${c.id===O.cat?"on":""}" data-cat="${c.id}">${esc(c.name)}</button>`).join("");
   const list = O.cat==="popular" ? CONFIG.menu.filter(m=>m.popular) : CONFIG.menu.filter(m=>m.cat===O.cat);
   const cat = CONFIG.categories.find(c=>c.id===O.cat);
   $("#o-cat-t").textContent = cat ? cat.name : "Menu";
@@ -1637,7 +1642,7 @@ function renderTrack(){
         <button class="btn red" style="padding:10px 14px;font-size:13px" data-action="enableNotif">Hidupkan</button></div>` : ""}
     ${st!=="cancelled" ? `<div class="tile red ord-active" style="margin:0"><span class="ic">${icon("sparkle")}</span>
       <span class="tx"><b>+${fmt(o.earn)} point${o.stamps?` · +${o.stamps} cap`:""}</b><small>${o.credited?"Telah dikreditkan ke akaun anda":"Dikreditkan automatik bila pesanan diambil"}</small></span></div>` : ""}
-    ${ACTIVE.includes(st)
+    ${ACTIVE.includes(st) && CONFIG.firebase ? "" : ACTIVE.includes(st)
       ? `<button class="btn ghost block" data-action="simStore">${icon("refresh")}Demo: simulasi kedai proses pesanan</button>
          <p class="demo-note" style="margin-top:0">Atau buka admin.html → Pesanan dalam tab lain untuk proses sebagai staf.</p>`
       : `<button class="btn red block" data-go="order">Order lagi</button>`}
@@ -2027,8 +2032,8 @@ document.addEventListener("click", e=>{
   const t=e.target.closest("[data-toggle]"); if(t){ toggle(t.dataset.toggle); return; }
   const a=e.target.closest("[data-action]"); if(!a) return;
   ({
-    qr:showQR, close:closeSheet, claimStamp, demoBuy, editName, saveName,
-    storeInfo, addItem, placeOrder, simStore, enableNotif,
+    qr:showQR, close:closeSheet, claimStamp, demoBuy:()=>{ if(!CONFIG.firebase) demoBuy(); }, editName, saveName,
+    storeInfo, addItem, placeOrder, simStore:()=>{ if(!CONFIG.firebase) simStore(); }, enableNotif,
     backup:backupMenu, backupDownload:()=>{ const f=downloadBackup(true); closeSheet(); toast(`${f.name} dimuat turun`); },
     backupShare:async()=>{ try{ await shareBackup(true); closeSheet(); }catch(e){ if(e && e.name!=="AbortError") toast(e.message||"Tidak dapat kongsi"); } }, duitnowPaid:()=>placeOrder(true),
     delivery:()=>toast("Delivery akan datang. Buat masa ini pickup sahaja."),
