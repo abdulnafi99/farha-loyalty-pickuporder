@@ -774,6 +774,7 @@ const IC = {
   bag:'<path d="M6 8h12l-1.2 11.2a2 2 0 0 1-2 1.8H9.2a2 2 0 0 1-2-1.8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/>',
   pin:'<path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/>',
   clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  upload:'<path d="M12 15V3M7 8l5-5 5 5M5 21h14"/>',
   share:'<path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8M16 6l-4-4-4 4M12 2v13"/>',
 };
 const icon = (n, s) => `<svg class="i" viewBox="0 0 24 24"${s?` style="${s}"`:""}>${IC[n]||""}</svg>`;
@@ -1097,9 +1098,29 @@ let SOLD = [];
 let CART = []; try{ CART = JSON.parse(localStorage.getItem(CART_KEY)) || []; }catch(e){ CART = []; }
 const saveCart = () => { try{ localStorage.setItem(CART_KEY, JSON.stringify(CART)); }catch(e){} };
 const O = { cat:"popular", pickupMode:"asap", pickupAt:null, pay:"counter", perk:null, viewing:null, paying:false };
-const seenStatus = {}, seenPaid = {};
+const seenStatus = {}, seenPaid = {}, seenRej = {};
+/* Bukti bayaran DuitNow: gambar dimampatkan (JPEG) dan disimpan ikut no. pesanan.
+   Untuk produksi, muat naik ke storage (cth. Firebase Storage) dan simpan URL sahaja. */
+const PROOF_PREFIX = "farha-proof-";
+let PROOF = null;
+function compressImage(file, max=1000, q=.7){
+  return new Promise((ok, no)=>{
+    if(!file || !/^image\//.test(file.type)){ no(new Error("Bukan gambar")); return; }
+    const url = URL.createObjectURL(file), img = new Image();
+    img.onload = ()=>{ const k=Math.min(1, max/Math.max(img.width,img.height)), c=document.createElement("canvas");
+      c.width=Math.round(img.width*k); c.height=Math.round(img.height*k); c.getContext("2d").drawImage(img,0,0,c.width,c.height);
+      URL.revokeObjectURL(url); ok(c.toDataURL("image/jpeg", q)); };
+    img.onerror = ()=>{ URL.revokeObjectURL(url); no(new Error("Gambar tidak dapat dibaca")); };
+    img.src = url;
+  });
+}
+function saveProof(no, data){
+  const keep = new Set(readOrders().slice(0,30).map(o=>PROOF_PREFIX+o.no)); keep.add(PROOF_PREFIX+no);
+  try{ Object.keys(localStorage).forEach(k=>{ if(k.startsWith(PROOF_PREFIX) && !keep.has(k)) localStorage.removeItem(k); }); }catch(e){}
+  try{ localStorage.setItem(PROOF_PREFIX+no, data); return true; }catch(e){ return false; }
+}
 const PAY_NAME = { counter:"Tunai di kaunter", duitnow:"QR DuitNow" };
-function payLine(o){ return o.paid ? `Dibayar · ${o.pay==="duitnow"?"DuitNow":"Tunai"}` : o.pay==="duitnow" ? "DuitNow · menunggu pengesahan staf" : "Bayar tunai di kaunter"; }
+function payLine(o){ return o.paid ? `Dibayar · ${o.pay==="duitnow"?"DuitNow":"Tunai"}` : o.pay==="duitnow" ? (o.payRejected ? "DuitNow · bukti ditolak" : "DuitNow · bukti sedang disemak") : "Bayar tunai di kaunter"; }
 let PI = null;
 
 const money = n => `${CONFIG.order.currency} ${(+n).toFixed(2)}`;
@@ -1323,30 +1344,56 @@ function duitnowSheet(){
         onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'sub',style:'height:100%;display:grid;place-items:center;text-align:center;font-size:12px;padding:10px',textContent:'QR DuitNow kedai belum dimasukkan. Letak gambar QR di ${esc(q.duitnowQr)}'}))"></div>
       <div style="font-size:13px;color:var(--ink-2)">${esc(q.duitnowName)}</div>
       <div class="code-big" style="letter-spacing:0;font-size:32px">${money(t.total)}</div>
-      <p style="margin:0 0 18px;font-size:12.5px">Tulis <b>nama anda</b> di ruangan rujukan. Tekan butang di bawah selepas bayaran berjaya.</p>
-      <div class="btn-row"><button class="btn ghost" data-action="close">Batal</button><button class="btn red" data-action="duitnowPaid">Saya dah bayar</button></div>
+      <p style="margin:0 0 14px;font-size:12.5px">Tulis <b>nama anda</b> di ruangan rujukan. Selepas bayar, <b>muat naik screenshot resit</b> sebagai bukti.</p>
+      <label class="btn ghost block" for="proofIn" id="proofLbl" style="margin-bottom:10px">${icon("upload")}Muat naik bukti bayaran</label>
+      <input type="file" id="proofIn" accept="image/*" class="sr">
+      <div id="proofPrev"></div>
+      <div class="btn-row"><button class="btn ghost" data-action="close">Batal</button><button class="btn red" data-action="duitnowPaid" id="proofSend" disabled>Hantar pesanan</button></div>
+      <p class="demo-note" style="margin-top:10px">Pesanan disahkan selepas staf semak bukti bayaran anda.</p>
     </div>`);
+  PROOF = null;
+}
+function proofPreview(data){
+  return `<img src="${data}" alt="Bukti bayaran" style="display:block;max-width:100%;max-height:200px;margin:0 auto 12px;border-radius:14px;box-shadow:var(--shadow)">`;
+}
+async function onProofPicked(input){
+  const f = input.files && input.files[0]; if(!f) return;
+  try{
+    const data = await compressImage(f);
+    if(input.id==="proofIn"){
+      PROOF = data; $("#proofPrev").innerHTML = proofPreview(data);
+      $("#proofLbl").innerHTML = icon("refresh")+"Tukar gambar"; $("#proofSend").disabled = false;
+    }else{ // hantar semula dari skrin status
+      if(!saveProof(O.viewing, data)){ toast("Gambar terlalu besar. Cuba screenshot yang lebih kecil."); return; }
+      updateOrder(O.viewing, o=>{ o.payRejected=false; o.proofAt=Date.now(); });
+      seenRej[O.viewing] = false; renderTrack(); toast("Bukti baru dihantar. Staf akan semak semula.");
+    }
+  }catch(e){ toast(e.message||"Gambar tidak dapat dibaca"); }
+  input.value = "";
 }
 function placeOrder(confirmed){
   if(!CART.length || O.paying) return;
   if(!SHOP.open){ toast("Kedai tidak terima pesanan buat masa ini"); return; }
-  if(O.pay==="duitnow" && confirmed!==true && totals().total>0){ duitnowSheet(); return; }
+  const needProof = O.pay==="duitnow" && totals().total>0;
+  if(needProof && confirmed!==true){ duitnowSheet(); return; }
+  if(needProof && !PROOF){ toast("Sila muat naik bukti bayaran dahulu"); return; }
   closeSheet();
   O.paying = true; renderCart();
   setTimeout(()=>{
     const t = totals(), list = readOrders();
     const no = "F-" + (list.reduce((a,o)=>Math.max(a, parseInt(String(o.no).replace(/\D/g,""),10)||0), 100) + 1);
+    if(needProof && !saveProof(no, PROOF)){ O.paying=false; renderCart(); toast("Gambar bukti terlalu besar. Cuba screenshot yang lebih kecil."); return; }
     const o = {
       no, ts:Date.now(), memberId:S.memberId, name:S.name, store:CONFIG.store.name,
       items:CART.map(l=>({ name:l.name, opts:l.opts, qty:l.qty, unit:l.unit, stamp:l.stamp })),
       subtotal:t.subtotal, discount:t.discount, total:t.total,
       perk:t.perk ? { id:t.perk.r.id, name:t.perk.r.name, pts:t.perk.r.pts } : null,
-      pay:O.pay, paid:false, payClaimed:O.pay==="duitnow", pickupAt:O.pickupMode==="later"?O.pickupAt:null, prep:CONFIG.order.prepMins,
+      pay:O.pay, paid:false, payClaimed:needProof, proofAt:needProof?Date.now():null, payRejected:false, pickupAt:O.pickupMode==="later"?O.pickupAt:null, prep:CONFIG.order.prepMins,
       qty:t.qty, earn:t.earn, stamps:t.drinks, status:"new", credited:false,
     };
     list.unshift(o); writeOrders(list);
     if(o.perk){ S.points -= o.perk.pts; S.redeemed++; S.history.unshift({ ts:o.ts, t:`${o.perk.name} (order ${no})`, p:-o.perk.pts }); save(); }
-    seenStatus[no] = "new"; seenPaid[no] = false;
+    seenStatus[no] = "new"; seenPaid[no] = false; seenRej[no] = false; PROOF = null;
     CART = []; saveCart(); Object.assign(O, { perk:null, paying:false, pickupMode:"asap", pickupAt:null });
     render(); openTrack(no); confetti(); toast(`Pesanan ${no} dihantar ke kedai`);
   }, 700);
@@ -1382,6 +1429,12 @@ function renderTrack(){
       ${o.discount?`<div class="oline" style="color:#14833F;font-weight:600"><span>${esc(o.perk?.name||"Diskaun")}</span><span class="mono" style="color:inherit">− ${money(o.discount)}</span></div>`:""}
       <div class="oline tot"><span>${payLine(o)}</span><span class="mono">${money(o.total)}</span></div>
     </div>
+    ${o.pay==="duitnow" && !o.paid && ACTIVE.includes(st) ? (o.payRejected
+      ? `<div class="tile" style="border:1.5px solid var(--brand)"><b style="color:var(--brand)">Bukti bayaran ditolak</b>
+          <p class="sub" style="margin:4px 0 12px">Staf tidak dapat sahkan bayaran anda. Hantar screenshot resit yang betul, atau bayar di kaunter semasa ambil pesanan.</p>
+          <label class="btn red block" for="proofIn2">${icon("upload")}Hantar bukti baru</label><input type="file" id="proofIn2" accept="image/*" class="sr"></div>`
+      : `<div class="tile" style="display:flex;gap:12px;align-items:center"><span class="icon-sq" style="background:var(--warn,#C77700)">${icon("clock")}</span>
+          <div><b style="font-size:14px">Bukti bayaran dihantar</b><div class="sub">Menunggu staf sahkan bayaran DuitNow anda.</div></div></div>`) : ""}
     ${st!=="cancelled" ? `<div class="tile red ord-active" style="margin:0"><span class="ic">${icon("sparkle")}</span>
       <span class="tx"><b>+${fmt(o.earn)} point${o.stamps?` · +${o.stamps} cap`:""}</b><small>${o.credited?"Telah dikreditkan ke akaun anda":"Dikreditkan automatik bila pesanan diambil"}</small></span></div>` : ""}
     ${ACTIVE.includes(st)
@@ -1402,7 +1455,7 @@ function simStore(){
   const next = { new:"preparing", preparing:"ready", ready:"done" }[cur.status]; if(!next) return;
   const o = updateOrder(cur.no, x=>{
     x.status = next;
-    if(next==="preparing") x.acceptedAt = Date.now();
+    if(next==="preparing"){ x.acceptedAt = Date.now(); if(x.pay==="duitnow"&&!x.paid){ x.paid=true; x.payRejected=false; } }
     if(next==="ready") x.readyAt = Date.now();
     if(next==="done"){ x.doneAt = Date.now(); creditOrder(x); }
   });
@@ -1412,6 +1465,8 @@ function orderNotice(o){
   if(!o) return;
   if(o.paid && seenPaid[o.no]===false && o.status!=="done"){ seenPaid[o.no]=true; if(seenStatus[o.no]===o.status){ toast(`Bayaran ${o.pay==="duitnow"?"DuitNow":""} untuk ${o.no} disahkan`); return; } }
   seenPaid[o.no] = !!o.paid;
+  if(o.payRejected && seenRej[o.no]===false){ seenRej[o.no]=true; toast(`Bukti bayaran ${o.no} ditolak. Sila hantar semula atau bayar di kaunter.`); if(navigator.vibrate) navigator.vibrate([80,60,80]); return; }
+  seenRej[o.no] = !!o.payRejected;
   if(seenStatus[o.no]===o.status) return;
   seenStatus[o.no] = o.status;
   const msg = {
@@ -1459,7 +1514,7 @@ function orderClick(e){
   if((el=q("[data-pickup]"))){ O.pickupMode=el.dataset.pickup; renderCart(); return true; }
   return false;
 }
-document.addEventListener("change", e=>{ if(e.target.id==="slotSel") O.pickupAt = +e.target.value; });
+document.addEventListener("change", e=>{ if(e.target.id==="slotSel") O.pickupAt = +e.target.value; if(e.target.id==="proofIn"||e.target.id==="proofIn2") onProofPicked(e.target); });
 setInterval(()=>{ const s=document.body.dataset.screen; if(s==="track") renderTrack(); else if(s==="order"||s==="home") renderOrder(); }, 30000);
 
 /* Delegasi klik */
@@ -1537,7 +1592,7 @@ function endSplash(){
 /* INIT */
 $$("img.wm").forEach(i=>{ if(!i.src) i.src=WORDMARK; });
 hydrateIcons();
-applyShared(); load(); save(); publishMenu(); myOrders().forEach(o=>{ seenStatus[o.no]=o.status; seenPaid[o.no]=!!o.paid; }); render(); net();
+applyShared(); load(); save(); publishMenu(); myOrders().forEach(o=>{ seenStatus[o.no]=o.status; seenPaid[o.no]=!!o.paid; seenRej[o.no]=!!o.payRejected; }); render(); net();
 go((location.hash||"#home").slice(1).replace(/[^a-z]/g,"") || "home");
 if(!$(".screen.active")) go("home");
 const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;

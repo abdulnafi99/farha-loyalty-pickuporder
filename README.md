@@ -17,14 +17,14 @@ Ditulis sepenuhnya dalam **HTML, CSS dan JavaScript vanilla**, dalam satu fail `
 Pelanggan boleh order terus dari app dan ambil di kaunter, macam app kopi berantai.
 - **Tab Order** dalam bottom nav: pilih cawangan, kategori menu (Popular, Kopi, Bukan Kopi, Teh, Pastri) dan item.
 - **Pilih minuman**: suhu, saiz, kemanisan, tambahan (extra shot, susu oat), nota untuk barista dan kuantiti.
-- **Troli & bayar**: ambil secepat mungkin atau jadualkan masa, edit kuantiti, **guna ganjaran loyalti semasa checkout** (Diskaun RM5, Minuman Percuma), pilih cara bayar: **Tunai di kaunter** atau **QR DuitNow** (pelanggan imbas QR kedai, tekan "Saya dah bayar", staf sahkan di admin).
+- **Troli & bayar**: ambil secepat mungkin atau jadualkan masa, edit kuantiti, **guna ganjaran loyalti semasa checkout** (Diskaun RM5, Minuman Percuma), pilih cara bayar: **Tunai di kaunter** atau **QR DuitNow** (pelanggan imbas QR kedai, bayar, kemudian **wajib muat naik screenshot resit** sebelum pesanan dihantar).
 - **Status pesanan**: nombor pesanan, bar progres (Dihantar → Disediakan → Siap diambil), anggaran masa siap, kod QR pickup dan notifikasi bila pesanan siap.
 - Order dalam app dapat **2× point** (boleh ubah). Point & cap dikreditkan bila staf tandakan pesanan "Sudah diambil".
 
 **Admin → Pesanan** (`admin.html`):
 - Papan 3 lajur: **Baru → Sedang disediakan → Siap diambil**, dengan bunyi "ding" dan lencana bila pesanan baru masuk.
 - Butang Terima / Tolak / Tanda siap / Sudah diambil. Tolak pesanan akan memulangkan point ganjaran yang digunakan.
-- Pesanan DuitNow ditanda **"semak bayaran"** sehingga staf tekan **Sahkan bayaran DuitNow** (semak duit masuk dalam app bank kedai). Pesanan tunai: tekan **Terima tunai & serah** bila pelanggan ambil.
+- Pesanan DuitNow ditanda **"semak bukti"**. Staf buka pesanan, lihat gambar bukti, semak duit masuk dalam app bank kedai, kemudian tekan **Sahkan bayaran** atau **Bukti tidak sah** (pelanggan diminta hantar bukti baru atau bayar di kaunter). Pesanan tunai: tekan **Terima tunai & serah** bila pelanggan ambil.
 - Suis **Terima pesanan** (tutup sementara bila sibuk), dan **Menu & stok** untuk tanda item habis.
 - Di **Kaunter**, imbas QR pesanan atau taip no. pesanan (cth. `F-101`) untuk buka pesanan.
 - **Tetapan**: anggaran masa sediakan dan gandaan point order app.

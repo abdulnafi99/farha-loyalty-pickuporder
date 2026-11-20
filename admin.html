@@ -814,9 +814,11 @@ const hmA = ts => new Date(ts).toLocaleTimeString("ms-MY",{hour:"numeric",minute
 const freshNos = new Set();
 let knownNos = new Set();
 function orderDue(o){ let end=(o.acceptedAt||o.ts)+(o.prep||SETTINGS.prepMins)*60e3; if(o.pickupAt&&o.pickupAt>end) end=o.pickupAt; return end; }
-function orderActs(o){
+function orderActs(o, inSheet){
   const id = esc(o.no);
-  const verify = needsPayCheck(o) ? `<button class="btn sm" style="background:var(--warn)" data-action="ordPaid" data-no="${id}">${icon("check","width:16px;height:16px")}Sahkan bayaran DuitNow</button></div><div class="row" style="margin-top:8px">` : "";
+  const verify = !needsPayCheck(o) ? "" : inSheet
+    ? `<button class="btn ghost sm" data-action="ordReject" data-no="${id}">${icon("x","width:16px;height:16px")}Bukti tidak sah</button><button class="btn sm" style="background:var(--ok)" data-action="ordPaid" data-no="${id}">${icon("check","width:16px;height:16px")}Sahkan bayaran</button></div><div class="row" style="margin-top:8px">`
+    : `<button class="btn sm" style="background:var(--warn)" data-action="ordProof" data-no="${id}">${icon("search","width:16px;height:16px")}${o.payRejected?"Bukti ditolak · lihat":"Semak bukti DuitNow"}</button></div><div class="row" style="margin-top:8px">`;
   return verify + {
     new:`<button class="btn ghost sm" data-action="ordCancel" data-no="${esc(o.no)}">Tolak</button><button class="btn red sm" data-action="ordSet" data-no="${esc(o.no)}" data-st="preparing">${icon("check","width:16px;height:16px")}Terima &amp; sediakan</button>`,
     preparing:`<button class="btn red sm" data-action="ordSet" data-no="${esc(o.no)}" data-st="ready">${icon("bell","width:16px;height:16px")}Tanda siap</button>`,
@@ -824,10 +826,17 @@ function orderActs(o){
   }[o.status] || "";
 }
 const orderItems = o => o.items.map(i=>`<li><b>${i.qty}×</b> ${esc(i.name)}${i.opts?.length?`<span>${esc(i.opts.join(" · "))}</span>`:""}</li>`).join("");
-const payBadge = o => `<span class="badge" ${o.paid?'style="background:rgba(20,164,77,.12);color:var(--ok)"':'style="background:rgba(199,119,0,.12);color:var(--warn)"'}>${o.paid?`Dibayar · ${PAY_TXT[o.pay]||""}`:o.pay==="duitnow"?"DuitNow · semak bayaran":"Tunai · bayar di kaunter"}</span>`;
+const payBadge = o => `<span class="badge" ${o.paid?'style="background:rgba(20,164,77,.12);color:var(--ok)"':'style="background:rgba(199,119,0,.12);color:var(--warn)"'}>${o.paid?`Dibayar · ${PAY_TXT[o.pay]||""}`:o.pay==="duitnow"?(o.payRejected?"DuitNow · bukti ditolak":"DuitNow · semak bukti"):"Tunai · bayar di kaunter"}</span>`;
+const proofOf = no => { try{ return localStorage.getItem("farha-proof-"+no); }catch(e){ return null; } };
+function rejectProof(no){
+  if(!confirm(`Tolak bukti bayaran ${no}? Pelanggan akan diminta hantar semula atau bayar di kaunter.`)) return;
+  const list = readOrders(), o = list.find(x=>x.no===no); if(!o) return;
+  o.payRejected = true; o.rejectedAt = Date.now(); writeOrders(list);
+  toast(`Bukti ${no} ditolak · pelanggan dimaklumkan`); closeSheet(); renderOrders();
+}
 function markPaid(no){
   const list = readOrders(), o = list.find(x=>x.no===no); if(!o) return;
-  o.paid = true; o.paidAt = Date.now(); writeOrders(list);
+  o.paid = true; o.paidAt = Date.now(); o.payRejected = false; writeOrders(list);
   toast(`Bayaran DuitNow ${no} disahkan`); closeSheet(); renderOrders();
 }
 function orderCard(o){
@@ -890,7 +899,10 @@ function openOrder(no){
       <div class="feed-row"><div class="t"><b>Jumlah</b></div><span class="mono"><b>${rm(o.total)}</b></span></div>
     </div>
     <div class="tile warm" style="margin-bottom:14px;font-size:13px">Ganjaran ahli: <b class="mono">+${fmt(o.earn)}</b> point · <b class="mono">+${o.stamps||0}</b> cap ${o.credited?"(telah dikreditkan)":o.status==="cancelled"?"(tidak dikreditkan)":"(dikreditkan bila diambil)"}</div>
-    <div class="row">${orderActs(o)}</div>`);
+    ${o.pay==="duitnow" ? `<div class="tile" style="margin-bottom:14px"><h3>Bukti bayaran DuitNow <small>${o.proofAt?`dihantar ${ago(o.proofAt)}`:""}</small></h3>
+      ${proofOf(o.no) ? `<img src="${proofOf(o.no)}" alt="Bukti bayaran ${esc(o.no)}" style="display:block;width:100%;border-radius:14px;border:1px solid var(--line)">` : `<div class="empty">Tiada bukti dimuat naik</div>`}
+      <p class="note" style="margin:10px 0 0">Semak nama, jumlah <b class="mono">${rm(o.total)}</b> dan masa dalam app bank kedai sebelum sahkan.</p></div>` : ""}
+    <div class="row">${orderActs(o, true)}</div>`);
 }
 function setOrderStatus(no, st){
   const list = readOrders(), o = list.find(x=>x.no===no); if(!o) return;
@@ -1116,7 +1128,7 @@ document.addEventListener("click",e=>{
     exportCSV, newReward:()=>editReward(""), editReward:()=>editReward(d.r), saveReward:()=>saveReward(d.r),
     deleteReward:()=>deleteReward(d.r), toggleReward:()=>toggleReward(d.r),
     saveSettings, resetDemo,
-    ordSet:()=>setOrderStatus(d.no,d.st), ordPaid:()=>markPaid(d.no), ordCancel:()=>cancelOrder(d.no), toggleOpen, toggleStock:()=>toggleStock(d.id),
+    ordSet:()=>setOrderStatus(d.no,d.st), ordPaid:()=>markPaid(d.no), ordProof:()=>openOrder(d.no), ordReject:()=>rejectProof(d.no), ordCancel:()=>cancelOrder(d.no), toggleOpen, toggleStock:()=>toggleStock(d.id),
     logout:()=>{sessionStorage.removeItem("farha-admin-auth");location.reload();},
   })[d.action]?.();
 });
