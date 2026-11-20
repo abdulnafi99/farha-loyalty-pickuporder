@@ -64,6 +64,11 @@ Ubah menu, harga (harga dalam template ialah contoh), cawangan dan pilihan minum
 - Bila ditekan, banner boleh: buka **item istimewa** (terus ke halaman item), buka **kategori**, buka **menu Order**, atau tiada tindakan (banner sahaja).
 - Gambar dimampatkan secara automatik. Saiz disyorkan: landskap, cth. 1200×600. Jika gambar sudah ada tulisan, kosongkan tajuk.
 
+## Backup & eksport data
+- **Admin → Tetapan → Backup & eksport data**: muat turun semua data app dalam pelayar ini sebagai fail `.json` (pilihan: dengan / tanpa gambar), **Kongsi fail** (telefon), dan **Pulihkan dari fail**.
+- **App pelanggan → Profil → Backup data app**: muat turun / kongsi fail yang sama (berguna jika belum boleh masuk admin).
+- Password tidak dieksport. Fail mengandungi nama & no. telefon pelanggan — kongsi dengan berhati-hati.
+
 ## Notifikasi push
 - **Pelanggan**: notifikasi bila pesanan diterima, siap, selesai, dibatalkan, bayaran DuitNow disahkan atau bukti ditolak. Hidupkan dari skrin status pesanan atau Profil → Notifikasi push.
 - **Admin**: notifikasi bila pesanan baru masuk atau pelanggan hantar semula bukti DuitNow. Tekan **Hidupkan notifikasi** di skrin Pesanan.
