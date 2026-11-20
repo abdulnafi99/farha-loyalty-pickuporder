@@ -1784,7 +1784,63 @@ async function fbInit(){
   await loadScript(base+"firebase-auth-compat.js");
   if(!firebase.apps.length) firebase.initializeApp(CONFIG.firebase);
   FB.auth = firebase.auth();
+  // Realtime Database (segerak menu, promosi, tetapan, ganjaran)
+  try{ await loadScript(base+"firebase-database-compat.js"); FB.db = firebase.database(); }catch(e){ FB.db = null; }
+  startShopSync(false);
 }
+/* =========================================================
+   SEGERAK REALTIME DATABASE (langkah 1): menu, promosi, tetapan, ganjaran
+   Laluan: /shop/{menu|promos|settings|rewards} = { data:"<JSON>", updatedAt, by }
+   - Semua peranti membaca (dan dikemas kini secara langsung).
+   - Hanya admin menulis (lihat database.rules.json).
+   Data disimpan sebagai rentetan JSON supaya senarai kosong & nama pilihan
+   (cth. "100%", "No. 1") kekal tepat.
+   ========================================================= */
+const SHOP_SYNC = { "farha-menu-v1":"menu", "farha-promos-v1":"promos", "farha-settings-v1":"settings", "farha-rewards-v1":"rewards" };
+const SYNC = { remote:false, canWrite:false, started:false, timers:{}, email:"", state:"off", err:"" };
+function syncStatus(state, err){
+  SYNC.state = state; SYNC.err = err ? (err.code || err.message || String(err)) : "";
+  if(typeof onSyncStatus === "function") onSyncStatus(state, SYNC.err);
+}
+function applyRemote(key, json){
+  if(localStorage.getItem(key) === json) return;
+  SYNC.remote = true;
+  try{ localStorage.setItem(key, json); }catch(e){}
+  SYNC.remote = false;
+  dispatchEvent(new StorageEvent("storage", { key, newValue:json, storageArea:localStorage }));
+}
+function shopPayload(key){ return { data:localStorage.getItem(key), updatedAt:firebase.database.ServerValue.TIMESTAMP, by:SYNC.email || "admin" }; }
+function pushShop(key){
+  if(!SYNC.canWrite || !FB.db) return;
+  clearTimeout(SYNC.timers[key]);
+  SYNC.timers[key] = setTimeout(()=>{
+    if(localStorage.getItem(key) == null) return;
+    syncStatus("saving");
+    FB.db.ref("shop/"+SHOP_SYNC[key]).set(shopPayload(key)).then(()=>syncStatus("ok")).catch(e=>syncStatus("err", e));
+  }, 400);
+}
+async function startShopSync(canWrite, email){
+  if(SYNC.started || !FB.db) return;
+  SYNC.started = true; SYNC.email = email || "";
+  const keys = Object.keys(SHOP_SYNC);
+  syncStatus("loading");
+  if(canWrite){
+    // Kali pertama: jika server masih kosong, muat naik data dari pelayar admin ini.
+    for(const k of keys){
+      try{
+        const v = (await FB.db.ref("shop/"+SHOP_SYNC[k]).get()).val();
+        if(v && typeof v.data === "string") applyRemote(k, v.data);
+        else if(localStorage.getItem(k) != null) await FB.db.ref("shop/"+SHOP_SYNC[k]).set(shopPayload(k));
+      }catch(e){ syncStatus("err", e); }
+    }
+    SYNC.canWrite = SYNC.state !== "err";
+  }
+  keys.forEach(k=>FB.db.ref("shop/"+SHOP_SYNC[k]).on("value",
+    s=>{ const v = s.val(); if(v && typeof v.data === "string") applyRemote(k, v.data); if(SYNC.state!=="err") syncStatus("ok"); },
+    e=>syncStatus("err", e)));
+}
+
+
 function authMsg(x){
   const c = x && x.code || "";
   if(/invalid-credential|wrong-password|user-not-found|invalid-login/.test(c)) return "No. telefon atau password salah.";

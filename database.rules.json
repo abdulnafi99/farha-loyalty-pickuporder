@@ -1,0 +1,11 @@
+{
+  "rules": {
+    "shop": {
+      ".read": true,
+      "$node": {
+        ".write": "auth != null && auth.token.email === 'admin@farha.app'",
+        ".validate": "newData.hasChildren(['data', 'updatedAt']) && newData.child('data').isString() && newData.child('data').val().length < 9000000"
+      }
+    }
+  }
+}
