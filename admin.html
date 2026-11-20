@@ -1932,19 +1932,12 @@ function hrSlots(cfg, now=Date.now()){
   }
   return out;
 }
-function hrDayLabel(ts, now=Date.now()){
-  const a = new Date(now); a.setHours(0,0,0,0); const b = new Date(ts); b.setHours(0,0,0,0);
-  const diff = Math.round((b-a)/864e5), day = HR_DAYS[new Date(ts).getDay()];
-  return diff===0 ? "Hari ini" : diff===1 ? `Esok · ${day}` : day;
-}
-const hrIsPre = (ts, now=Date.now()) => !!ts && new Date(ts).toDateString() !== new Date(now).toDateString();
+/* Pre-order = masa ambil di luar waktu buka semasa (betul juga untuk kedai buka lepas tengah malam) */
+const hrIsPre = (ts, cfg, now=Date.now()) => { if(!ts) return false; const cur = hrWindows(cfg, now).find(([s,e])=>now>=s && now<e); return !(cur && ts <= cur[1]); };
 function hrWhen(ts, now=Date.now()){
   const a = new Date(now); a.setHours(0,0,0,0); const b = new Date(ts); b.setHours(0,0,0,0);
   const diff = Math.round((b-a)/864e5);
   return (diff===0 ? "" : diff===1 ? "esok " : HR_DAYS[new Date(ts).getDay()]+" ") + hrTime(ts);
-}
-function hrWeekText(cfg){
-  return [1,2,3,4,5,6,0].map(d=>{ const h=(cfg.hours||{})[d]; return { day:HR_DAYS[d], txt: !h || h.closed ? "Tutup" : `${hrTime(new Date(`2000-01-01T${h.open}`))} – ${hrTime(new Date(`2000-01-01T${h.close}`))}` }; });
 }
 /* ---------- Admin → Waktu Pickup ---------- */
 const admCfg = () => ({ open:SETTINGS.orderOpen!==false, hours:SETTINGS.hours, prepMins:SETTINGS.prepMins||10, slotMins:SETTINGS.slotMins||15, maxAheadMins:SETTINGS.maxAheadMins||120, allowSchedule:SETTINGS.allowSchedule!==false, preorder:SETTINGS.preorder!==false });
@@ -1969,7 +1962,7 @@ function renderHoursPreview(fromForm=true){
   const cfg = fromForm ? { ...admCfg(), ...readHoursForm() } : admCfg(), hs = hrState(cfg), sl = hrSlots(cfg);
   const status = !cfg.open ? "Pesanan app ditutup (suis Terima pesanan)" : hs.asap ? `Buka sekarang · tutup ${hrTime(hs.closeAt)}` : hs.inHours ? `Hampir tutup (${hrTime(hs.closeAt)}) · pesanan segera tidak diterima` : `Tutup sekarang · buka ${hs.nextOpen?hrWhen(hs.nextOpen):"—"}`;
   $("#hrNow").textContent = status;
-  $("#hrPreview").innerHTML = `<b>Pelanggan nampak sekarang:</b> ${esc(status)}<br><b>Slot jadual:</b> ${sl.length ? esc(sl.slice(0,8).map(t=>hrWhen(t)).join(", ")) + (sl.length>8?` … hingga ${hrWhen(sl[sl.length-1])} (${sl.length} slot)`:"") + (sl.some(t=>hrIsPre(t))?" · <b>pre-order dibuka</b>":"") : (cfg.allowSchedule ? "Tiada slot dalam tempoh ini" : "Jadual dimatikan")}${fromForm?'<br><span class="note">Belum disimpan</span>':""}`;
+  $("#hrPreview").innerHTML = `<b>Pelanggan nampak sekarang:</b> ${esc(status)}<br><b>Slot jadual:</b> ${sl.length ? esc(sl.slice(0,8).map(t=>hrWhen(t)).join(", ")) + (sl.length>8?` … hingga ${hrWhen(sl[sl.length-1])} (${sl.length} slot)`:"") + (sl.some(t=>hrIsPre(t, cfg))?" · <b>pre-order dibuka</b>":"") : (cfg.allowSchedule ? "Tiada slot dalam tempoh ini" : "Jadual dimatikan")}${fromForm?'<br><span class="note">Belum disimpan</span>':""}`;
 }
 function saveHours(){
   const f = readHoursForm();

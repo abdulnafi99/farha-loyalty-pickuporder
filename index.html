@@ -1391,7 +1391,7 @@ function statusPill(o){
   return `<span class="pill-st ${cls}">${{new:"Dihantar",preparing:"Disediakan",ready:"Siap",done:"Selesai",cancelled:"Batal"}[o.status]}</span>`;
 }
 function activeTile(o){
-  const eta = etaMin(o);
+  const eta = o.pickupAt && etaMin(o) > 90 ? null : etaMin(o);
   return `<button class="tile red ord-active press" data-track="${esc(o.no)}" style="width:100%;text-align:left">
     <span class="ic">${icon("bag")}</span>
     <span class="tx"><b>Pesanan ${esc(o.no)}</b><small>${STATUS_TXT[o.status]}${eta?` · siap ~${eta} min`:""}${o.pickupAt&&o.status!=="ready"?` · ${o.preorder?"pre-order, ":""}ambil ${hrWhen(o.pickupAt)}`:""}</small></span>
@@ -1537,7 +1537,6 @@ function totals(){
 /* ---------- Waktu operasi & slot pickup (dikongsi admin.html & index.html) ----------
    hours[0..6] (0 = Ahad) = { open:"08:00", close:"22:00", closed:false }. Tutup <= buka bermaksud hingga lepas tengah malam. */
 const HR_DAYS = ["Ahad","Isnin","Selasa","Rabu","Khamis","Jumaat","Sabtu"];
-const HR_DEFAULT = () => Object.fromEntries([0,1,2,3,4,5,6].map(d=>[d, { open:"08:00", close:"22:00", closed:false }]));
 function hrTime(ts){ return new Date(ts).toLocaleTimeString("ms-MY",{ hour:"numeric", minute:"2-digit" }); }
 function hrWindows(cfg, from){
   const out = [], base = new Date(from); base.setHours(0,0,0,0);
@@ -1579,7 +1578,8 @@ function hrDayLabel(ts, now=Date.now()){
   const diff = Math.round((b-a)/864e5), day = HR_DAYS[new Date(ts).getDay()];
   return diff===0 ? "Hari ini" : diff===1 ? `Esok · ${day}` : day;
 }
-const hrIsPre = (ts, now=Date.now()) => !!ts && new Date(ts).toDateString() !== new Date(now).toDateString();
+/* Pre-order = masa ambil di luar waktu buka semasa (betul juga untuk kedai buka lepas tengah malam) */
+const hrIsPre = (ts, cfg, now=Date.now()) => { if(!ts) return false; const cur = hrWindows(cfg, now).find(([s,e])=>now>=s && now<e); return !(cur && ts <= cur[1]); };
 function hrWhen(ts, now=Date.now()){
   const a = new Date(now); a.setHours(0,0,0,0); const b = new Date(ts); b.setHours(0,0,0,0);
   const diff = Math.round((b-a)/864e5);
@@ -1594,7 +1594,7 @@ function shopStatusText(){
   const hs = hrState(shopCfg()), can = slots().length > 0, p = CONFIG.order.prepMins;
   if(!SHOP.open) return { ok:false, txt:"Tidak terima pesanan buat masa ini" };
   if(hs.asap) return { ok:true, txt:`Buka · siap dalam ~${p} min · tutup ${hrTime(hs.closeAt)}` };
-  const pre = can && slots().some(t=>hrIsPre(t));
+  const pre = can && slots().some(t=>hrIsPre(t, shopCfg()));
   if(hs.inHours) return { ok:false, txt:`Hampir tutup (${hrTime(hs.closeAt)})${pre?" · boleh pre-order":can?" · boleh jadualkan":""}` };
   return { ok:false, txt:`Tutup · buka ${hs.nextOpen?hrWhen(hs.nextOpen):"—"}${pre?" · boleh pre-order":can?" · boleh jadualkan":""}` };
 }
@@ -1620,10 +1620,10 @@ function renderCart(){
         <span class="tx"><small>Pickup di</small><b>${esc(CONFIG.store.name)}</b></span><button class="link" data-action="storeInfo">Info</button></div>
       <div class="opts" style="margin-top:12px;grid-template-columns:1fr 1fr">
         <button class="opt ${O.pickupMode==="asap"?"on":""}" data-pickup="asap" aria-pressed="${O.pickupMode==="asap"}" ${hs.asap?"":"disabled"}>Secepat mungkin<small>${hs.asap?`Siap ~${CONFIG.order.prepMins} min`:"Tidak tersedia sekarang"}</small></button>
-        ${schedOn?`<button class="opt ${O.pickupMode==="later"?"on":""}" data-pickup="later" aria-pressed="${O.pickupMode==="later"}" ${sl.length?"":"disabled"}>${!hs.asap&&sl.length&&hrIsPre(sl[0])?"Pre-order":"Jadualkan"}<small>${!sl.length?"Tiada slot":hs.asap?"Pilih masa ambil":`Seawal ${hrWhen(sl[0])}`}</small></button>`:""}
+        ${schedOn?`<button class="opt ${O.pickupMode==="later"?"on":""}" data-pickup="later" aria-pressed="${O.pickupMode==="later"}" ${sl.length?"":"disabled"}>${!hs.asap&&sl.length&&hrIsPre(sl[0], shopCfg())?"Pre-order":"Jadualkan"}<small>${!sl.length?"Tiada slot":hs.asap?"Pilih masa ambil":`Seawal ${hrWhen(sl[0])}`}</small></button>`:""}
       </div>
       ${O.pickupMode==="later"?`<label class="sr" for="slotSel">Masa ambil</label><select class="input" id="slotSel" style="margin:10px 0 0">${slotOpts(sl)}</select>
-        ${hrIsPre(O.pickupAt)?`<p class="pre-note">${icon("clock","width:15px;height:15px")}<span><b>Pre-order untuk ${esc(hrWhen(O.pickupAt))}.</b> Kedai akan sediakan pesanan anda bila buka. Simpan nombor pesanan untuk ambil nanti.</span></p>`:""}`:""}
+        ${hrIsPre(O.pickupAt, shopCfg())?`<p class="pre-note">${icon("clock","width:15px;height:15px")}<span><b>Pre-order untuk ${esc(hrWhen(O.pickupAt))}.</b> Kedai akan sediakan pesanan anda bila buka. Simpan nombor pesanan untuk ambil nanti.</span></p>`:""}`:""}
     </div>
     <div class="card" style="padding:2px 14px">
       ${CART.map((l,i)=>`<div class="cl"><span class="thumb ${l.tone||""}">${thumbInner(menuItem(l.id)||l)}</span><div class="tx">
@@ -1651,7 +1651,7 @@ function renderCart(){
   $("#payTotal").textContent = money(t.total);
   const canOrder = (O.pickupMode==="asap" && hs.asap) || (O.pickupMode==="later" && sl.includes(O.pickupAt));
   btn.disabled = !canOrder || O.paying;
-  btn.textContent = !SHOP.open ? "Kedai tidak terima pesanan" : !canOrder ? (hs.nextOpen ? `Kedai tutup · buka ${hrWhen(hs.nextOpen)}` : "Kedai tutup") : O.paying ? "Memproses…" : O.pay==="duitnow" ? "Bayar dengan DuitNow" : (O.pickupMode==="later" && hrIsPre(O.pickupAt)) ? "Hantar pre-order" : "Hantar pesanan";
+  btn.textContent = !SHOP.open ? "Kedai tidak terima pesanan" : !canOrder ? (hs.nextOpen ? `Kedai tutup · buka ${hrWhen(hs.nextOpen)}` : "Kedai tutup") : O.paying ? "Memproses…" : O.pay==="duitnow" ? "Bayar dengan DuitNow" : (O.pickupMode==="later" && hrIsPre(O.pickupAt, shopCfg())) ? "Hantar pre-order" : "Hantar pesanan";
 }
 function duitnowSheet(){
   const t = totals(), q = CONFIG.order;
@@ -1708,7 +1708,7 @@ function placeOrder(confirmed){
       items:CART.map(l=>({ name:l.name, opts:l.opts, qty:l.qty, unit:l.unit, stamp:l.stamp })),
       subtotal:t.subtotal, discount:t.discount, total:t.total,
       perk:t.perk ? { id:t.perk.r.id, name:t.perk.r.name, pts:t.perk.r.pts } : null,
-      pay:O.pay, paid:false, payClaimed:needProof, proofAt:needProof?Date.now():null, payRejected:false, pickupAt:O.pickupMode==="later"?O.pickupAt:null, preorder:O.pickupMode==="later" && hrIsPre(O.pickupAt), prep:CONFIG.order.prepMins,
+      pay:O.pay, paid:false, payClaimed:needProof, proofAt:needProof?Date.now():null, payRejected:false, pickupAt:O.pickupMode==="later"?O.pickupAt:null, preorder:O.pickupMode==="later" && hrIsPre(O.pickupAt, shopCfg()), prep:CONFIG.order.prepMins,
       qty:t.qty, earn:t.earn, stamps:t.drinks, status:"new", credited:false,
     };
     list.unshift(o); writeOrders(list);
@@ -1728,7 +1728,7 @@ function renderTrack(){
   O.viewing = o.no;
   const st = o.status, idx = { new:0, preparing:1, ready:2, done:3, cancelled:-1 }[st];
   $("#t-head").textContent = st==="cancelled" ? "Pesanan dibatalkan" : o.paid ? "Pesanan dibayar" : o.pay==="duitnow" ? "Bayaran sedang disemak" : "Bayar tunai di kaunter";
-  const right = st==="preparing" ? ["Siap dalam", `~${etaMin(o)} min`] : ["Status", { new:"Menunggu", ready:"Sedia!", done:"Selesai", cancelled:"Batal" }[st]];
+  const right = st==="preparing" ? (etaMin(o) > 90 && o.pickupAt ? ["Ambil", hrWhen(o.pickupAt)] : ["Siap dalam", `~${etaMin(o)} min`]) : ["Status", { new:"Menunggu", ready:"Sedia!", done:"Selesai", cancelled:"Batal" }[st]];
   const seg = [idx>=1?"on":idx===0?"run":"", idx>=2?"on":idx===1?"run":"", idx>=2?"on":""];
   box.innerHTML = `<div class="trk">
     <div class="tile dark">
@@ -1928,15 +1928,6 @@ function applyRemote(key, json){
   dispatchEvent(new StorageEvent("storage", { key, newValue:json, storageArea:localStorage }));
 }
 function shopPayload(key){ return { data:localStorage.getItem(key), updatedAt:firebase.database.ServerValue.TIMESTAMP, by:SYNC.email || "admin" }; }
-function pushShop(key){
-  if(!SYNC.canWrite || !FB.db) return;
-  clearTimeout(SYNC.timers[key]);
-  SYNC.timers[key] = setTimeout(()=>{
-    if(localStorage.getItem(key) == null) return;
-    syncStatus("saving");
-    FB.db.ref("shop/"+SHOP_SYNC[key]).set(shopPayload(key)).then(()=>syncStatus("ok")).catch(e=>syncStatus("err", e));
-  }, 400);
-}
 async function startShopSync(canWrite, email){
   if(SYNC.started || !FB.db) return;
   SYNC.started = true; SYNC.email = email || "";
@@ -2472,7 +2463,6 @@ document.addEventListener("click", e=>{
     storeInfo, addItem, placeOrder, simStore:()=>{ if(!CONFIG.firebase) simStore(); }, enableNotif,
     backup:backupMenu, backupDownload:()=>{ const f=downloadBackup(true); closeSheet(); toast(`${f.name} dimuat turun`); },
     backupShare:async()=>{ try{ await shareBackup(true); closeSheet(); }catch(e){ if(e && e.name!=="AbortError") toast(e.message||"Tidak dapat kongsi"); } }, duitnowPaid:()=>placeOrder(true),
-    delivery:()=>toast("Delivery akan datang. Buat masa ini pickup sahaja."),
     logout:()=>confirmBox("Log keluar?","Anda perlu log masuk semula dengan no. telefon dan password.","doLogout","Log keluar"),
     doLogout:()=>{ closeSheet(); authLogout(); },
     reset:()=>confirmBox("Set semula data?","Semua point, cap dan sejarah akan kembali ke data demo.","doReset","Set semula"),
