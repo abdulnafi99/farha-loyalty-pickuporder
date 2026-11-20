@@ -465,6 +465,9 @@ body[data-screen="cart"] .paybar{display:flex}
 .auth-err.info{color:var(--ink-2)}
 .auth .link{display:block;margin:14px auto 0;padding:6px}
 .auth .demo-note{margin-top:12px}
+.auth-admin{display:flex;align-items:center;justify-content:center;gap:8px;width:max-content;max-width:calc(100% - 32px);margin:0 auto calc(24px + var(--safe-b));padding:12px 18px;border-radius:999px;font-size:13px;color:var(--ink-2);text-decoration:none;background:rgba(255,255,255,.7);border:1px solid rgba(191,3,17,.12)}
+.auth-admin b{color:var(--brand)}
+.auth-admin svg.i{width:18px;height:18px}
 
 /* ---------- Toast ---------- */
 .toast{position:fixed;left:50%;top:calc(16px + var(--safe-t));z-index:60;transform:translate(-50%,-140%);opacity:0;visibility:hidden;transition:transform .45s cubic-bezier(.2,.9,.2,1),opacity .3s,visibility 0s .45s;background:var(--brand-deep);color:#fff;padding:12px 18px;border-radius:16px;font-size:13.5px;font-weight:600;box-shadow:0 10px 30px -10px rgba(60,0,8,.6);max-width:90vw;display:flex;gap:10px;align-items:center}
@@ -568,6 +571,7 @@ body[data-screen="cart"] .paybar{display:flex}
     </form>
     <p class="demo-note" id="aDemo">Akaun demo: <b class="mono">012-345 6789</b> · password <b class="mono">demo123</b></p>
   </div>
+  <a class="auth-admin" href="admin.html"><svg class="i" data-ic="shield"></svg>Staf / pemilik kedai? <b>Log masuk admin</b></a>
 </div>
 
 <div class="sky"><i></i><i></i><i></i></div>
@@ -899,6 +903,7 @@ const IC = {
   upload:'<path d="M12 15V3M7 8l5-5 5 5M5 21h14"/>',
   eye:'<path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
   eyeOff:'<path d="M3 3l18 18M10.6 5.1A10.4 10.4 0 0 1 12 5c6.4 0 10 7 10 7a17.6 17.6 0 0 1-3.3 4.2M6.6 6.6A17.4 17.4 0 0 0 2 12s3.6 7 10 7a9.7 9.7 0 0 0 5.4-1.6M9.9 9.9a3 3 0 0 0 4.2 4.2"/>',
+  shield:'<path d="M12 3 4 6v6c0 5 3.4 8.3 8 9 4.6-.7 8-4 8-9V6z"/><path d="m9 12 2 2 4-4"/>',
   share:'<path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8M16 6l-4-4-4 4M12 2v13"/>',
 };
 const icon = (n, s) => `<svg class="i" viewBox="0 0 24 24"${s?` style="${s}"`:""}>${IC[n]||""}</svg>`;
