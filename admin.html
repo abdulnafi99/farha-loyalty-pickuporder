@@ -226,6 +226,37 @@ svg.i{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stro
 .toast{position:fixed;left:50%;top:18px;z-index:60;transform:translate(-50%,-140%);opacity:0;visibility:hidden;transition:transform .45s cubic-bezier(.2,.9,.2,1),opacity .3s,visibility 0s .45s;background:var(--brand-deep);color:#fff;padding:12px 18px;border-radius:16px;font-size:13.5px;font-weight:600;box-shadow:0 10px 30px -10px rgba(60,0,8,.6);display:flex;gap:10px;align-items:center;max-width:90vw}
 .toast.show{transform:translate(-50%,0);opacity:1;visibility:visible;transition:transform .45s cubic-bezier(.2,.9,.2,1),opacity .2s}
 
+/* ---------- Pesanan (order pickup) ---------- */
+.nbadge{margin-left:auto;min-width:20px;height:20px;padding:0 6px;border-radius:10px;background:var(--brand);color:#fff;font-size:11px;font-weight:800;display:grid;place-items:center}
+.nav-btn.active .nbadge{background:#fff;color:var(--brand)}
+.mob-nav button{position:relative}
+.mob-nav .nbadge{position:absolute;top:0;right:0;min-width:17px;height:17px;padding:0 4px;font-size:10px;margin:0;box-shadow:0 0 0 2px #fff}
+.open-tg{display:flex;align-items:center;gap:10px;font-size:13px;font-weight:700;background:rgba(255,255,255,.75);border:1px solid var(--glass-line);padding:8px 8px 8px 14px;border-radius:14px}
+.kanban{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;align-items:start}
+.col{border-radius:var(--radius);padding:14px;background:rgba(255,255,255,.38);border:1px solid var(--glass-line);min-height:170px;min-width:0}
+.col>h3{margin:2px 4px 12px;font-size:14px;display:flex;align-items:center;gap:8px}
+.col>h3 i{width:9px;height:9px;border-radius:50%;background:var(--brand)}
+.col>h3 .cnt{margin-left:auto;font-family:var(--mono);font-size:12px;padding:2px 9px;border-radius:99px;background:rgba(191,3,17,.1);color:var(--brand)}
+.col-list{display:flex;flex-direction:column;gap:10px}
+.col-empty{padding:22px 8px;text-align:center;font-size:12.5px;color:var(--ink-2)}
+.oc{padding:14px 16px;cursor:pointer}
+.oc.fresh{animation:ordPulse 1.1s ease-in-out 4;border-color:var(--brand)}
+@keyframes ordPulse{50%{box-shadow:0 0 0 6px rgba(191,3,17,.22)}}
+.oc-h{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.oc-h b{font-family:var(--mono);font-size:20px}
+.oc-who{font-size:12.5px;color:var(--ink-2);margin:2px 0 10px}
+.oc-items{list-style:none;margin:0 0 12px;padding:0;display:flex;flex-direction:column;gap:7px;font-size:13.5px}
+.oc-items b{font-family:var(--mono)}
+.oc-items span{display:block;font-size:11.5px;color:var(--ink-2);margin:1px 0 0 24px}
+.oc-f{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:12px}
+.oc-f .mono{font-weight:700}
+.oc .row .btn,.sheet .row .btn.sm{flex:1}
+.pickup-t{display:inline-flex;align-items:center;gap:4px;font-weight:700;color:var(--warn);vertical-align:-2px}
+.due{font-size:12px;font-weight:700;color:var(--ok)}
+.due.late{color:var(--brand)}
+@media (max-width:1100px){ .kanban{grid-template-columns:1fr 1fr} }
+@media (max-width:900px){ .kanban{grid-template-columns:1fr} .open-tg span{display:none} }
+
 /* ---------- Responsif ---------- */
 @media (max-width:1100px){ .g4{grid-template-columns:repeat(2,1fr)} }
 @media (max-width:900px){
@@ -268,6 +299,7 @@ svg.i{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stro
   <aside class="side">
     <div class="brand"><div class="brand-dot"><img class="wm" alt="farha"></div><div><b>Farha Admin</b><span>Program loyalti</span></div></div>
     <button class="nav-btn active" data-go="overview"><svg class="i" data-ic="chart"></svg>Ringkasan</button>
+    <button class="nav-btn" data-go="orders"><svg class="i" data-ic="bag"></svg>Pesanan<span class="nbadge" data-ordbadge hidden>0</span></button>
     <button class="nav-btn" data-go="counter"><svg class="i" data-ic="scan"></svg>Kaunter</button>
     <button class="nav-btn" data-go="members"><svg class="i" data-ic="users"></svg>Ahli</button>
     <button class="nav-btn" data-go="rewards"><svg class="i" data-ic="gift"></svg>Ganjaran</button>
@@ -307,6 +339,23 @@ svg.i{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stro
       </div>
     </section>
 
+    <!-- ========== PESANAN ========== -->
+    <section class="screen" data-screen="orders">
+      <div class="topbar">
+        <div><small>Pickup dari app pelanggan</small><h1>Pesanan</h1></div>
+        <div class="top-actions"><div class="open-tg"><span id="openLbl">Terima pesanan</span><button class="switch on" data-open-sw data-action="toggleOpen" aria-label="Terima pesanan dari app"></button></div></div>
+      </div>
+      <div class="kanban">
+        <div class="col"><h3><i></i>Baru<span class="cnt" id="cNew">0</span></h3><div class="col-list" id="colNew"></div></div>
+        <div class="col"><h3><i style="background:var(--warn)"></i>Sedang disediakan<span class="cnt" id="cPrep">0</span></h3><div class="col-list" id="colPrep"></div></div>
+        <div class="col"><h3><i style="background:var(--ok)"></i>Siap diambil<span class="cnt" id="cReady">0</span></h3><div class="col-list" id="colReady"></div></div>
+      </div>
+      <div class="grid g2" style="margin-top:14px">
+        <div class="tile"><h3>Selesai hari ini <small id="doneSum">—</small></h3><div class="feed" id="doneList"></div></div>
+        <div class="tile"><h3>Menu &amp; stok <small>Tutup suis bila item habis</small></h3><div class="feed" id="menuList"></div></div>
+      </div>
+    </section>
+
     <!-- ========== KAUNTER ========== -->
     <section class="screen" data-screen="counter">
       <div class="topbar"><div><small>Untuk staf di kaunter</small><h1>Kaunter</h1></div></div>
@@ -316,11 +365,11 @@ svg.i{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stro
             <h3>Cari ahli</h3>
             <div class="scan-box" id="scanBox" hidden><video id="video" playsinline muted></video><div class="frame"></div><div class="laser"></div></div>
             <div class="row" style="margin-bottom:10px">
-              <input class="input mono grow" id="memberIn" placeholder="ID ahli / imbas QR" inputmode="numeric">
+              <input class="input mono grow" id="memberIn" placeholder="ID ahli / no. pesanan">
               <button class="btn" data-action="findMember">Cari</button>
             </div>
             <button class="btn ghost block" id="scanBtn" data-action="scan"><svg class="i" data-ic="camera"></svg>Imbas QR dengan kamera</button>
-            <p class="note" style="margin:12px 0 0">Cuba ID demo <b class="mono">0012 3456 7890</b> (Aisyah, sama dengan app pelanggan).</p>
+            <p class="note" style="margin:12px 0 0">Cuba ID demo <b class="mono">0012 3456 7890</b> (Aisyah, sama dengan app pelanggan). Imbas QR pesanan atau taip no. pesanan (cth. <b class="mono">F-101</b>) untuk buka pesanan.</p>
           </div>
           <div class="tile">
             <h3>Sahkan baucar</h3>
@@ -381,6 +430,14 @@ svg.i{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stro
           <p class="note" style="margin-top:12px">Perubahan terus digunakan oleh app pelanggan dalam pelayar yang sama.</p>
         </div>
         <div class="tile">
+          <h3>Order pickup (app)</h3>
+          <div class="row field" style="justify-content:space-between"><span style="margin:0">Terima pesanan dari app</span><button type="button" class="switch" data-open-sw data-action="toggleOpen" aria-label="Terima pesanan dari app"></button></div>
+          <label class="field"><span>Anggaran masa sediakan (minit)</span><input class="input mono" type="number" min="1" max="120" id="setPrep"></label>
+          <label class="field"><span>Gandaan point untuk order dalam app</span><input class="input mono" type="number" min="1" max="5" id="setMult"></label>
+          <button class="btn red" data-action="saveSettings">Simpan tetapan</button>
+          <p class="note" style="margin-top:12px">Point order = bilangan item × point setiap minuman × gandaan. Cap hanya untuk minuman.</p>
+        </div>
+        <div class="tile">
           <h3>Data demo</h3>
           <p class="note" style="margin-top:0">Semua data dashboard ini adalah data contoh yang disimpan dalam pelayar ini (localStorage). Bila client setuju, data ini akan disambung ke Firebase supaya semua staf dan pelanggan berkongsi data sebenar.</p>
           <div class="row" style="flex-wrap:wrap">
@@ -395,6 +452,7 @@ svg.i{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stro
 
 <nav class="mob-nav" id="mobNav" hidden>
   <button data-go="overview" class="active"><svg class="i" data-ic="chart"></svg><span>Ringkasan</span></button>
+  <button data-go="orders"><svg class="i" data-ic="bag"></svg><span>Pesanan</span><b class="nbadge" data-ordbadge hidden>0</b></button>
   <button data-go="counter"><svg class="i" data-ic="scan"></svg><span>Kaunter</span></button>
   <button data-go="members"><svg class="i" data-ic="users"></svg><span>Ahli</span></button>
   <button data-go="rewards"><svg class="i" data-ic="gift"></svg><span>Ganjaran</span></button>
@@ -418,9 +476,11 @@ const ADMIN = {
     rewards: "farha-rewards-v1",
     settings: "farha-settings-v1",
     vouchers: "farha-vouchers-v1",
+    menu: "farha-menu-v1",          // katalog menu + item habis (ditulis oleh index.html)
+    orders: "farha-orders-v1",      // pesanan pickup dari app
   },
   tiers: [{name:"Silver",min:0},{name:"Gold",min:1000},{name:"Platinum",min:2000}],
-  defaultSettings: { stampTarget: 10, pointsPerPurchase: 20 },
+  defaultSettings: { stampTarget: 10, pointsPerPurchase: 20, prepMins: 10, pointsMultiplier: 2, orderOpen: true },
   defaultRewards: [
     { id:"drink",  name:"Minuman Percuma", desc:"Sebarang minuman saiz biasa", pts:500,  icon:"cup",     featured:true, active:true },
     { id:"pastry", name:"Pastri Percuma",  desc:"Pilihan pastri harian",       pts:400,  icon:"cake",    active:true },
@@ -468,6 +528,9 @@ const IC = {
   tag:'<path d="M12.6 2.6A2 2 0 0 0 11.2 2H4a2 2 0 0 0-2 2v7.2a2 2 0 0 0 .6 1.4l8.7 8.7a2.4 2.4 0 0 0 3.4 0l6.6-6.6a2.4 2.4 0 0 0 0-3.4z"/><circle cx="7.5" cy="7.5" r="1.2"/>',
   sparkle:'<path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M5.6 18.4l2.8-2.8M15.6 8.4l2.8-2.8"/>',
   bean:'<path d="M10 2v2M14 2v2M16 8a1 1 0 0 1 1 1v8a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V9a1 1 0 0 1 1-1h14a4 4 0 1 1 0 8h-1"/>',
+  bag:'<path d="M6 8h12l-1.2 11.2a2 2 0 0 1-2 1.8H9.2a2 2 0 0 1-2-1.8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/>',
+  clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  bell:'<path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.94 1.94 0 0 0 3.4 0"/>',
   ticket:'<path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2zM13 5v2M13 17v2M13 11v2"/>',
 };
 const REWARD_ICONS = ["cup","cake","tag","sparkle","bean","gift","ticket"];
@@ -558,7 +621,7 @@ function custAsMember(){
 const allMembers=()=>[custAsMember(),...DB.members];
 const getMember=id=>allMembers().find(m=>m.id===id);
 function allTx(){
-  const c=CUST.history.map(h=>({ts:h.ts,id:CUST.memberId,k:h.p>0?"buy":(h.p<0||/kad cap|percuma/i.test(h.t))?"redeem":"adjust",t:h.t,p:h.p,n:h.n||(h.p>0?Math.max(1,Math.round(h.p/SETTINGS.pointsPerPurchase)):0)}));
+  const c=CUST.history.map(h=>({ts:h.ts,id:CUST.memberId,k:h.k||(h.p>0?"buy":(h.p<0||/kad cap|percuma/i.test(h.t))?"redeem":"adjust"),t:h.t,p:h.p,n:h.n||(h.p>0?Math.max(1,Math.round(h.p/SETTINGS.pointsPerPurchase)):0)}));
   return [...DB.tx,...c].sort((a,b)=>b.ts-a.ts);
 }
 /* Ubah ahli — tulis ke tempat yang betul */
@@ -566,7 +629,7 @@ function updateMember(id,fn,txEntry){
   if(id===CUST.memberId){
     const m={points:CUST.points,lifetime:CUST.lifetime,stamps:CUST.stamps,redeemed:CUST.redeemed};
     fn(m); Object.assign(CUST,m);
-    if(txEntry) CUST.history.unshift({ts:txEntry.ts,t:txEntry.t,p:txEntry.p,n:txEntry.n});
+    if(txEntry) CUST.history.unshift({ts:txEntry.ts,t:txEntry.t,p:txEntry.p,n:txEntry.n,k:txEntry.k});
     saveCust();
   }else{
     const m=DB.members.find(x=>x.id===id); if(!m) return;
@@ -588,7 +651,7 @@ function go(name){
   history.replaceState(null,"","#"+name);
 }
 function renderScreen(){
-  ({overview:renderOverview,counter:()=>{},members:renderMembers,rewards:renderRewards,settings:renderSettings})[current]?.();
+  ({overview:renderOverview,orders:renderOrders,counter:()=>{},members:renderMembers,rewards:renderRewards,settings:renderSettings})[current]?.();
 }
 
 /* =========================================================
@@ -667,7 +730,10 @@ let rz;addEventListener("resize",()=>{clearTimeout(rz);rz=setTimeout(()=>current
    ========================================================= */
 let counterId=null, qty=1;
 function findMember(raw){
-  const id=cleanId(raw??$("#memberIn").value);
+  const rawS=String(raw??$("#memberIn").value).trim();
+  const om=rawS.match(/ORDER:\s*([A-Z]-?\d+)/i)||rawS.match(/^([A-Z]-?\d{1,6})$/i);
+  if(om){ go("orders"); openOrder(om[1]); return; }
+  const id=cleanId(rawS);
   if(!id){toast("Masukkan ID ahli");return;}
   const m=getMember(id);
   if(!m){toast("Ahli tidak dijumpai");$("#memberIn").classList.add("shake");setTimeout(()=>$("#memberIn").classList.remove("shake"),400);return;}
@@ -732,6 +798,143 @@ function useVoucher(code){
   const list=read(ADMIN.keys.vouchers,[]), v=list.find(x=>x.code===code); if(!v||v.used) return;
   v.used=Date.now(); write(ADMIN.keys.vouchers,list); toast(`Baucar ${code} disahkan`); checkVoucher();
 }
+
+/* =========================================================
+   PESANAN — order pickup dari app pelanggan
+   Aliran: Baru → Sedang disediakan → Siap diambil → Selesai
+   Point & cap dikreditkan kepada ahli bila staf tekan "Sudah diambil".
+   ========================================================= */
+const ORD_LABEL = { new:"Baru", preparing:"Sedang disediakan", ready:"Siap diambil", done:"Selesai", cancelled:"Dibatalkan" };
+const PAY_TXT = { ewallet:"e-Wallet", fpx:"FPX", card:"Kad", counter:"Bayar di kaunter" };
+const readOrders = () => { const v=read(ADMIN.keys.orders,[]); return Array.isArray(v)?v:[]; };
+const writeOrders = l => write(ADMIN.keys.orders, l);
+const rm = n => `RM ${(+n).toFixed(2)}`;
+const hmA = ts => new Date(ts).toLocaleTimeString("ms-MY",{hour:"numeric",minute:"2-digit"});
+const freshNos = new Set();
+let knownNos = new Set();
+function orderDue(o){ let end=(o.acceptedAt||o.ts)+(o.prep||SETTINGS.prepMins)*60e3; if(o.pickupAt&&o.pickupAt>end) end=o.pickupAt; return end; }
+function orderActs(o){
+  return {
+    new:`<button class="btn ghost sm" data-action="ordCancel" data-no="${esc(o.no)}">Tolak</button><button class="btn red sm" data-action="ordSet" data-no="${esc(o.no)}" data-st="preparing">${icon("check","width:16px;height:16px")}Terima &amp; sediakan</button>`,
+    preparing:`<button class="btn red sm" data-action="ordSet" data-no="${esc(o.no)}" data-st="ready">${icon("bell","width:16px;height:16px")}Tanda siap</button>`,
+    ready:`<button class="btn sm" data-action="ordSet" data-no="${esc(o.no)}" data-st="done">${icon("check","width:16px;height:16px")}Sudah diambil</button>`,
+  }[o.status] || "";
+}
+const orderItems = o => o.items.map(i=>`<li><b>${i.qty}×</b> ${esc(i.name)}${i.opts?.length?`<span>${esc(i.opts.join(" · "))}</span>`:""}</li>`).join("");
+const payBadge = o => `<span class="badge" ${o.paid?"":'style="background:rgba(199,119,0,.12);color:var(--warn)"'}>${o.paid?`Dibayar · ${PAY_TXT[o.pay]||""}`:"Belum bayar"}</span>`;
+function orderCard(o){
+  let meta;
+  if(o.status==="preparing"){ const left=Math.round((orderDue(o)-Date.now())/60e3); meta=`<span class="due ${left<0?"late":""}">${left<0?`Lewat ${-left} min`:`Siap dalam ${left} min`}</span>`; }
+  else if(o.status==="ready") meta=`<span class="due">Siap ${ago(o.readyAt||o.ts)}</span>`;
+  else meta=`<span class="note">${ago(o.ts)}</span>`;
+  return `<div class="tile oc ${freshNos.has(o.no)?"fresh":""}" data-order="${esc(o.no)}">
+    <div class="oc-h"><b>${esc(o.no)}</b>${meta}</div>
+    <div class="oc-who">${esc(o.name)} · ${o.pickupAt?`<span class="pickup-t">${icon("clock","width:13px;height:13px")}Ambil ${hmA(o.pickupAt)}</span>`:"Secepat mungkin"}</div>
+    <ul class="oc-items">${orderItems(o)}</ul>
+    <div class="oc-f"><span class="mono">${rm(o.total)}</span>${payBadge(o)}</div>
+    <div class="row">${orderActs(o)}</div>
+  </div>`;
+}
+function renderOrders(){
+  const list = readOrders(), t0 = dayStart(Date.now());
+  [["new","colNew","cNew","Tiada pesanan baru"],["preparing","colPrep","cPrep","Tiada yang sedang disediakan"],["ready","colReady","cReady","Tiada pesanan menunggu"]].forEach(([s,col,c,empty])=>{
+    const l = list.filter(o=>o.status===s).sort((a,b)=>a.ts-b.ts);
+    $("#"+c).textContent = l.length;
+    $("#"+col).innerHTML = l.map(orderCard).join("") || `<div class="col-empty">${empty}</div>`;
+  });
+  const done = list.filter(o=>(o.status==="done"||o.status==="cancelled")&&(o.doneAt||o.ts)>=t0).sort((a,b)=>(b.doneAt||b.ts)-(a.doneAt||a.ts));
+  const ok = done.filter(o=>o.status==="done");
+  $("#doneSum").textContent = `${ok.length} pesanan · ${rm(ok.reduce((a,o)=>a+o.total,0))}`;
+  $("#doneList").innerHTML = done.map(o=>`<div class="feed-row" data-order="${esc(o.no)}" style="cursor:pointer">
+    <div class="av" ${o.status==="cancelled"?'style="background:rgba(110,74,80,.3)"':""}>${icon(o.status==="cancelled"?"x":"check","width:16px;height:16px")}</div>
+    <div class="t"><b>${esc(o.no)} · ${esc(o.name)}</b><span>${esc(o.items.map(i=>`${i.qty}× ${i.name}`).join(", "))}</span></div>
+    <span class="pts">${o.status==="cancelled"?"Batal":rm(o.total)}</span></div>`).join("") || `<div class="empty">Belum ada pesanan selesai hari ini</div>`;
+  const mn = read(ADMIN.keys.menu,{}), items = Array.isArray(mn.items)?mn.items:[], sold = mn.soldOut||[];
+  $("#menuList").innerHTML = items.length ? items.map(m=>{ const out=sold.includes(m.id); return `<div class="feed-row">
+    <div class="t"><b>${esc(m.name)}</b><span class="mono">${rm(m.price)}</span></div>
+    <span class="status ${out?"bad":"ok"}" style="min-width:58px">${out?"Habis":"Ada"}</span>
+    <button class="switch ${out?"":"on"}" data-action="toggleStock" data-id="${esc(m.id)}" aria-label="${esc(m.name)}: ada stok" aria-pressed="${!out}"></button></div>`; }).join("")
+    : `<div class="empty">Menu belum dimuat. Buka app pelanggan (index.html) sekali dalam pelayar ini.</div>`;
+  const open = SETTINGS.orderOpen!==false;
+  $$("[data-open-sw]").forEach(b=>{ b.classList.toggle("on",open); b.setAttribute("aria-pressed",open); });
+  $("#openLbl").textContent = open ? "Terima pesanan" : "Pesanan ditutup";
+  updateOrderBadge();
+}
+function updateOrderBadge(){
+  const n = readOrders().filter(o=>o.status==="new").length;
+  $$("[data-ordbadge]").forEach(b=>{ b.hidden=!n; b.textContent=n; });
+  document.title = (n?`(${n}) `:"") + "Farha Admin";
+}
+function findOrder(no){
+  const k = String(no).toUpperCase().replace(/[^A-Z0-9]/g,"");
+  return readOrders().find(o=>o.no.replace(/[^A-Z0-9]/g,"")===k);
+}
+function openOrder(no){
+  const o = findOrder(no); if(!o){ toast("Pesanan tidak dijumpai"); return; }
+  openSheet(`
+    <h2 class="mono" style="font-size:30px">${esc(o.no)}</h2>
+    <p class="sub">${esc(o.name)} · <span class="mono">${fmtId(o.memberId)}</span><br>Dibuat ${hmA(o.ts)} (${ago(o.ts)}) · ${o.pickupAt?`ambil jam ${hmA(o.pickupAt)}`:"secepat mungkin"}</p>
+    <div class="row" style="margin-bottom:14px;flex-wrap:wrap"><span class="tier">${ORD_LABEL[o.status]}</span>${payBadge(o)}</div>
+    <div class="tile" style="margin-bottom:14px">
+      <ul class="oc-items">${orderItems(o)}</ul>
+      <div class="feed-row"><div class="t">Jumlah kecil</div><span class="mono">${rm(o.subtotal)}</span></div>
+      ${o.discount?`<div class="feed-row"><div class="t">${esc(o.perk?.name||"Diskaun")} <span class="note">(${fmt(o.perk?.pts||0)} point)</span></div><span class="mono pts plus">− ${rm(o.discount)}</span></div>`:""}
+      <div class="feed-row"><div class="t"><b>Jumlah</b></div><span class="mono"><b>${rm(o.total)}</b></span></div>
+    </div>
+    <div class="tile warm" style="margin-bottom:14px;font-size:13px">Ganjaran ahli: <b class="mono">+${fmt(o.earn)}</b> point · <b class="mono">+${o.stamps||0}</b> cap ${o.credited?"(telah dikreditkan)":o.status==="cancelled"?"(tidak dikreditkan)":"(dikreditkan bila diambil)"}</div>
+    <div class="row">${orderActs(o)}</div>`);
+}
+function setOrderStatus(no, st){
+  const list = readOrders(), o = list.find(x=>x.no===no); if(!o) return;
+  if(st==="done" && !o.credited){
+    if(getMember(o.memberId)) updateMember(o.memberId, x=>{ x.points+=o.earn; x.lifetime+=o.earn; x.stamps=Math.min(SETTINGS.stampTarget, x.stamps+(o.stamps||0)); },
+      { ts:Date.now(), k:"buy", t:`Order ${o.no} (app)`, p:o.earn, n:o.qty||o.items.reduce((a,i)=>a+i.qty,0) });
+    o.credited = true; o.paid = true;
+  }
+  o.status = st;
+  if(st==="preparing") o.acceptedAt = Date.now();
+  if(st==="ready") o.readyAt = Date.now();
+  if(st==="done") o.doneAt = Date.now();
+  writeOrders(list); freshNos.delete(no);
+  toast({ preparing:`${no} diterima · mula sediakan`, ready:`${no} siap · pelanggan dimaklumkan`, done:`${no} selesai · +${fmt(o.earn)} point dikreditkan` }[st]);
+  closeSheet(); renderOrders();
+}
+function cancelOrder(no){
+  if(!confirm(`Tolak pesanan ${no}? Pelanggan akan dimaklumkan.`)) return;
+  const list = readOrders(), o = list.find(x=>x.no===no); if(!o) return;
+  if(o.perk && getMember(o.memberId)) updateMember(o.memberId, x=>{ x.points+=o.perk.pts; x.redeemed=Math.max(0,x.redeemed-1); },
+    { ts:Date.now(), k:"adjust", t:`Refund ${o.perk.name} (order ${no} batal)`, p:o.perk.pts, n:0 });
+  o.status = "cancelled"; o.doneAt = Date.now(); writeOrders(list); freshNos.delete(no);
+  toast(`${no} dibatalkan${o.paid?" · pulangkan bayaran pelanggan":""}`); closeSheet(); renderOrders();
+}
+function toggleOpen(){
+  SETTINGS.orderOpen = SETTINGS.orderOpen===false; write(ADMIN.keys.settings, SETTINGS);
+  renderOrders(); renderSettings(); toast(SETTINGS.orderOpen?"Kedai terima pesanan dari app":"Pesanan app ditutup sementara");
+}
+function toggleStock(id){
+  const mn = read(ADMIN.keys.menu,{}); const sold = new Set(mn.soldOut||[]);
+  if(sold.has(id)) sold.delete(id); else sold.add(id);
+  mn.soldOut = [...sold]; write(ADMIN.keys.menu, mn); renderOrders();
+  const it = (mn.items||[]).find(m=>m.id===id); toast(`${it?it.name:id}: ${sold.has(id)?"ditanda habis":"ada semula"}`);
+}
+/* Bunyi "ding" bila pesanan baru masuk */
+let actx;
+function beep(){
+  try{
+    actx = actx || new (window.AudioContext||window.webkitAudioContext)();
+    const t = actx.currentTime;
+    [0,.2].forEach((d,i)=>{ const o=actx.createOscillator(), g=actx.createGain(); o.frequency.value=i?1320:880;
+      g.gain.setValueAtTime(.0001,t+d); g.gain.exponentialRampToValueAtTime(.25,t+d+.02); g.gain.exponentialRampToValueAtTime(.0001,t+d+.18);
+      o.connect(g).connect(actx.destination); o.start(t+d); o.stop(t+d+.2); });
+  }catch(e){}
+}
+function checkNewOrders(){
+  const list = readOrders(); let added = [];
+  list.forEach(o=>{ if(!knownNos.has(o.no)){ knownNos.add(o.no); if(o.status==="new"){ added.push(o.no); freshNos.add(o.no); } } });
+  if(added.length){ beep(); toast(`Pesanan baru: ${added.join(", ")}`); if(navigator.vibrate) navigator.vibrate(60); }
+  updateOrderBadge();
+}
+setInterval(()=>{ if(current==="orders") renderOrders(); }, 30000);
 
 /* Imbas QR: BarcodeDetector (Chrome/Android) atau jsQR (fallback, dimuat bila perlu) */
 let stream=null, scanRAF=null;
@@ -869,11 +1072,11 @@ function toggleReward(id){ const r=REWARDS.find(x=>x.id===id); r.active=r.active
 /* =========================================================
    TETAPAN
    ========================================================= */
-function renderSettings(){ $("#setStamp").value=SETTINGS.stampTarget; $("#setPts").value=SETTINGS.pointsPerPurchase; }
+function renderSettings(){ $("#setStamp").value=SETTINGS.stampTarget; $("#setPts").value=SETTINGS.pointsPerPurchase; $("#setPrep").value=SETTINGS.prepMins; $("#setMult").value=SETTINGS.pointsMultiplier; $$("[data-open-sw]").forEach(b=>b.classList.toggle("on",SETTINGS.orderOpen!==false)); }
 function saveSettings(){
-  const s=parseInt($("#setStamp").value,10), p=parseInt($("#setPts").value,10);
-  if(!(s>=4&&s<=20)||!(p>=1)){toast("Nilai tidak sah");return;}
-  SETTINGS={stampTarget:s,pointsPerPurchase:p}; write(ADMIN.keys.settings,SETTINGS); toast("Tetapan disimpan");
+  const s=parseInt($("#setStamp").value,10), p=parseInt($("#setPts").value,10), pr=parseInt($("#setPrep").value,10), mu=parseInt($("#setMult").value,10);
+  if(!(s>=4&&s<=20)||!(p>=1)||!(pr>=1&&pr<=120)||!(mu>=1&&mu<=5)){toast("Nilai tidak sah");return;}
+  SETTINGS={...SETTINGS,stampTarget:s,pointsPerPurchase:p,prepMins:pr,pointsMultiplier:mu}; write(ADMIN.keys.settings,SETTINGS); toast("Tetapan disimpan");
 }
 function resetDemo(){
   if(!confirm("Set semula semua data demo (ahli, transaksi, ganjaran, tetapan & app pelanggan)?")) return;
@@ -894,6 +1097,7 @@ document.addEventListener("click",e=>{
   const g=e.target.closest("[data-go]"); if(g){go(g.dataset.go);return;}
   const mrow=e.target.closest("[data-member]"); if(mrow){openMember(mrow.dataset.member);return;}
   const th=e.target.closest("th[data-sort]"); if(th){const k=th.dataset.sort;sortDir=sortKey===k?-sortDir:(k==="name"||k==="tier"?1:-1);sortKey=k;renderMembers();return;}
+  const oc=e.target.closest("[data-order]"); if(oc&&!e.target.closest("[data-action]")){openOrder(oc.dataset.order);return;}
   const a=e.target.closest("[data-action]"); if(!a) return;
   const d=a.dataset;
   ({
@@ -904,6 +1108,7 @@ document.addEventListener("click",e=>{
     exportCSV, newReward:()=>editReward(""), editReward:()=>editReward(d.r), saveReward:()=>saveReward(d.r),
     deleteReward:()=>deleteReward(d.r), toggleReward:()=>toggleReward(d.r),
     saveSettings, resetDemo,
+    ordSet:()=>setOrderStatus(d.no,d.st), ordCancel:()=>cancelOrder(d.no), toggleOpen, toggleStock:()=>toggleStock(d.id),
     logout:()=>{sessionStorage.removeItem("farha-admin-auth");location.reload();},
   })[d.action]?.();
 });
@@ -916,6 +1121,7 @@ $("#tierFilter").addEventListener("change",renderMembers);
 /* Segerak langsung dengan app pelanggan (tab lain, pelayar sama) */
 addEventListener("storage",e=>{
   if(!Object.values(ADMIN.keys).includes(e.key)) return;
+  if(e.key===ADMIN.keys.orders) checkNewOrders();
   load(); renderScreen(); if(current==="counter"&&counterId) renderCounterMember();
 });
 
@@ -934,7 +1140,8 @@ $("#loginForm").addEventListener("submit",e=>{
 });
 function enter(){
   $("#login").remove(); $("#layout").hidden=false; $("#mobNav").hidden=false;
-  const h=(location.hash||"").slice(1); go(["overview","counter","members","rewards","settings"].includes(h)?h:"overview");
+  knownNos=new Set(readOrders().map(o=>o.no)); updateOrderBadge();
+  const h=(location.hash||"").slice(1); go(["overview","orders","counter","members","rewards","settings"].includes(h)?h:"overview");
 }
 
 /* INIT */
