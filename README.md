@@ -79,6 +79,12 @@ Ubah menu, harga (harga dalam template ialah contoh), cawangan dan pilihan minum
 - Senarai **Ahli** dan **Ringkasan** di admin kini dari database (ahli sebenar yang mendaftar).
 - Selepas kemas kini, **Publish semula** peraturan dari `database.rules.json`.
 
+## Waktu Pickup (admin)
+- **Admin → Waktu Pickup**: waktu operasi setiap hari (buka / tutup / cuti, boleh hingga lepas tengah malam), anggaran masa sediakan, selang slot (10–30 minit), had jadual (1–24 jam ke depan), suis benarkan jadual, dan suis **Terima pesanan**. Pratonton menunjukkan status & slot yang pelanggan nampak.
+- App pelanggan ikut waktu ini secara automatik: status "Buka · tutup 10:00 MLM" / "Tutup · buka esok 8:00 PG", "Secepat mungkin" hanya bila kedai buka dan sempat disediakan, slot "Jadualkan" hanya dalam waktu operasi, dan senarai waktu operasi dalam maklumat cawangan.
+- Disegerak ke semua telefon melalui Realtime Database (`/shop/settings`).
+- Pilihan Delivery dibuang (pickup sahaja).
+
 ## Tour panduan & cara pasang app
 - **Tour panduan (spotlight)**: keluar sekali selepas log masuk pertama di setiap peranti. Menyorot satu demi satu: Promosi, Point, Kad cap, Kod ahli, Order, Cawangan, Kategori, Pilih minuman, Ganjaran dan Profil, kemudian cara pasang app. Boleh **Langkau**, **Kembali**, atau ulang dari **Profil → Panduan app**.
 - **Cara pasang app**: panduan langkah demi langkah ikut peranti (iPhone/iPad, Android, Komputer), dengan butang **Pasang sekarang** bila pelayar menyokong. Juga dari **Profil → Cara pasang app** dan butang Pasang di Home.
