@@ -274,6 +274,47 @@ svg.i{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stro
 .mfoot{border-top:1px solid var(--line);padding-top:10px}
 .notif-btn.on{color:var(--ok);background:rgba(20,164,77,.1)}
 
+/* ---------- Varian & add-on ---------- */
+.seg{display:inline-grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:4px;padding:4px;border-radius:16px;background:rgba(255,255,255,.7);border:1px solid var(--glass-line);margin-bottom:14px;max-width:100%}
+.seg button{padding:9px 16px;border-radius:12px;font-size:13.5px;font-weight:600;color:var(--ink-2);white-space:nowrap}
+.seg button.on{background:var(--brand);color:#fff;font-weight:700;box-shadow:0 8px 18px -10px rgba(191,3,17,.8)}
+.gchips{display:flex;flex-wrap:wrap;gap:6px}
+.gchip{font-size:11px;font-weight:700;padding:3px 9px;border-radius:99px;background:rgba(90,7,16,.08);color:var(--brand-deep)}
+.gchip.add{background:rgba(199,119,0,.12);color:#8A5300}
+.gchoices{display:flex;flex-wrap:wrap;gap:6px}
+.gchoices span{font-size:12.5px;padding:5px 10px;border-radius:10px;background:#fff;border:1px solid var(--line)}
+.gchoices b{font-size:11.5px;color:var(--brand)}
+.gchoices em{font-style:normal;font-size:10.5px;font-weight:700;color:var(--ok)}
+.gtype{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.gtype button{text-align:left;padding:12px;border-radius:14px;background:#fff;border:1.5px solid rgba(191,3,17,.14)}
+.gtype button b{display:block;font-size:14px}
+.gtype button small{display:block;font-size:11.5px;color:var(--ink-2);margin-top:2px;line-height:1.35}
+.gtype button.on{border-color:var(--brand);background:rgba(191,3,17,.05)}
+.gtype button.on b{color:var(--brand)}
+.gc{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.gc .input{margin:0}
+.gc-n{flex:1;min-width:0}
+.gc-pw{display:flex;align-items:center;width:112px;flex:none;background:#fff;border:1px solid rgba(191,3,17,.16);border-radius:14px;overflow:hidden}
+.gc-pw b{font-size:11px;color:var(--ink-2);padding-left:10px}
+.gc-pw .input{border:0;box-shadow:none;padding:12px 8px;min-width:0}
+.gc-def{width:24px;height:24px;border-radius:50%;border:2px solid rgba(191,3,17,.3);flex:none}
+.gc-def.on{border:7px solid var(--brand)}
+.gc-x{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;color:var(--brand);background:rgba(191,3,17,.07);flex:none}
+.gc-x[disabled]{opacity:.35}
+.chkl{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:14px;background:#fff;max-height:260px;overflow-y:auto}
+.chk{display:flex;align-items:center;gap:12px;padding:11px 14px;cursor:pointer}
+.chk+.chk{border-top:1px solid var(--line)}
+.chk input{width:18px;height:18px;accent-color:var(--brand);flex:none;margin:0}
+.chk span{font-size:13.5px;font-weight:600;min-width:0}
+.chk small{display:block;font-size:11.5px;font-weight:500;color:var(--ink-2);margin-top:1px}
+.link-btn{font-size:12.5px;font-weight:700;color:var(--brand)}
+.field .gc-pw{display:flex;margin:0;font-size:inherit;color:inherit}
+.field .gc-pw b{font-size:11px}
+.field .chk span{display:block;margin:0;font-size:13.5px;font-weight:600;color:var(--ink)}
+.field .chk .gchip,.gchips .gchip{display:inline-block;margin:0 0 0 4px;font-size:10.5px;font-weight:700;color:var(--brand-deep)}
+.field .chk .gchip.add,.gchips .gchip.add{color:#8A5300}
+.gchips .gchip{margin:0}
+
 /* ---------- Sidebar telefon ---------- */
 .mbar,.side-x,.side-scrim{display:none}
 
@@ -389,8 +430,9 @@ svg.i{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stro
     <section class="screen" data-screen="menu">
       <div class="topbar">
         <div><small id="menuCount">—</small><h1>Menu</h1></div>
-        <div class="top-actions"><button class="btn red" data-action="newItem"><svg class="i" data-ic="plus"></svg>Tambah item</button></div>
+        <div class="top-actions"><button class="btn red" data-action="menuAdd" id="menuAddBtn"><svg class="i" data-ic="plus"></svg><span>Tambah item</span></button></div>
       </div>
+      <div class="seg" role="tablist" aria-label="Bahagian menu"><button role="tab" data-mtab="items" class="on" aria-selected="true">Item</button><button role="tab" data-mtab="groups" aria-selected="false">Varian &amp; Add-on</button></div>
       <div class="mchips" id="mCats" role="toolbar" aria-label="Tapis kategori"></div>
       <div class="mi-grid" id="miGrid"></div>
     </section>
@@ -1004,14 +1046,18 @@ const OPT_SETS = {
 const TONES = { "":"Merah", peach:"Peach", dark:"Gelap" };
 const DEFAULT_CATS = [{id:"kopi",name:"Kopi"},{id:"bukankopi",name:"Bukan Kopi"},{id:"teh",name:"Teh"},{id:"pastri",name:"Pastri"}];
 let menuCat = "", EDIT_PHOTO = null;
-const readMenu = () => { const m = read(ADMIN.keys.menu, {}); return m && typeof m==="object" ? m : {}; };
+const readMenu = () => { const m = read(ADMIN.keys.menu, {}); if(!m || typeof m!=="object") return {}; if(ensureGroups(m)) saveMenu(m); return m; };
 const menuCats = m => (Array.isArray(m.cats) && m.cats.length ? m.cats : DEFAULT_CATS).filter(c=>c.id!=="popular");
-function saveMenu(m){ m.v = 2; write(ADMIN.keys.menu, m); }
+function saveMenu(m){ m.v = 3; write(ADMIN.keys.menu, m); }
 function itemThumb(it, size=56){
   const tone = it.tone==="peach" ? "background:linear-gradient(160deg,#FFD9C8,#FFB49F);color:var(--brand-deep)" : it.tone==="dark" ? "background:linear-gradient(160deg,var(--brand-deep),#2E070C);color:#fff" : "background:linear-gradient(160deg,var(--brand-2),var(--brand));color:#fff";
   return `<div class="m-thumb" style="width:${size}px;height:${size}px;${it.photo?"":tone}">${it.photo?`<img src="${esc(it.photo)}" alt="">`:icon(it.icon==="cake"?"cake":"cup","width:"+Math.round(size*.46)+"px;height:"+Math.round(size*.46)+"px")}</div>`;
 }
 function renderMenu(){
+  $$("[data-mtab]").forEach(b=>{ const on=b.dataset.mtab===menuTab; b.classList.toggle("on",on); b.setAttribute("aria-selected",on); });
+  $("#menuAddBtn span").textContent = menuTab==="groups" ? "Tambah varian / add-on" : "Tambah item";
+  $("#mCats").hidden = menuTab==="groups";
+  if(menuTab==="groups") return renderGroups();
   const m = readMenu(), items = Array.isArray(m.items) ? m.items : [], sold = m.soldOut || [], cats = menuCats(m);
   $("#mCats").innerHTML = [{id:"",name:"Semua"}, ...cats].map(c=>`<button class="${menuCat===c.id?"on":""}" data-mcat="${esc(c.id)}">${esc(c.name)} <span>${c.id?items.filter(i=>i.cat===c.id).length:items.length}</span></button>`).join("");
   const list = items.filter(i=>!menuCat || i.cat===menuCat);
@@ -1024,13 +1070,14 @@ function renderMenu(){
         <div class="grow" style="min-width:0"><b class="mname">${esc(it.name)}</b><div class="note">${esc(cat?cat.name:it.cat)}</div><div class="mono" style="font-weight:700;margin-top:4px">RM ${(+it.price).toFixed(2)}</div></div>
         <button class="btn ghost sm" data-action="editItem" data-id="${esc(it.id)}" aria-label="Edit ${esc(it.name)}">${icon("edit","width:16px;height:16px")}</button></div>
       <div class="row" style="flex-wrap:wrap;gap:6px">${it.hidden?'<span class="badge" style="background:rgba(110,74,80,.12);color:var(--ink-2)">Tidak dijual</span>':""}${it.popular?'<span class="badge">Popular</span>':""}${it.badge?`<span class="badge">${esc(it.badge)}</span>`:""}${out?'<span class="badge" style="background:rgba(191,3,17,.12)">Habis</span>':""}</div>
+      <div class="gchips">${itemGroupSummary(m, it)}</div>
       <div class="row mfoot"><span class="note grow">${out?"Habis stok":"Ada stok"}</span><button class="switch ${out?"":"on"}" data-action="toggleStock" data-id="${esc(it.id)}" aria-label="${esc(it.name)}: ada stok" aria-pressed="${!out}"></button></div>
     </div>`;
   }).join("") || `<div class="tile empty" style="grid-column:1/-1">Tiada item dalam kategori ini</div>`;
 }
 function editItem(id){
   const m = readMenu(), cats = menuCats(m);
-  const it = (m.items||[]).find(x=>x.id===id) || { id:"", name:"", desc:"", price:"", cat:menuCat||cats[0]?.id||"", opts:"coffee", icon:"cup", tone:"", popular:false, stamp:true, badge:"", hidden:false };
+  const it = (m.items||[]).find(x=>x.id===id) || { id:"", name:"", desc:"", price:"", cat:menuCat||cats[0]?.id||"", groups:[], icon:"cup", tone:"", popular:false, stamp:true, badge:"", hidden:false };
   EDIT_PHOTO = it.photo || null;
   openSheet(`
     <h2>${id?"Edit item":"Item baru"}</h2><p class="sub">Dipaparkan dalam skrin Order app pelanggan.</p>
@@ -1045,7 +1092,8 @@ function editItem(id){
       <label class="field"><span>Harga (RM)</span><input class="input mono" id="miPrice" type="number" min="0.5" max="999" step="0.10" inputmode="decimal" value="${it.price===""?"":(+it.price).toFixed(2)}"></label>
       <label class="field"><span>Kategori</span><select class="input" id="miCat">${cats.map(c=>`<option value="${esc(c.id)}" ${c.id===it.cat?"selected":""}>${esc(c.name)}</option>`).join("")}</select></label>
     </div>
-    <label class="field"><span>Pilihan untuk pelanggan</span><select class="input" id="miOpts">${Object.entries(OPT_SETS).map(([k,v])=>`<option value="${k}" ${k===(it.opts||"none")?"selected":""}>${v}</option>`).join("")}</select></label>
+    <div class="field"><span style="display:flex;justify-content:space-between;align-items:center">Varian &amp; add-on <button type="button" class="link-btn" data-action="toGroups">Urus senarai</button></span>
+      <div class="chkl" id="miGroups">${(m.groups||[]).map(g=>`<label class="chk"><input type="checkbox" value="${esc(g.id)}" ${(it.groups||[]).includes(g.id)?"checked":""}><span>${esc(g.name)} <span class="gchip ${g.type==="many"?"add":""}">${groupLabel(g)}</span><small>${esc(g.choices.map(c=>c.n+(c.p?` ${priceTxt(c.p)}`:"")).join(" · "))}</small></span></label>`).join("") || '<div class="note" style="padding:12px">Belum ada varian / add-on. Tambah di tab Varian &amp; Add-on.</div>'}</div></div>
     <div class="grid g2" style="grid-template-columns:1fr 1fr;gap:10px">
       <label class="field"><span>Ikon</span><select class="input" id="miIcon"><option value="cup" ${it.icon!=="cake"?"selected":""}>Minuman</option><option value="cake" ${it.icon==="cake"?"selected":""}>Pastri / makanan</option></select></label>
       <label class="field"><span>Warna</span><select class="input" id="miTone">${Object.entries(TONES).map(([k,v])=>`<option value="${k}" ${k===(it.tone||"")?"selected":""}>${v}</option>`).join("")}</select></label>
@@ -1082,10 +1130,11 @@ function saveItem(id){
   let it = m.items.find(x=>x.id===id);
   if(!it){ it = { id:"it"+Date.now().toString(36) }; m.items.push(it); }
   const on = k => $(`[data-tgl="${k}"]`).classList.contains("on");
-  Object.assign(it, { name, desc:$("#miDesc").value.trim(), price, cat:$("#miCat").value, opts:$("#miOpts").value, icon:$("#miIcon").value, tone:$("#miTone").value,
+  Object.assign(it, { name, desc:$("#miDesc").value.trim(), price, cat:$("#miCat").value, groups:(m.groups||[]).map(g=>g.id).filter(gid=>$$("#miGroups input:checked").some(x=>x.value===gid)), icon:$("#miIcon").value, tone:$("#miTone").value,
     badge:$("#miBadge").value.trim().toUpperCase(), hidden:!on("miSale"), popular:on("miPop"), stamp:on("miStamp"), photo:EDIT_PHOTO||undefined });
   if(!it.photo) delete it.photo;
-  try{ localStorage.setItem(ADMIN.keys.menu, JSON.stringify({...m, v:2})); }catch(e){ toast("Storan penuh. Guna gambar yang lebih kecil."); return; }
+  delete it.opts;
+  try{ localStorage.setItem(ADMIN.keys.menu, JSON.stringify({...m, v:3})); }catch(e){ toast("Storan penuh. Guna gambar yang lebih kecil."); return; }
   closeSheet(); renderScreen(); toast(`${name} disimpan`);
 }
 function deleteItem(id){
@@ -1153,6 +1202,134 @@ if("serviceWorker" in navigator){
 /* ---------- Sidebar (telefon / tablet kecil) ---------- */
 function openSide(){ $(".side").classList.add("open"); $("#sideScrim").classList.add("show"); $("#menuBtn").setAttribute("aria-expanded","true"); }
 function closeSide(){ $(".side").classList.remove("open"); $("#sideScrim").classList.remove("show"); $("#menuBtn")?.setAttribute("aria-expanded","false"); }
+
+/* =========================================================
+   VARIAN & ADD-ON — pustaka kumpulan pilihan yang boleh disambung ke item
+   - Varian  (type "one")  : pelanggan pilih SATU, cth. Saiz, Suhu, Kemanisan
+   - Add-on  (type "many") : pelanggan boleh pilih BANYAK, cth. Extra shot +RM2
+   Disimpan dalam menu.groups; item.groups = senarai id kumpulan.
+   ========================================================= */
+const DEFAULT_GROUPS = [
+  { id:"suhu",    name:"Suhu",        type:"one",  def:0, choices:[{n:"Ais",p:0},{n:"Panas",p:0}] },
+  { id:"saiz",    name:"Saiz",        type:"one",  def:0, choices:[{n:"Biasa",p:0,s:"12 oz"},{n:"Besar",p:2,s:"16 oz"}] },
+  { id:"manis",   name:"Kemanisan",   type:"one",  def:1, choices:[{n:"Kurang manis",p:0},{n:"Normal",p:0},{n:"Lebih manis",p:0}] },
+  { id:"addkopi", name:"Add-on kopi", type:"many", max:0, choices:[{n:"Extra shot espresso",p:2},{n:"Tukar ke susu oat",p:2.5}] },
+  { id:"addsusu", name:"Add-on susu", type:"many", max:0, choices:[{n:"Tukar ke susu oat",p:2.5},{n:"Krim putar",p:1.5}] },
+  { id:"hidang",  name:"Hidangan",    type:"one",  def:0, choices:[{n:"Biasa",p:0},{n:"Panaskan",p:0}] },
+];
+const PRESET_GROUPS = { coffee:["suhu","saiz","manis","addkopi"], milk:["suhu","saiz","manis","addsusu"], tea:["suhu","saiz","manis"], pastry:["hidang"], none:[] };
+let menuTab = "items", EG = null;
+/* Menu lama (item.opts) → kumpulan (item.groups) */
+function ensureGroups(m){
+  if(!Array.isArray(m.items) || Array.isArray(m.groups)) return false;
+  m.groups = structuredClone(DEFAULT_GROUPS);
+  m.items.forEach(it=>{ if(!Array.isArray(it.groups)) it.groups = [...(PRESET_GROUPS[it.opts||"none"]||[])]; });
+  return true;
+}
+const groupLabel = g => g.type==="many" ? "Add-on" : "Varian";
+const groupsOfItem = (m, it) => (m.groups||[]).filter(g=>(it.groups||[]).includes(g.id));
+const priceTxt = p => p ? `+RM ${(+p).toFixed(2)}` : "";
+function itemGroupSummary(m, it){
+  const gs = groupsOfItem(m, it); if(!gs.length) return `<span class="note">Tiada varian / add-on</span>`;
+  return gs.map(g=>`<span class="gchip ${g.type==="many"?"add":""}">${esc(g.name)}</span>`).join("");
+}
+function renderGroups(){
+  const m = readMenu(), gs = m.groups || [], items = m.items || [];
+  $("#menuCount").textContent = `${gs.filter(g=>g.type!=="many").length} varian · ${gs.filter(g=>g.type==="many").length} add-on`;
+  $("#mCats").innerHTML = "";
+  $("#miGrid").innerHTML = gs.map(g=>{
+    const used = items.filter(it=>(it.groups||[]).includes(g.id));
+    return `<div class="tile mcard">
+      <div class="row" style="align-items:flex-start">
+        <div class="grow" style="min-width:0"><b class="mname">${esc(g.name)}</b>
+          <div class="note">${g.type==="many"?`Add-on · boleh pilih banyak${g.max?` (maks ${g.max})`:""}`:"Varian · pilih satu (wajib)"}</div></div>
+        <button class="btn ghost sm" data-action="editGroup" data-id="${esc(g.id)}" aria-label="Edit ${esc(g.name)}">${icon("edit","width:16px;height:16px")}</button></div>
+      <div class="gchoices">${g.choices.map((c,i)=>`<span>${esc(c.n)}${c.p?` <b class="mono">${priceTxt(c.p)}</b>`:""}${g.type!=="many"&&i===(g.def||0)?' <em>asal</em>':""}</span>`).join("")}</div>
+      <div class="row mfoot"><span class="note grow">${used.length?`Disambung ke ${used.length} item: ${esc(used.slice(0,3).map(i=>i.name).join(", "))}${used.length>3?"…":""}`:"Belum disambung ke mana-mana item"}</span></div>
+    </div>`;
+  }).join("") || `<div class="tile empty" style="grid-column:1/-1">Belum ada varian atau add-on. Tekan <b>Tambah varian / add-on</b>.</div>`;
+}
+function editGroup(id, type){
+  const m = readMenu(), items = m.items || [];
+  const g = (m.groups||[]).find(x=>x.id===id);
+  EG = g ? structuredClone(g) : { id:"", name:"", type:type||"one", def:0, max:0, choices:[{n:"",p:0},{n:"",p:0}] };
+  EG.items = new Set(items.filter(it=>(it.groups||[]).includes(EG.id)).map(it=>it.id));
+  const drinks = items.filter(it=>it.stamp!==false).length;
+  openSheet(`
+    <h2>${id?"Edit":"Tambah"} varian / add-on</h2><p class="sub">Pilihan yang pelanggan nampak bila tekan item.</p>
+    <div class="field"><span>Jenis</span>
+      <div class="gtype" role="radiogroup" aria-label="Jenis">
+        <button type="button" role="radio" data-gtype="one"><b>Varian</b><small>Pelanggan pilih satu. Cth. Saiz, Suhu</small></button>
+        <button type="button" role="radio" data-gtype="many"><b>Add-on</b><small>Boleh pilih banyak. Cth. Extra shot</small></button>
+      </div></div>
+    <label class="field"><span>Nama</span><input class="input" id="gName" maxlength="30" value="${esc(EG.name)}" placeholder="cth. Saiz, Pilihan susu, Topping"></label>
+    <div class="field"><span>Pilihan &amp; harga tambahan</span>
+      <div id="gChoices"></div>
+      <button type="button" class="btn ghost sm" data-action="gAdd" style="margin-top:8px">${icon("plus","width:16px;height:16px")}Tambah pilihan</button>
+      <p class="note" id="gHint" style="margin:8px 0 0"></p></div>
+    <label class="field" id="gMaxF"><span>Maksimum pilihan (0 = tiada had)</span><input class="input mono" id="gMax" type="number" min="0" max="20" value="${EG.max||0}"></label>
+    <div class="field"><span style="display:flex;justify-content:space-between;align-items:center">Sambung ke item <span>
+      <button type="button" class="btn ghost sm" data-action="gAllDrinks" ${drinks?"":"disabled"}>Semua minuman</button>
+      <button type="button" class="btn ghost sm" data-action="gNone">Kosongkan</button></span></span>
+      <div class="chkl" id="gItems">${items.length?items.map(it=>`<label class="chk"><input type="checkbox" value="${esc(it.id)}" data-drink="${it.stamp!==false?1:0}" ${EG.items.has(it.id)?"checked":""}><span>${esc(it.name)}<small>${it.stamp!==false?"Minuman":"Bukan minuman"}${it.hidden?" · tidak dijual":""}</small></span></label>`).join(""):'<div class="note">Belum ada item.</div>'}</div></div>
+    <div class="row" style="margin-top:20px">
+      ${id?`<button class="btn ghost" data-action="deleteGroup" data-id="${esc(id)}">${icon("trash")}Buang</button>`:""}
+      <button class="btn red grow" data-action="saveGroup">${icon("check")}Simpan</button>
+    </div>`);
+  renderGroupForm();
+}
+function syncChoices(){
+  $$("#gChoices .gc").forEach((row,i)=>{ const c=EG.choices[i]; if(!c) return; c.n=row.querySelector(".gc-n").value; c.p=parseFloat(row.querySelector(".gc-p").value)||0; });
+  EG.name = $("#gName").value; EG.max = parseInt($("#gMax").value,10)||0;
+  EG.items = new Set($$("#gItems input:checked").map(x=>x.value));
+}
+function renderGroupForm(){
+  const one = EG.type!=="many";
+  $$("[data-gtype]").forEach(b=>{ const on=b.dataset.gtype===EG.type; b.classList.toggle("on",on); b.setAttribute("aria-checked",on); });
+  $("#gMaxF").hidden = one;
+  $("#gHint").textContent = one ? "Tekan bulatan untuk pilih pilihan asal (dipilih secara automatik)." : "Harga ditambah pada harga item bila pelanggan pilih.";
+  $("#gChoices").innerHTML = EG.choices.map((c,i)=>`<div class="gc">
+    ${one?`<button type="button" class="gc-def ${i===(EG.def||0)?"on":""}" data-gdef="${i}" aria-label="Jadikan pilihan asal" aria-pressed="${i===(EG.def||0)}"></button>`:""}
+    <input class="input gc-n" maxlength="30" value="${esc(c.n)}" placeholder="Nama pilihan" aria-label="Nama pilihan ${i+1}">
+    <span class="gc-pw"><b>+RM</b><input class="input mono gc-p" type="number" min="0" max="99" step="0.10" inputmode="decimal" value="${c.p?(+c.p).toFixed(2):""}" placeholder="0.00" aria-label="Harga tambahan pilihan ${i+1}"></span>
+    <button type="button" class="gc-x" data-gdel="${i}" aria-label="Buang pilihan ${i+1}" ${EG.choices.length<=1?"disabled":""}>${icon("x","width:16px;height:16px")}</button>
+  </div>`).join("");
+}
+function saveGroup(){
+  syncChoices();
+  const name = EG.name.trim(), choices = EG.choices.map(c=>({ ...c, n:c.n.trim(), p:Math.max(0,Math.round(c.p*100)/100) })).filter(c=>c.n);
+  if(!name){ toast("Masukkan nama varian / add-on"); return; }
+  if(!choices.length){ toast("Tambah sekurang-kurangnya satu pilihan"); return; }
+  if(EG.type!=="many" && choices.length<2){ toast("Varian perlu sekurang-kurangnya 2 pilihan"); return; }
+  choices.forEach(c=>{ if(!c.p) c.p=0; if(!c.s) delete c.s; });
+  const m = readMenu(); m.groups = m.groups || [];
+  let g = m.groups.find(x=>x.id===EG.id);
+  if(!g){ g = { id:"g"+Date.now().toString(36) }; m.groups.push(g); }
+  Object.assign(g, { name, type:EG.type, choices, def:EG.type==="many"?undefined:Math.min(EG.def||0, choices.length-1), max:EG.type==="many"?Math.max(0,EG.max):undefined });
+  Object.keys(g).forEach(k=>g[k]===undefined && delete g[k]);
+  const order = m.groups.map(x=>x.id);
+  (m.items||[]).forEach(it=>{
+    const set = new Set(it.groups||[]);
+    if(EG.items.has(it.id)) set.add(g.id); else set.delete(g.id);
+    it.groups = order.filter(x=>set.has(x));
+  });
+  saveMenu(m); closeSheet(); renderScreen(); toast(`${name} disimpan`);
+}
+function deleteGroup(id){
+  const m = readMenu(), g = (m.groups||[]).find(x=>x.id===id); if(!g) return;
+  const n = (m.items||[]).filter(it=>(it.groups||[]).includes(id)).length;
+  if(!confirm(`Buang "${g.name}"?${n?` Ia akan dibuang dari ${n} item.`:""}`)) return;
+  m.groups = m.groups.filter(x=>x.id!==id);
+  (m.items||[]).forEach(it=>{ it.groups = (it.groups||[]).filter(x=>x!==id); });
+  saveMenu(m); closeSheet(); renderScreen(); toast(`${g.name} dibuang`);
+}
+document.addEventListener("click", e=>{
+  if(!EG || !$("#gChoices")) return;
+  const t = e.target.closest("[data-gtype]"); if(t){ syncChoices(); EG.type=t.dataset.gtype; renderGroupForm(); return; }
+  const d = e.target.closest("[data-gdef]"); if(d){ syncChoices(); EG.def=+d.dataset.gdef; renderGroupForm(); return; }
+  const x = e.target.closest("[data-gdel]"); if(x){ syncChoices(); EG.choices.splice(+x.dataset.gdel,1); if((EG.def||0)>=EG.choices.length) EG.def=0; renderGroupForm(); return; }
+});
+document.addEventListener("click", e=>{ const t=e.target.closest("[data-mtab]"); if(t){ menuTab=t.dataset.mtab; menuCat=""; renderMenu(); } });
 
 /* Imbas QR: BarcodeDetector (Chrome/Android) atau jsQR (fallback, dimuat bila perlu) */
 let stream=null, scanRAF=null;
@@ -1326,6 +1503,10 @@ document.addEventListener("click",e=>{
     exportCSV, newReward:()=>editReward(""), editReward:()=>editReward(d.r), saveReward:()=>saveReward(d.r),
     deleteReward:()=>deleteReward(d.r), toggleReward:()=>toggleReward(d.r),
     saveSettings, resetDemo,
+    menuAdd:()=>menuTab==="groups"?editGroup("","one"):editItem(""), editGroup:()=>editGroup(d.id), saveGroup, deleteGroup:()=>deleteGroup(d.id),
+    gAdd:()=>{syncChoices();EG.choices.push({n:"",p:0});renderGroupForm();const r=$$("#gChoices .gc-n");r[r.length-1]?.focus();},
+    gAllDrinks:()=>$$("#gItems input").forEach(x=>{ if(x.dataset.drink==="1") x.checked=true; }), gNone:()=>$$("#gItems input").forEach(x=>x.checked=false),
+    toGroups:()=>{closeSheet();menuTab="groups";renderMenu();},
     newItem:()=>editItem(""), editItem:()=>editItem(d.id), saveItem:()=>saveItem(d.id), deleteItem:()=>deleteItem(d.id),
     clearPhoto:()=>{EDIT_PHOTO=null;refreshPhotoPreview();}, enableNotif, openSide, closeSide,
     ordSet:()=>setOrderStatus(d.no,d.st), ordPaid:()=>markPaid(d.no), ordProof:()=>openOrder(d.no), ordReject:()=>rejectProof(d.no), ordCancel:()=>cancelOrder(d.no), toggleOpen, toggleStock:()=>toggleStock(d.id),

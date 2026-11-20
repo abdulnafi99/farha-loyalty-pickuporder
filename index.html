@@ -930,7 +930,8 @@ function applyShared(){
   try{ const r=JSON.parse(localStorage.getItem(SHARED.rewards)); CONFIG.rewards = (Array.isArray(r)&&r.length) ? r.filter(x=>x.active!==false) : DEFAULT_REWARDS; }catch(e){}
   try{ const st=JSON.parse(localStorage.getItem(SHARED.settings)); if(st){ if(st.stampTarget) CONFIG.stampTarget=+st.stampTarget; if(st.pointsPerPurchase) CONFIG.pointsPerPurchase=+st.pointsPerPurchase; if(st.prepMins) CONFIG.order.prepMins=+st.prepMins; if(st.pointsMultiplier) CONFIG.order.pointsMultiplier=+st.pointsMultiplier; SHOP.open = st.orderOpen!==false; } }catch(e){}
   try{ const mn=JSON.parse(localStorage.getItem(SHARED.menu)); SOLD = (mn&&Array.isArray(mn.soldOut)) ? mn.soldOut : [];
-    CONFIG.menu = (mn && mn.v===2 && Array.isArray(mn.items)) ? mn.items.filter(i=>!i.hidden) : DEFAULT_MENU; }catch(e){}
+    CONFIG.menu = (mn && mn.v>=2 && Array.isArray(mn.items)) ? mn.items.filter(i=>!i.hidden) : DEFAULT_MENU;
+    GROUPS = (mn && Array.isArray(mn.groups)) ? mn.groups : null; }catch(e){}
 }
 function load(){
   try{ S = JSON.parse(localStorage.getItem(CONFIG.storageKey)); }catch(e){ S=null; }
@@ -1179,7 +1180,7 @@ const OPTION_SETS = {
 const ACTIVE = ["new","preparing","ready"];
 const CART_KEY = "farha-cart-v1";
 const SHOP = { open:true };
-let SOLD = [];
+let SOLD = [], GROUPS = null;
 let CART = []; try{ CART = JSON.parse(localStorage.getItem(CART_KEY)) || []; }catch(e){ CART = []; }
 const saveCart = () => { try{ localStorage.setItem(CART_KEY, JSON.stringify(CART)); }catch(e){} };
 const O = { cat:"popular", pickupMode:"asap", pickupAt:null, pay:"counter", perk:null, viewing:null, paying:false };
@@ -1216,7 +1217,23 @@ function updateOrder(no, fn){ const list=readOrders(), o=list.find(x=>x.no===no)
 const myOrders = () => readOrders().filter(o=>o.memberId===S.memberId).sort((a,b)=>b.ts-a.ts);
 const activeOrder = () => myOrders().find(o=>ACTIVE.includes(o.status));
 const menuItem = id => CONFIG.menu.find(m=>m.id===id);
-const groupsFor = m => OPTION_SETS[m.opts] || [];
+/* Varian & add-on: dari admin (menu.groups + item.groups), atau set asal OPTION_SETS */
+function groupsFor(m){
+  if(!m) return [];
+  if(GROUPS && Array.isArray(m.groups)) return m.groups.map(id=>GROUPS.find(g=>g.id===id)).filter(g=>g && g.choices && g.choices.length)
+    .map(g=>({ id:g.id, name:g.name, multi:g.type==="many", def:Math.min(g.def||0, g.choices.length-1), max:g.max||0, choices:g.choices }))
+    .sort((a,b)=>a.multi-b.multi); // varian dahulu, kemudian add-on
+  return OPTION_SETS[m.opts] || [];
+}
+const DEFAULT_GROUPS = [
+  { id:"suhu", name:"Suhu", type:"one", def:0, choices:G_TEMP.choices.map(c=>({p:0,...c})) },
+  { id:"saiz", name:"Saiz", type:"one", def:0, choices:G_SIZE.choices.map(c=>({p:0,...c})) },
+  { id:"manis", name:"Kemanisan", type:"one", def:1, choices:G_SWEET.choices.map(c=>({p:0,...c})) },
+  { id:"addkopi", name:"Add-on kopi", type:"many", max:0, choices:OPTION_SETS.coffee[3].choices },
+  { id:"addsusu", name:"Add-on susu", type:"many", max:0, choices:OPTION_SETS.milk[3].choices },
+  { id:"hidang", name:"Hidangan", type:"one", def:0, choices:OPTION_SETS.pastry[0].choices.map(c=>({p:0,...c})) },
+];
+const PRESET_GROUPS = { coffee:["suhu","saiz","manis","addkopi"], milk:["suhu","saiz","manis","addsusu"], tea:["suhu","saiz","manis"], pastry:["hidang"], none:[] };
 const ptsFor = qty => qty * CONFIG.pointsPerPurchase * CONFIG.order.pointsMultiplier;
 const cartCount = id => CART.filter(l=>!id||l.id===id).reduce((a,l)=>a+l.qty,0);
 
@@ -1227,8 +1244,14 @@ function publishMenu(){
   try{
     const cur = JSON.parse(localStorage.getItem(SHARED.menu)) || {};
     const cats = CONFIG.categories.filter(c=>c.id!=="popular");
-    if(cur.v===2 && Array.isArray(cur.items)){ if(!cur.cats){ cur.cats=cats; localStorage.setItem(SHARED.menu, JSON.stringify(cur)); } return; }
-    Object.assign(cur, { v:2, items:DEFAULT_MENU.map(m=>({...m})), cats, soldOut:cur.soldOut||[] });
+    if(cur.v>=2 && Array.isArray(cur.items)){
+      let ch = false;
+      if(!cur.cats){ cur.cats=cats; ch=true; }
+      if(!Array.isArray(cur.groups)){ cur.groups=structuredClone(DEFAULT_GROUPS); cur.items.forEach(it=>{ if(!Array.isArray(it.groups)) it.groups=[...(PRESET_GROUPS[it.opts||"none"]||[])]; }); cur.v=3; ch=true; }
+      if(ch){ localStorage.setItem(SHARED.menu, JSON.stringify(cur)); applyShared(); }
+      return;
+    }
+    Object.assign(cur, { v:3, items:DEFAULT_MENU.map(m=>({ ...m, groups:[...(PRESET_GROUPS[m.opts||"none"]||[])] })), groups:structuredClone(DEFAULT_GROUPS), cats, soldOut:cur.soldOut||[] });
     localStorage.setItem(SHARED.menu, JSON.stringify(cur)); applyShared();
   }catch(e){}
 }
@@ -1315,7 +1338,7 @@ function openItem(id){
     <div class="pi-head"><h2>${esc(m.name)}</h2><span class="mono">${money(m.price)}</span></div>
     <p style="margin:4px 0 10px">${esc(m.desc)}</p>
     <span class="chip light">+${fmt(ptsFor(1))} point${m.stamp===false?"":" · +1 cap"}</span>
-    ${groupsFor(m).map(g=>`<div class="opt-g"><div class="gh"><b>${esc(g.name)}</b><span>${g.multi?"Pilihan":"Wajib"}</span></div>
+    ${groupsFor(m).map(g=>`<div class="opt-g"><div class="gh"><b>${esc(g.name)}</b><span>${g.multi?(g.max?`Pilih hingga ${g.max}`:"Pilihan"):"Wajib"}</span></div>
       ${g.multi ? `<div class="addons">${g.choices.map((c,i)=>addBtn(g,c,i)).join("")}</div>` : `<div class="opts">${g.choices.map((c,i)=>optBtn(g,c,i)).join("")}</div>`}</div>`).join("")}
     <div class="opt-g"><div class="gh"><label for="piNote"><b>Nota untuk barista</b></label><span>Pilihan</span></div>
       <input class="input note" id="piNote" maxlength="60" placeholder="cth. kurang ais"></div>
@@ -1333,7 +1356,7 @@ function piUnit(){
 function piPick(gid, i){
   if(!PI) return;
   const g = groupsFor(menuItem(PI.id)).find(x=>x.id===gid); if(!g) return;
-  if(g.multi){ const a=PI.sel[gid], k=a.indexOf(i); if(k>=0) a.splice(k,1); else a.push(i); a.sort(); }
+  if(g.multi){ const a=PI.sel[gid], k=a.indexOf(i); if(k>=0) a.splice(k,1); else { if(g.max && a.length>=g.max){ toast(`Maksimum ${g.max} pilihan untuk ${esc(g.name)}`); return; } a.push(i); } a.sort(); }
   else PI.sel[gid] = i;
   $$(`#sheetBody [data-opt^="${gid}:"]`).forEach(b=>{
     const j = +b.dataset.opt.split(":")[1], on = g.multi ? PI.sel[gid].includes(j) : PI.sel[gid]===j;
