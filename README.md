@@ -48,7 +48,9 @@ Ubah menu, harga (harga dalam template ialah contoh), cawangan dan pilihan minum
 - **Tambah, edit dan buang item jualan**: nama, penerangan, harga, kategori, gambar (dimampatkan), pilihan untuk pelanggan (kopi / susu / teh / pastri / tiada), lencana (cth. TERLARIS), Popular, dapat cap, dan suis **Dijual dalam app**.
 - **Varian & Add-on** (tab dalam skrin Menu): bina sendiri kumpulan pilihan dan sambungkan ke item.
   - **Varian** = pelanggan pilih satu (wajib), cth. Saiz: Biasa / Besar +RM2.00. Tetapkan pilihan asal.
-    - **Cara kira harga varian**: *Tambah pada harga item* (masukkan beza harga sahaja, cth. item RM12, Besar +RM2 = RM14) atau *Harga penuh* (harga pilihan menggantikan harga item, cth. Biasa RM12, Besar RM14). Jika semua pilihan ada harga dalam mod tambah, admin akan ditanya sama ada mahu tukar ke harga penuh supaya harga tidak jadi berganda.
+    - **Harga varian = harga penuh**: masukkan harga jualan sebenar (cth. Biasa RM12, Besar RM14). Kosongkan jika sama dengan harga item (cth. Ais / Panas).
+    - Harga varian boleh diubah **untuk setiap item** di skrin edit item (cth. Besar Latte RM12.90, Besar Signature RM14.90).
+    - Hanya satu varian patut ada harga (cth. Saiz). Caj tambahan seperti susu oat → guna **Add-on** (+RM).
   - **Add-on** = pelanggan boleh pilih banyak, setiap satu dengan harga, cth. Extra shot +RM2.00. Boleh hadkan bilangan maksimum.
   - Sambung ke item dari skrin varian/add-on (butang **Semua minuman**) atau dari skrin edit item.
 - Suis **Ada stok** untuk tanda item habis sementara. Perubahan terus muncul dalam app pelanggan.

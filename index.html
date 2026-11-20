@@ -1221,7 +1221,10 @@ const menuItem = id => CONFIG.menu.find(m=>m.id===id);
 function groupsFor(m){
   if(!m) return [];
   if(GROUPS && Array.isArray(m.groups)) return m.groups.map(id=>GROUPS.find(g=>g.id===id)).filter(g=>g && g.choices && g.choices.length)
-    .map(g=>({ id:g.id, name:g.name, multi:g.type==="many", set:g.type!=="many"&&g.mode==="set", def:Math.min(g.def||0, g.choices.length-1), max:g.max||0, choices:g.choices }))
+    .map(g=>{ const one = g.type!=="many", ov = (m.vprices && m.vprices[g.id]) || {};
+      return { id:g.id, name:g.name, multi:!one, set:one, def:Math.min(g.def||0, g.choices.length-1), max:g.max||0,
+        // varian = harga penuh: harga khas item → harga varian → (0 = ikut harga item)
+        choices: one ? g.choices.map(c=>({ ...c, p: +ov[c.n]>0 ? +ov[c.n] : (+c.p||0) })) : g.choices }; })
     .sort((a,b)=>a.multi-b.multi); // varian dahulu, kemudian add-on
   return OPTION_SETS[m.opts] || [];
 }
@@ -1233,6 +1236,23 @@ const DEFAULT_GROUPS = [
   { id:"addsusu", name:"Add-on susu", type:"many", max:0, choices:OPTION_SETS.milk[3].choices },
   { id:"hidang", name:"Hidangan", type:"one", def:0, choices:OPTION_SETS.pastry[0].choices.map(c=>({p:0,...c})) },
 ];
+/* Menu v4: semua varian guna HARGA PENUH. Varian lama (harga tambahan) ditukar tanpa ubah harga:
+   harga item + tambahan → harga khas item (item.vprices[groupId][namaPilihan]). */
+function migrateV4(mn){
+  if(!mn || mn.v>=4 || !Array.isArray(mn.groups)) return false;
+  mn.groups.forEach(g=>{
+    if(g.type==="many") return;
+    if(g.mode!=="set"){
+      (mn.items||[]).forEach(it=>{
+        if(!(it.groups||[]).includes(g.id)) return;
+        g.choices.forEach(c=>{ if(+c.p>0){ it.vprices = it.vprices||{}; (it.vprices[g.id] = it.vprices[g.id]||{})[c.n] = Math.round((+it.price + +c.p)*100)/100; } });
+      });
+      g.choices.forEach(c=>{ c.p = 0; });
+    }
+    g.mode = "set";
+  });
+  mn.v = 4; return true;
+}
 const PRESET_GROUPS = { coffee:["suhu","saiz","manis","addkopi"], milk:["suhu","saiz","manis","addsusu"], tea:["suhu","saiz","manis"], pastry:["hidang"], none:[] };
 const ptsFor = qty => qty * CONFIG.pointsPerPurchase * CONFIG.order.pointsMultiplier;
 const cartCount = id => CART.filter(l=>!id||l.id===id).reduce((a,l)=>a+l.qty,0);
@@ -1248,10 +1268,12 @@ function publishMenu(){
       let ch = false;
       if(!cur.cats){ cur.cats=cats; ch=true; }
       if(!Array.isArray(cur.groups)){ cur.groups=structuredClone(DEFAULT_GROUPS); cur.items.forEach(it=>{ if(!Array.isArray(it.groups)) it.groups=[...(PRESET_GROUPS[it.opts||"none"]||[])]; }); cur.v=3; ch=true; }
+      if(migrateV4(cur)) ch=true;
       if(ch){ localStorage.setItem(SHARED.menu, JSON.stringify(cur)); applyShared(); }
       return;
     }
     Object.assign(cur, { v:3, items:DEFAULT_MENU.map(m=>({ ...m, groups:[...(PRESET_GROUPS[m.opts||"none"]||[])] })), groups:structuredClone(DEFAULT_GROUPS), cats, soldOut:cur.soldOut||[] });
+    migrateV4(cur);
     localStorage.setItem(SHARED.menu, JSON.stringify(cur)); applyShared();
   }catch(e){}
 }
@@ -1353,7 +1375,7 @@ function unitFor(m, sel){
   let base = m.price, extra = 0, setDone = false;
   groupsFor(m).forEach(g=>{
     const s = sel[g.id];
-    if(g.set && !setDone){ const c=g.choices[s]; if(c){ base = +c.p||0; setDone = true; } return; }
+    if(g.set){ const c=g.choices[s]; if(c && +c.p>0){ if(!setDone){ base = +c.p; setDone = true; } else extra += +c.p - m.price; } return; }
     (g.multi?s:[s]).forEach(i=>{ extra += g.choices[i]?.p || 0; });
   });
   return { base, unit:base+extra };
@@ -1361,9 +1383,9 @@ function unitFor(m, sel){
 function piUnit(){ return unitFor(menuItem(PI.id), PI.sel).unit; }
 /* Harga dipapar dalam menu: "RM 12.00" atau "dari RM 12.00" bila harga ikut varian */
 function priceLabel(m){
-  const sg = groupsFor(m).find(g=>g.set);
+  const sg = groupsFor(m).find(g=>g.set && g.choices.some(c=>+c.p>0 && +c.p!==+m.price));
   if(!sg) return money(m.price);
-  const ps = sg.choices.map(c=>+c.p||0), lo = Math.min(...ps);
+  const ps = sg.choices.map(c=>+c.p>0 ? +c.p : +m.price), lo = Math.min(...ps);
   return (Math.max(...ps)>lo ? "dari " : "") + money(lo);
 }
 function piPick(gid, i){

@@ -308,6 +308,11 @@ svg.i{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stro
 .chk span{font-size:13.5px;font-weight:600;min-width:0}
 .chk small{display:block;font-size:11.5px;font-weight:500;color:var(--ink-2);margin-top:1px}
 .link-btn{font-size:12.5px;font-weight:700;color:var(--brand)}
+.vp{border:1px solid var(--line);border-radius:14px;background:#fff;padding:10px 12px;margin-bottom:8px}
+.vp>b{display:block;font-size:13px;margin-bottom:6px}
+.vp-more summary{cursor:pointer;font-size:12.5px;font-weight:600;color:var(--ink-2);padding:6px 2px 10px}
+.field .vp-r{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:4px 0;margin:0;font-size:13.5px;font-weight:600;color:var(--ink)}
+.field .vp-r>span:first-child{display:block;margin:0;font-size:13.5px;color:var(--ink);font-weight:600}
 .field .gc-pw{display:flex;margin:0;font-size:inherit;color:inherit}
 .field .gc-pw b{font-size:11px}
 .field .chk span{display:block;margin:0;font-size:13.5px;font-weight:600;color:var(--ink)}
@@ -1046,9 +1051,9 @@ const OPT_SETS = {
 const TONES = { "":"Merah", peach:"Peach", dark:"Gelap" };
 const DEFAULT_CATS = [{id:"kopi",name:"Kopi"},{id:"bukankopi",name:"Bukan Kopi"},{id:"teh",name:"Teh"},{id:"pastri",name:"Pastri"}];
 let menuCat = "", EDIT_PHOTO = null;
-const readMenu = () => { const m = read(ADMIN.keys.menu, {}); if(!m || typeof m!=="object") return {}; if(ensureGroups(m)) saveMenu(m); return m; };
+const readMenu = () => { const m = read(ADMIN.keys.menu, {}); if(!m || typeof m!=="object") return {}; const a=ensureGroups(m), b=migrateV4(m); if(a||b) saveMenu(m); return m; };
 const menuCats = m => (Array.isArray(m.cats) && m.cats.length ? m.cats : DEFAULT_CATS).filter(c=>c.id!=="popular");
-function saveMenu(m){ m.v = 3; write(ADMIN.keys.menu, m); }
+function saveMenu(m){ m.v = 4; write(ADMIN.keys.menu, m); }
 function itemThumb(it, size=56){
   const tone = it.tone==="peach" ? "background:linear-gradient(160deg,#FFD9C8,#FFB49F);color:var(--brand-deep)" : it.tone==="dark" ? "background:linear-gradient(160deg,var(--brand-deep),#2E070C);color:#fff" : "background:linear-gradient(160deg,var(--brand-2),var(--brand));color:#fff";
   return `<div class="m-thumb" style="width:${size}px;height:${size}px;${it.photo?"":tone}">${it.photo?`<img src="${esc(it.photo)}" alt="">`:icon(it.icon==="cake"?"cake":"cup","width:"+Math.round(size*.46)+"px;height:"+Math.round(size*.46)+"px")}</div>`;
@@ -1078,7 +1083,7 @@ function renderMenu(){
 function editItem(id){
   const m = readMenu(), cats = menuCats(m);
   const it = (m.items||[]).find(x=>x.id===id) || { id:"", name:"", desc:"", price:"", cat:menuCat||cats[0]?.id||"", groups:[], icon:"cup", tone:"", popular:false, stamp:true, badge:"", hidden:false };
-  EDIT_PHOTO = it.photo || null;
+  EDIT_PHOTO = it.photo || null; EDIT_VP = structuredClone(it.vprices||{});
   openSheet(`
     <h2>${id?"Edit item":"Item baru"}</h2><p class="sub">Dipaparkan dalam skrin Order app pelanggan.</p>
     <div class="field"><span>Gambar</span>
@@ -1092,9 +1097,9 @@ function editItem(id){
       <label class="field"><span>Harga (RM)</span><input class="input mono" id="miPrice" type="number" min="0.5" max="999" step="0.10" inputmode="decimal" value="${it.price===""?"":(+it.price).toFixed(2)}"></label>
       <label class="field"><span>Kategori</span><select class="input" id="miCat">${cats.map(c=>`<option value="${esc(c.id)}" ${c.id===it.cat?"selected":""}>${esc(c.name)}</option>`).join("")}</select></label>
     </div>
-    ${(m.groups||[]).some(isSetMode)?`<p class="note" style="margin:-6px 0 14px">Jika item disambung ke varian <b>harga penuh</b> (${esc((m.groups||[]).filter(isSetMode).map(g=>g.name).join(", "))}), harga pelanggan ikut harga varian, bukan harga item.</p>`:""}
     <div class="field"><span style="display:flex;justify-content:space-between;align-items:center">Varian &amp; add-on <button type="button" class="link-btn" data-action="toGroups">Urus senarai</button></span>
-      <div class="chkl" id="miGroups">${(m.groups||[]).map(g=>`<label class="chk"><input type="checkbox" value="${esc(g.id)}" ${(it.groups||[]).includes(g.id)?"checked":""}><span>${esc(g.name)} <span class="gchip ${g.type==="many"?"add":""}">${groupLabel(g)}</span><small>${esc(g.choices.map(c=>c.n+((c.p||isSetMode(g))?` ${choicePrice(g,c)}`:"")).join(" · "))}</small></span></label>`).join("") || '<div class="note" style="padding:12px">Belum ada varian / add-on. Tambah di tab Varian &amp; Add-on.</div>'}</div></div>
+      <div class="chkl" id="miGroups">${(m.groups||[]).map(g=>`<label class="chk"><input type="checkbox" value="${esc(g.id)}" ${(it.groups||[]).includes(g.id)?"checked":""}><span>${esc(g.name)} <span class="gchip ${g.type==="many"?"add":""}">${groupLabel(g)}</span><small>${esc(g.choices.map(c=>c.n+(choicePrice(g,c)?` ${choicePrice(g,c)}`:"")).join(" · "))}</small></span></label>`).join("") || '<div class="note" style="padding:12px">Belum ada varian / add-on. Tambah di tab Varian &amp; Add-on.</div>'}</div></div>
+    <div class="field" id="miVP"></div>
     <div class="grid g2" style="grid-template-columns:1fr 1fr;gap:10px">
       <label class="field"><span>Ikon</span><select class="input" id="miIcon"><option value="cup" ${it.icon!=="cake"?"selected":""}>Minuman</option><option value="cake" ${it.icon==="cake"?"selected":""}>Pastri / makanan</option></select></label>
       <label class="field"><span>Warna</span><select class="input" id="miTone">${Object.entries(TONES).map(([k,v])=>`<option value="${k}" ${k===(it.tone||"")?"selected":""}>${v}</option>`).join("")}</select></label>
@@ -1107,6 +1112,7 @@ function editItem(id){
       ${id?`<button class="btn ghost" data-action="deleteItem" data-id="${esc(id)}" aria-label="Buang item">${icon("trash")}Buang</button>`:""}
       <button class="btn red grow" data-action="saveItem" data-id="${esc(id)}">${icon("check")}Simpan item</button>
     </div>`);
+  renderVP();
 }
 function compressImage(file, max=640, q=.78){
   return new Promise((ok,no)=>{
@@ -1123,6 +1129,31 @@ function refreshPhotoPreview(){
   $("#miPhoto").innerHTML = itemThumb({ photo:EDIT_PHOTO, icon:$("#miIcon").value, tone:$("#miTone").value }, 72);
   $("#miClear").hidden = !EDIT_PHOTO;
 }
+/* Harga varian untuk item ini (harga penuh). Kosong = guna harga varian / harga item. */
+let EDIT_VP = {};
+function renderVP(){
+  const box = $("#miVP"); if(!box) return;
+  const m = readMenu(), price = parseFloat($("#miPrice").value)||0;
+  const ids = $$("#miGroups input:checked").map(x=>x.value);
+  const gs = (m.groups||[]).filter(g=>isVarian(g) && ids.includes(g.id));
+  if(!gs.length){ box.innerHTML = ""; box.hidden = true; return; }
+  box.hidden = false;
+  const hasPrice = g => g.choices.some(c=>(+(EDIT_VP[g.id]||{})[c.n]>0) || +c.p>0) || (m.items||[]).some(i=>i.vprices && i.vprices[g.id] && Object.keys(i.vprices[g.id]).length);
+  const priced = gs.filter(g=>g.choices.some(c=>(+(EDIT_VP[g.id]||{})[c.n]>0) || +c.p>0));
+  const card = g => `<div class="vp"><b>${esc(g.name)}</b>${g.choices.map(c=>{ const v=(EDIT_VP[g.id]||{})[c.n];
+      return `<label class="vp-r"><span>${esc(c.n)}</span><span class="gc-pw"><b>RM</b><input class="input mono" type="number" min="0" max="999" step="0.10" inputmode="decimal" data-vp="${esc(g.id)}" data-vpn="${esc(c.n)}" value="${v>0?(+v).toFixed(2):""}" placeholder="${+c.p>0?(+c.p).toFixed(2):(price?price.toFixed(2):"sama")}" aria-label="Harga ${esc(g.name)} ${esc(c.n)}"></span></label>`; }).join("")}</div>`;
+  const main = gs.filter(hasPrice), rest = gs.filter(g=>!hasPrice(g));
+  box.innerHTML = `<span>Harga varian untuk item ini <small style="font-weight:500">(harga penuh)</small></span>
+    ${main.map(card).join("")}
+    ${rest.length?`<details class="vp-more"${main.length?"":" open"}><summary>Varian lain tanpa harga: ${esc(rest.map(g=>g.name).join(", "))}</summary>${rest.map(card).join("")}</details>`:""}
+    <p class="note" style="margin:6px 0 0">Kosongkan untuk guna harga ${price?`item (RM ${price.toFixed(2)})`:"item"} atau harga asal varian.${priced.length>1?` <b style="color:var(--brand)">Hanya satu varian patut ada harga (cth. Saiz). Untuk caj tambahan seperti susu oat, guna Add-on.</b>`:""}</p>`;
+}
+document.addEventListener("input", e=>{
+  const t = e.target;
+  if(t.dataset && t.dataset.vp){ const g=t.dataset.vp, n=t.dataset.vpn, v=parseFloat(t.value); EDIT_VP[g]=EDIT_VP[g]||{}; if(v>0) EDIT_VP[g][n]=Math.round(v*100)/100; else delete EDIT_VP[g][n]; }
+});
+document.addEventListener("change", e=>{ if(e.target.closest && e.target.closest("#miGroups")) renderVP(); if(e.target.id==="miPrice") renderVP(); });
+
 function saveItem(id){
   const name = $("#miName").value.trim(), price = Math.round(parseFloat($("#miPrice").value)*100)/100;
   if(!name){ toast("Masukkan nama item"); return; }
@@ -1135,7 +1166,9 @@ function saveItem(id){
     badge:$("#miBadge").value.trim().toUpperCase(), hidden:!on("miSale"), popular:on("miPop"), stamp:on("miStamp"), photo:EDIT_PHOTO||undefined });
   if(!it.photo) delete it.photo;
   delete it.opts;
-  try{ localStorage.setItem(ADMIN.keys.menu, JSON.stringify({...m, v:3})); }catch(e){ toast("Storan penuh. Guna gambar yang lebih kecil."); return; }
+  const vp = {}; Object.entries(EDIT_VP).forEach(([g,o])=>{ if(!it.groups.includes(g)) return; const k=Object.entries(o).filter(([,v])=>v>0); if(k.length) vp[g]=Object.fromEntries(k); });
+  if(Object.keys(vp).length) it.vprices = vp; else delete it.vprices;
+  try{ localStorage.setItem(ADMIN.keys.menu, JSON.stringify({...m, v:4})); }catch(e){ toast("Storan penuh. Guna gambar yang lebih kecil."); return; }
   closeSheet(); renderScreen(); toast(`${name} disimpan`);
 }
 function deleteItem(id){
@@ -1221,6 +1254,23 @@ const DEFAULT_GROUPS = [
 const PRESET_GROUPS = { coffee:["suhu","saiz","manis","addkopi"], milk:["suhu","saiz","manis","addsusu"], tea:["suhu","saiz","manis"], pastry:["hidang"], none:[] };
 let menuTab = "items", EG = null;
 /* Menu lama (item.opts) → kumpulan (item.groups) */
+/* Menu v4: semua varian guna HARGA PENUH. Varian lama (harga tambahan) ditukar tanpa ubah harga:
+   harga item + tambahan → harga khas item (item.vprices[groupId][namaPilihan]). */
+function migrateV4(mn){
+  if(!mn || mn.v>=4 || !Array.isArray(mn.groups)) return false;
+  mn.groups.forEach(g=>{
+    if(g.type==="many") return;
+    if(g.mode!=="set"){
+      (mn.items||[]).forEach(it=>{
+        if(!(it.groups||[]).includes(g.id)) return;
+        g.choices.forEach(c=>{ if(+c.p>0){ it.vprices = it.vprices||{}; (it.vprices[g.id] = it.vprices[g.id]||{})[c.n] = Math.round((+it.price + +c.p)*100)/100; } });
+      });
+      g.choices.forEach(c=>{ c.p = 0; });
+    }
+    g.mode = "set";
+  });
+  mn.v = 4; return true;
+}
 function ensureGroups(m){
   if(!Array.isArray(m.items) || Array.isArray(m.groups)) return false;
   m.groups = structuredClone(DEFAULT_GROUPS);
@@ -1230,14 +1280,15 @@ function ensureGroups(m){
 const groupLabel = g => g.type==="many" ? "Add-on" : "Varian";
 const groupsOfItem = (m, it) => (m.groups||[]).filter(g=>(it.groups||[]).includes(g.id));
 const priceTxt = p => p ? `+RM ${(+p).toFixed(2)}` : "";
-const isSetMode = g => g && g.type!=="many" && g.mode==="set";
-/* Teks harga pilihan: "+RM 2.00" (tambah pada harga item) atau "RM 14.00" (harga penuh) */
-const choicePrice = (g, c) => isSetMode(g) ? `RM ${(+c.p||0).toFixed(2)}` : priceTxt(c.p);
-/* Harga item seperti dilihat pelanggan, ambil kira varian "harga penuh" */
+const isVarian = g => g && g.type!=="many";
+/* Teks harga pilihan: varian = harga penuh "RM 14.00" (kosong = ikut harga item); add-on = "+RM 2.00" */
+const choicePrice = (g, c) => isVarian(g) ? (+c.p>0 ? `RM ${(+c.p).toFixed(2)}` : "") : priceTxt(c.p);
+/* Harga varian sebenar untuk item: harga khas item → harga varian → harga item */
+const vPrice = (it, g, c) => { const o = it.vprices && it.vprices[g.id] && +it.vprices[g.id][c.n]; return o>0 ? o : (+c.p>0 ? +c.p : +it.price); };
 function itemPriceTxt(m, it){
-  const sg = groupsOfItem(m, it).find(isSetMode);
+  const sg = groupsOfItem(m, it).find(g=>isVarian(g) && g.choices.some(c=>vPrice(it,g,c)!==+it.price));
   if(!sg) return `RM ${(+it.price).toFixed(2)}`;
-  const ps = sg.choices.map(c=>+c.p||0), lo = Math.min(...ps), hi = Math.max(...ps);
+  const ps = sg.choices.map(c=>vPrice(it,sg,c)), lo = Math.min(...ps), hi = Math.max(...ps);
   return `RM ${lo.toFixed(2)}${hi>lo?`–${hi.toFixed(2)}`:""} <span class="note" style="font-family:var(--font);font-weight:500">ikut ${esc(sg.name)}</span>`;
 }
 function itemGroupSummary(m, it){
@@ -1253,9 +1304,9 @@ function renderGroups(){
     return `<div class="tile mcard">
       <div class="row" style="align-items:flex-start">
         <div class="grow" style="min-width:0"><b class="mname">${esc(g.name)}</b>
-          <div class="note">${g.type==="many"?`Add-on · boleh pilih banyak${g.max?` (maks ${g.max})`:""}`:`Varian · pilih satu (wajib)${isSetMode(g)?" · harga penuh":""}`}</div></div>
+          <div class="note">${g.type==="many"?`Add-on · boleh pilih banyak${g.max?` (maks ${g.max})`:""}`:"Varian · pilih satu (wajib)"}</div></div>
         <button class="btn ghost sm" data-action="editGroup" data-id="${esc(g.id)}" aria-label="Edit ${esc(g.name)}">${icon("edit","width:16px;height:16px")}</button></div>
-      <div class="gchoices">${g.choices.map((c,i)=>`<span>${esc(c.n)}${(c.p||isSetMode(g))?` <b class="mono">${choicePrice(g,c)}</b>`:""}${g.type!=="many"&&i===(g.def||0)?' <em>asal</em>':""}</span>`).join("")}</div>
+      <div class="gchoices">${g.choices.map((c,i)=>`<span>${esc(c.n)}${choicePrice(g,c)?` <b class="mono">${choicePrice(g,c)}</b>`:""}${g.type!=="many"&&i===(g.def||0)?' <em>asal</em>':""}</span>`).join("")}</div>
       <div class="row mfoot"><span class="note grow">${used.length?`Disambung ke ${used.length} item: ${esc(used.slice(0,3).map(i=>i.name).join(", "))}${used.length>3?"…":""}`:"Belum disambung ke mana-mana item"}</span></div>
     </div>`;
   }).join("") || `<div class="tile empty" style="grid-column:1/-1">Belum ada varian atau add-on. Tekan <b>Tambah varian / add-on</b>.</div>`;
@@ -1272,11 +1323,6 @@ function editGroup(id, type){
       <div class="gtype" role="radiogroup" aria-label="Jenis">
         <button type="button" role="radio" data-gtype="one"><b>Varian</b><small>Pelanggan pilih satu. Cth. Saiz, Suhu</small></button>
         <button type="button" role="radio" data-gtype="many"><b>Add-on</b><small>Boleh pilih banyak. Cth. Extra shot</small></button>
-      </div></div>
-    <div class="field" id="gModeF"><span>Cara kira harga varian</span>
-      <div class="gtype" role="radiogroup" aria-label="Cara kira harga">
-        <button type="button" role="radio" data-gmode="add"><b>Tambah pada harga item</b><small>Masukkan beza harga sahaja. Cth. item RM12 + Besar +RM2 = RM14</small></button>
-        <button type="button" role="radio" data-gmode="set"><b>Harga penuh</b><small>Harga pilihan ganti harga item. Cth. Biasa RM12, Besar RM14</small></button>
       </div></div>
     <label class="field"><span>Nama</span><input class="input" id="gName" maxlength="30" value="${esc(EG.name)}" placeholder="cth. Saiz, Pilihan susu, Topping"></label>
     <div class="field"><span>Pilihan &amp; harga</span>
@@ -1302,17 +1348,15 @@ function syncChoices(){
 function renderGroupForm(){
   const one = EG.type!=="many";
   $$("[data-gtype]").forEach(b=>{ const on=b.dataset.gtype===EG.type; b.classList.toggle("on",on); b.setAttribute("aria-checked",on); });
-  const set = one && EG.mode==="set";
-  $("#gMaxF").hidden = one; $("#gModeF").hidden = !one;
-  $$("[data-gmode]").forEach(b=>{ const on=b.dataset.gmode===(EG.mode||"add"); b.classList.toggle("on",on); b.setAttribute("aria-checked",on); });
-  $("#gHint").textContent = set
-    ? "Harga penuh: harga pilihan menggantikan harga item. Masukkan harga jualan sebenar setiap pilihan. Tekan bulatan untuk pilihan asal."
-    : one ? "Harga tambahan: masukkan BEZA harga sahaja (0 jika sama harga). Cth. item RM12, Biasa 0, Besar 2 → RM12 / RM14. Tekan bulatan untuk pilihan asal."
-    : "Harga ditambah pada harga item bila pelanggan pilih. Cth. item RM12 + Extra shot +RM2 = RM14.";
+  const set = one;
+  $("#gMaxF").hidden = one;
+  $("#gHint").textContent = one
+    ? "Masukkan HARGA JUALAN PENUH setiap pilihan (cth. Biasa RM12, Besar RM14). Kosongkan (“sama”) jika sama dengan harga item (cth. Ais / Panas). Harga boleh diubah untuk setiap item di skrin edit item. Tekan bulatan untuk pilihan asal."
+    : "Add-on ialah caj tambahan: harga ditambah pada harga minuman. Cth. RM12 + Extra shot +RM2 = RM14.";
   $("#gChoices").innerHTML = EG.choices.map((c,i)=>`<div class="gc">
     ${one?`<button type="button" class="gc-def ${i===(EG.def||0)?"on":""}" data-gdef="${i}" aria-label="Jadikan pilihan asal" aria-pressed="${i===(EG.def||0)}"></button>`:""}
     <input class="input gc-n" maxlength="30" value="${esc(c.n)}" placeholder="Nama pilihan" aria-label="Nama pilihan ${i+1}">
-    <span class="gc-pw"><b>${set?"RM":"+RM"}</b><input class="input mono gc-p" type="number" min="0" max="999" step="0.10" inputmode="decimal" value="${c.p?(+c.p).toFixed(2):""}" placeholder="0.00" aria-label="${set?"Harga penuh":"Harga tambahan"} pilihan ${i+1}"></span>
+    <span class="gc-pw"><b>${set?"RM":"+RM"}</b><input class="input mono gc-p" type="number" min="0" max="999" step="0.10" inputmode="decimal" value="${c.p?(+c.p).toFixed(2):""}" placeholder="${set?"sama":"0.00"}" aria-label="${set?"Harga penuh":"Harga tambahan"} pilihan ${i+1}"></span>
     <button type="button" class="gc-x" data-gdel="${i}" aria-label="Buang pilihan ${i+1}" ${EG.choices.length<=1?"disabled":""}>${icon("x","width:16px;height:16px")}</button>
   </div>`).join("");
 }
@@ -1322,16 +1366,11 @@ function saveGroup(){
   if(!name){ toast("Masukkan nama varian / add-on"); return; }
   if(!choices.length){ toast("Tambah sekurang-kurangnya satu pilihan"); return; }
   if(EG.type!=="many" && choices.length<2){ toast("Varian perlu sekurang-kurangnya 2 pilihan"); return; }
-  if(EG.type!=="many" && EG.mode==="set" && choices.some(c=>!(c.p>0))){ toast("Harga penuh: setiap pilihan perlu ada harga"); return; }
-  if(EG.type!=="many" && EG.mode!=="set" && choices.every(c=>c.p>0) &&
-     confirm(`Semua pilihan ada harga tambahan, jadi pelanggan akan bayar harga item + harga pilihan (cth. item RM12 + ${choices[0].n} RM${choices[0].p.toFixed(2)} = RM${(12+choices[0].p).toFixed(2)}).\n\nJika ini harga jualan penuh setiap pilihan, tekan OK untuk tukar ke "Harga penuh". Tekan Batal untuk kekalkan sebagai harga tambahan.`)){
-    EG.mode = "set";
-  }
   choices.forEach(c=>{ if(!c.p) c.p=0; if(!c.s) delete c.s; });
   const m = readMenu(); m.groups = m.groups || [];
   let g = m.groups.find(x=>x.id===EG.id);
   if(!g){ g = { id:"g"+Date.now().toString(36) }; m.groups.push(g); }
-  Object.assign(g, { name, type:EG.type, choices, def:EG.type==="many"?undefined:Math.min(EG.def||0, choices.length-1), max:EG.type==="many"?Math.max(0,EG.max):undefined, mode:(EG.type!=="many"&&EG.mode==="set")?"set":undefined });
+  Object.assign(g, { name, type:EG.type, choices, def:EG.type==="many"?undefined:Math.min(EG.def||0, choices.length-1), max:EG.type==="many"?Math.max(0,EG.max):undefined, mode:EG.type!=="many"?"set":undefined });
   Object.keys(g).forEach(k=>g[k]===undefined && delete g[k]);
   const order = m.groups.map(x=>x.id);
   (m.items||[]).forEach(it=>{
@@ -1352,7 +1391,6 @@ function deleteGroup(id){
 document.addEventListener("click", e=>{
   if(!EG || !$("#gChoices")) return;
   const t = e.target.closest("[data-gtype]"); if(t){ syncChoices(); EG.type=t.dataset.gtype; renderGroupForm(); return; }
-  const gm = e.target.closest("[data-gmode]"); if(gm){ syncChoices(); EG.mode=gm.dataset.gmode; renderGroupForm(); return; }
   const d = e.target.closest("[data-gdef]"); if(d){ syncChoices(); EG.def=+d.dataset.gdef; renderGroupForm(); return; }
   const x = e.target.closest("[data-gdel]"); if(x){ syncChoices(); EG.choices.splice(+x.dataset.gdel,1); if((EG.def||0)>=EG.choices.length) EG.def=0; renderGroupForm(); return; }
 });
