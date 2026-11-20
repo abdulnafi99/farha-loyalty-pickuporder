@@ -736,6 +736,7 @@ body[data-screen="cart"] .paybar{display:flex}
         </div>
         <div class="tile span2 list rose">
           <button class="row" data-action="demoBuy"><svg class="i" data-ic="cup"></svg><div class="txt"><b>Simulasi pembelian</b><span>+1 cap &amp; +20 point (mod demo)</span></div><svg class="i" data-ic="chev" style="width:18px"></svg></button>
+          <button class="row" data-action="backup"><svg class="i" data-ic="download"></svg><div class="txt"><b>Backup data app</b><span>Muat turun / kongsi semua data dalam telefon ini</span></div><svg class="i" data-ic="chev" style="width:18px"></svg></button>
           <button class="row" data-action="reset"><svg class="i" data-ic="refresh"></svg><div class="txt"><b>Set semula data demo</b><span>Kembali ke data asal</span></div><svg class="i" data-ic="chev" style="width:18px"></svg></button>
           <a class="row" href="admin.html" target="_blank" rel="noopener"><svg class="i" data-ic="chart"></svg><div class="txt"><b>Admin dashboard</b><span>Kaunter staf &amp; laporan (demo · PIN 1234)</span></div><svg class="i" data-ic="chev" style="width:18px"></svg></a>
         </div>
@@ -1959,6 +1960,64 @@ function openPromo(id){
   else if(l.type==="order") go("order");
 }
 
+/* =========================================================
+   BACKUP / EKSPORT DATA — semua data app (kunci "farha-*") dalam pelayar ini
+   ========================================================= */
+function collectData(withImg=true){
+  const data = {};
+  for(let i=0;i<localStorage.length;i++){
+    const k = localStorage.key(i);
+    if(!k || !k.startsWith("farha-") || k==="farha-cart-v1") continue;
+    if(!withImg && k.startsWith("farha-proof-")) continue;
+    let v = localStorage.getItem(k); try{ v = JSON.parse(v); }catch(e){}
+    data[k] = v;
+  }
+  const users = data["farha-users-v1"];
+  if(users && typeof users==="object") Object.values(users).forEach(u=>{ if(u && typeof u==="object") delete u.pass; }); // jangan eksport hash password
+  if(!withImg){
+    const mn = data["farha-menu-v1"]; if(mn && Array.isArray(mn.items)) mn.items.forEach(it=>delete it.photo);
+    const pr = data["farha-promos-v1"]; if(Array.isArray(pr)) pr.forEach(p=>delete p.image);
+  }
+  return { app:"farha", type:"backup", version:1, exportedAt:new Date().toISOString(), source:location.host||"peranti", withImages:withImg, data };
+}
+function dataSummary(b){
+  const d = b.data, ord = Array.isArray(d["farha-orders-v1"]) ? d["farha-orders-v1"] : [], mn = d["farha-menu-v1"]||{};
+  const adm = d["farha-admin-v1"]||{}, users = d["farha-users-v1"]||{};
+  return {
+    ahli: (adm.members||[]).length + (d["farha-loyalty-v1"]?1:0),
+    akaun: Object.keys(users).length,
+    pesanan: ord.length,
+    item: (mn.items||[]).length,
+    promosi: (d["farha-promos-v1"]||[]).length,
+    bukti: Object.keys(d).filter(k=>k.startsWith("farha-proof-")).length,
+  };
+}
+function backupFile(withImg=true){
+  const b = collectData(withImg), json = JSON.stringify(b, null, 1);
+  const t = new Date(), stamp = `${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,"0")}-${String(t.getDate()).padStart(2,"0")}-${String(t.getHours()).padStart(2,"0")}${String(t.getMinutes()).padStart(2,"0")}`;
+  return { b, json, name:`farha-data-${stamp}.json`, kb:Math.max(1, Math.round(new Blob([json]).size/1024)) };
+}
+function downloadBackup(withImg=true){
+  const f = backupFile(withImg), a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([f.json], { type:"application/json" })); a.download = f.name;
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href), 1500);
+  return f;
+}
+async function shareBackup(withImg=true){
+  const f = backupFile(withImg), file = new File([f.json], f.name, { type:"application/json" });
+  if(navigator.canShare && navigator.canShare({ files:[file] })){ await navigator.share({ files:[file], title:"Data app Farha", text:"Backup data app Farha" }); return f; }
+  throw new Error("Peranti ini tidak menyokong kongsi fail. Guna Muat turun.");
+}
+async function backupMenu(){
+  const s = dataSummary(collectData(true)), f = backupFile(true);
+  const canShare = !!(navigator.canShare && navigator.canShare({ files:[new File(["{}"],"a.json",{type:"application/json"})] }));
+  openSheet(`
+    <div class="icon-sq" style="background:var(--brand);margin-bottom:14px">${icon("download")}</div>
+    <h2>Backup data app</h2>
+    <p>Data dalam telefon ini: <b>${s.akaun||1}</b> akaun · <b>${s.pesanan}</b> pesanan · <b>${s.item}</b> item menu · <b>${s.promosi}</b> promosi · <b>${s.bukti}</b> bukti bayaran. Saiz ≈ <b>${f.kb} KB</b>.</p>
+    <p style="font-size:12.5px">Fail <b>.json</b> boleh dihantar kepada pembangun atau disimpan sebagai backup. Password tidak dieksport. Fail ini ada nama dan no. telefon, jadi kongsi dengan berhati-hati.</p>
+    <div class="btn-row">${canShare?`<button class="btn ghost" data-action="backupShare">${icon("share","width:18px;height:18px")}Kongsi</button>`:""}<button class="btn red" data-action="backupDownload">${icon("download","width:18px;height:18px")}Muat turun</button></div>`);
+}
 /* Delegasi klik */
 document.addEventListener("click", e=>{
   const g=e.target.closest("[data-go]"); if(g){ go(g.dataset.go); return; }
@@ -1969,7 +2028,9 @@ document.addEventListener("click", e=>{
   const a=e.target.closest("[data-action]"); if(!a) return;
   ({
     qr:showQR, close:closeSheet, claimStamp, demoBuy, editName, saveName,
-    storeInfo, addItem, placeOrder, simStore, enableNotif, duitnowPaid:()=>placeOrder(true),
+    storeInfo, addItem, placeOrder, simStore, enableNotif,
+    backup:backupMenu, backupDownload:()=>{ const f=downloadBackup(true); closeSheet(); toast(`${f.name} dimuat turun`); },
+    backupShare:async()=>{ try{ await shareBackup(true); closeSheet(); }catch(e){ if(e && e.name!=="AbortError") toast(e.message||"Tidak dapat kongsi"); } }, duitnowPaid:()=>placeOrder(true),
     delivery:()=>toast("Delivery akan datang. Buat masa ini pickup sahaja."),
     logout:()=>confirmBox("Log keluar?","Anda perlu log masuk semula dengan no. telefon dan password.","doLogout","Log keluar"),
     doLogout:()=>{ closeSheet(); authLogout(); },

@@ -578,6 +578,17 @@ svg.i{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stro
           <p class="note" style="margin-top:12px">Point order = bilangan item × point setiap minuman × gandaan. Cap hanya untuk minuman.</p>
         </div>
         <div class="tile">
+          <h3>Backup &amp; eksport data</h3>
+          <p class="note" id="bkSum" style="margin-top:0">—</p>
+          <label class="row field" style="gap:10px;margin:12px 0"><input type="checkbox" id="bkImg" checked style="width:18px;height:18px;accent-color:var(--brand)"><span style="margin:0;font-weight:600;color:var(--ink)">Sertakan gambar (menu, promosi, bukti bayaran)</span></label>
+          <div class="row" style="flex-wrap:wrap">
+            <button class="btn red" data-action="exportData"><svg class="i" data-ic="download"></svg>Muat turun data</button>
+            <button class="btn ghost" data-action="shareData" id="bkShare" hidden><svg class="i" data-ic="share"></svg>Kongsi fail</button>
+            <label class="btn ghost" for="bkFile"><svg class="i" data-ic="upload"></svg>Pulihkan dari fail</label><input type="file" id="bkFile" accept="application/json,.json" class="sr">
+          </div>
+          <p class="note" style="margin-top:12px">Fail <b>.json</b> mengandungi semua data app dalam pelayar ini: ahli, point, pesanan, menu, promosi, tetapan dan bukti bayaran. Password tidak dieksport. Fail ini ada nama dan no. telefon pelanggan, jadi kongsi dengan berhati-hati.</p>
+        </div>
+        <div class="tile">
           <h3>Data demo</h3>
           <p class="note" style="margin-top:0">Semua data dashboard ini adalah data contoh yang disimpan dalam pelayar ini (localStorage). Bila client setuju, data ini akan disambung ke Firebase supaya semua staf dan pelanggan berkongsi data sebenar.</p>
           <div class="row" style="flex-wrap:wrap">
@@ -661,6 +672,8 @@ const IC = {
   logout:'<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/>',
   camera:'<path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3z"/><circle cx="12" cy="13" r="3"/>',
   search:'<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>',
+  upload:'<path d="M12 15V3M7 8l5-5 5 5M5 21h14"/>',
+  share:'<path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8M16 6l-4-4-4 4M12 2v13"/>',
   download:'<path d="M12 3v12M7 10l5 5 5-5M5 21h14"/>',
   refresh:'<path d="M21 12a9 9 0 1 1-2.6-6.4L21 8M21 3v5h-5"/>',
   plus:'<path d="M12 5v14M5 12h14"/>',
@@ -1611,6 +1624,77 @@ document.addEventListener("change", async e=>{
 });
 document.addEventListener("click", e=>{ if(EDIT_PR && e.target.closest('[data-tgl="prOn"]')) setTimeout(refreshPromoPreview,0); });
 
+/* =========================================================
+   BACKUP / EKSPORT DATA — semua data app (kunci "farha-*") dalam pelayar ini
+   ========================================================= */
+function collectData(withImg=true){
+  const data = {};
+  for(let i=0;i<localStorage.length;i++){
+    const k = localStorage.key(i);
+    if(!k || !k.startsWith("farha-") || k==="farha-cart-v1") continue;
+    if(!withImg && k.startsWith("farha-proof-")) continue;
+    let v = localStorage.getItem(k); try{ v = JSON.parse(v); }catch(e){}
+    data[k] = v;
+  }
+  const users = data["farha-users-v1"];
+  if(users && typeof users==="object") Object.values(users).forEach(u=>{ if(u && typeof u==="object") delete u.pass; }); // jangan eksport hash password
+  if(!withImg){
+    const mn = data["farha-menu-v1"]; if(mn && Array.isArray(mn.items)) mn.items.forEach(it=>delete it.photo);
+    const pr = data["farha-promos-v1"]; if(Array.isArray(pr)) pr.forEach(p=>delete p.image);
+  }
+  return { app:"farha", type:"backup", version:1, exportedAt:new Date().toISOString(), source:location.host||"peranti", withImages:withImg, data };
+}
+function dataSummary(b){
+  const d = b.data, ord = Array.isArray(d["farha-orders-v1"]) ? d["farha-orders-v1"] : [], mn = d["farha-menu-v1"]||{};
+  const adm = d["farha-admin-v1"]||{}, users = d["farha-users-v1"]||{};
+  return {
+    ahli: (adm.members||[]).length + (d["farha-loyalty-v1"]?1:0),
+    akaun: Object.keys(users).length,
+    pesanan: ord.length,
+    item: (mn.items||[]).length,
+    promosi: (d["farha-promos-v1"]||[]).length,
+    bukti: Object.keys(d).filter(k=>k.startsWith("farha-proof-")).length,
+  };
+}
+function backupFile(withImg=true){
+  const b = collectData(withImg), json = JSON.stringify(b, null, 1);
+  const t = new Date(), stamp = `${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,"0")}-${String(t.getDate()).padStart(2,"0")}-${String(t.getHours()).padStart(2,"0")}${String(t.getMinutes()).padStart(2,"0")}`;
+  return { b, json, name:`farha-data-${stamp}.json`, kb:Math.max(1, Math.round(new Blob([json]).size/1024)) };
+}
+function downloadBackup(withImg=true){
+  const f = backupFile(withImg), a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([f.json], { type:"application/json" })); a.download = f.name;
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href), 1500);
+  return f;
+}
+async function shareBackup(withImg=true){
+  const f = backupFile(withImg), file = new File([f.json], f.name, { type:"application/json" });
+  if(navigator.canShare && navigator.canShare({ files:[file] })){ await navigator.share({ files:[file], title:"Data app Farha", text:"Backup data app Farha" }); return f; }
+  throw new Error("Peranti ini tidak menyokong kongsi fail. Guna Muat turun.");
+}
+function renderBackup(){
+  const s = dataSummary(collectData(true)), f = backupFile($("#bkImg")?.checked!==false);
+  $("#bkSum").innerHTML = `Dalam pelayar ini: <b>${s.ahli}</b> ahli · <b>${s.pesanan}</b> pesanan · <b>${s.item}</b> item menu · <b>${s.promosi}</b> promosi · <b>${s.bukti}</b> bukti bayaran. Saiz fail ≈ <b>${f.kb} KB</b>.`;
+  const canShare = !!(navigator.canShare && navigator.canShare({ files:[new File(["{}"],"a.json",{type:"application/json"})] }));
+  $("#bkShare").hidden = !canShare;
+}
+function exportData(){ const f = downloadBackup($("#bkImg").checked); toast(`${f.name} dimuat turun (${f.kb} KB)`); }
+async function shareData(){ try{ await shareBackup($("#bkImg").checked); }catch(e){ if(e && e.name!=="AbortError") toast(e.message||"Tidak dapat kongsi fail"); } }
+async function importData(file){
+  let b;
+  try{ b = JSON.parse(await file.text()); }catch(e){ toast("Fail tidak sah (bukan JSON)"); return; }
+  if(!b || b.app!=="farha" || !b.data || typeof b.data!=="object"){ toast("Ini bukan fail backup Farha"); return; }
+  const s = dataSummary(b), when = b.exportedAt ? new Date(b.exportedAt).toLocaleString("ms-MY") : "tarikh tidak diketahui";
+  if(!confirm(`Pulihkan data dari backup ${when}?\n\n${s.ahli} ahli · ${s.pesanan} pesanan · ${s.item} item · ${s.promosi} promosi\n\nSEMUA data Farha dalam pelayar ini akan DIGANTI dengan data dari fail. Tindakan ini tidak boleh dibatalkan.`)) return;
+  try{
+    const keep = new Set(["farha-session-v1"]);
+    Object.keys(localStorage).filter(k=>k.startsWith("farha-") && !keep.has(k)).forEach(k=>localStorage.removeItem(k));
+    Object.entries(b.data).forEach(([k,v])=>{ if(k.startsWith("farha-") && !keep.has(k)) localStorage.setItem(k, typeof v==="string" ? v : JSON.stringify(v)); });
+  }catch(e){ toast("Storan penuh. Cuba backup tanpa gambar."); return; }
+  load(); renderScreen(); toast("Data dipulihkan dari backup");
+}
+document.addEventListener("change", e=>{ if(e.target.id==="bkImg") renderBackup(); if(e.target.id==="bkFile"){ const f=e.target.files&&e.target.files[0]; if(f) importData(f); e.target.value=""; } });
+
 /* Imbas QR: BarcodeDetector (Chrome/Android) atau jsQR (fallback, dimuat bila perlu) */
 let stream=null, scanRAF=null;
 async function startScan(){
@@ -1747,7 +1831,7 @@ function toggleReward(id){ const r=REWARDS.find(x=>x.id===id); r.active=r.active
 /* =========================================================
    TETAPAN
    ========================================================= */
-function renderSettings(){ $("#setStamp").value=SETTINGS.stampTarget; $("#setPts").value=SETTINGS.pointsPerPurchase; $("#setPrep").value=SETTINGS.prepMins; $("#setMult").value=SETTINGS.pointsMultiplier; $$("[data-open-sw]").forEach(b=>b.classList.toggle("on",SETTINGS.orderOpen!==false)); }
+function renderSettings(){ renderBackup(); $("#setStamp").value=SETTINGS.stampTarget; $("#setPts").value=SETTINGS.pointsPerPurchase; $("#setPrep").value=SETTINGS.prepMins; $("#setMult").value=SETTINGS.pointsMultiplier; $$("[data-open-sw]").forEach(b=>b.classList.toggle("on",SETTINGS.orderOpen!==false)); }
 function saveSettings(){
   const s=parseInt($("#setStamp").value,10), p=parseInt($("#setPts").value,10), pr=parseInt($("#setPrep").value,10), mu=parseInt($("#setMult").value,10);
   if(!(s>=4&&s<=20)||!(p>=1)||!(pr>=1&&pr<=120)||!(mu>=1&&mu<=5)){toast("Nilai tidak sah");return;}
@@ -1782,7 +1866,7 @@ document.addEventListener("click",e=>{
     adjust:()=>adjust(d.id), toCounter:()=>{closeSheet();go("counter");findMember(d.id);},
     exportCSV, newReward:()=>editReward(""), editReward:()=>editReward(d.r), saveReward:()=>saveReward(d.r),
     deleteReward:()=>deleteReward(d.r), toggleReward:()=>toggleReward(d.r),
-    saveSettings, resetDemo,
+    saveSettings, resetDemo, exportData, shareData,
     menuAdd:()=>menuTab==="groups"?editGroup("","one"):editItem(""), editGroup:()=>editGroup(d.id), saveGroup, deleteGroup:()=>deleteGroup(d.id),
     gAdd:()=>{syncChoices();EG.choices.push({n:"",p:0});renderGroupForm();const r=$$("#gChoices .gc-n");r[r.length-1]?.focus();},
     gAllDrinks:()=>$$("#gItems input").forEach(x=>{ if(x.dataset.drink==="1") x.checked=true; }), gNone:()=>$$("#gItems input").forEach(x=>x.checked=false),
