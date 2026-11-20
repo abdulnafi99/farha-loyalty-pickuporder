@@ -28,6 +28,7 @@
   --font:"Plus Jakarta Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
   --safe-b:env(safe-area-inset-bottom,0px);
+  --safe-t:env(safe-area-inset-top,0px);
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;min-height:100%}
@@ -218,12 +219,12 @@ svg.i{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stro
 /* ---------- Sheet (panel sisi / bawah) ---------- */
 .scrim{position:fixed;inset:0;z-index:40;background:rgba(42,11,16,.35);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);opacity:0;visibility:hidden;transition:opacity .3s,visibility 0s .3s}
 .scrim.show{opacity:1;visibility:visible;transition:opacity .3s}
-.sheet{position:fixed;z-index:41;top:0;right:0;height:100%;width:min(440px,100%);background:rgba(255,250,250,.98);box-shadow:-20px 0 50px -20px rgba(60,0,8,.35);transform:translateX(105%);transition:transform .45s cubic-bezier(.2,.9,.2,1);overflow-y:auto;padding:24px 24px calc(30px + var(--safe-b))}
+.sheet{position:fixed;z-index:41;top:0;right:0;height:100%;width:min(440px,100%);background:rgba(255,250,250,.98);box-shadow:-20px 0 50px -20px rgba(60,0,8,.35);transform:translateX(105%);transition:transform .45s cubic-bezier(.2,.9,.2,1);overflow-y:auto;padding:calc(24px + var(--safe-t)) 24px calc(30px + var(--safe-b))}
 .sheet.show{transform:none}
-.sheet .x{position:absolute;right:16px;top:16px;width:38px;height:38px;border-radius:12px;display:grid;place-items:center;background:rgba(191,3,17,.07);color:var(--brand)}
+.sheet .x{position:absolute;right:16px;top:calc(16px + var(--safe-t));width:38px;height:38px;border-radius:12px;display:grid;place-items:center;background:rgba(191,3,17,.07);color:var(--brand)}
 .sheet h2{margin:0 0 4px;font-size:20px}
 .sheet .sub{color:var(--ink-2);font-size:13px;margin:0 0 18px}
-.toast{position:fixed;left:50%;top:18px;z-index:60;transform:translate(-50%,-140%);opacity:0;visibility:hidden;transition:transform .45s cubic-bezier(.2,.9,.2,1),opacity .3s,visibility 0s .45s;background:var(--brand-deep);color:#fff;padding:12px 18px;border-radius:16px;font-size:13.5px;font-weight:600;box-shadow:0 10px 30px -10px rgba(60,0,8,.6);display:flex;gap:10px;align-items:center;max-width:90vw}
+.toast{position:fixed;left:50%;top:calc(18px + var(--safe-t));z-index:60;transform:translate(-50%,-140%);opacity:0;visibility:hidden;transition:transform .45s cubic-bezier(.2,.9,.2,1),opacity .3s,visibility 0s .45s;background:var(--brand-deep);color:#fff;padding:12px 18px;border-radius:16px;font-size:13.5px;font-weight:600;box-shadow:0 10px 30px -10px rgba(60,0,8,.6);display:flex;gap:10px;align-items:center;max-width:90vw}
 .toast.show{transform:translate(-50%,0);opacity:1;visibility:visible;transition:transform .45s cubic-bezier(.2,.9,.2,1),opacity .2s}
 
 /* ---------- Pesanan (order pickup) ---------- */
@@ -262,7 +263,7 @@ svg.i{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stro
 @media (max-width:900px){
   .layout{grid-template-columns:1fr}
   .side{display:none}
-  .main{padding:20px 16px calc(110px + var(--safe-b))}
+  .main{padding:calc(20px + var(--safe-t)) 16px calc(110px + var(--safe-b))}
   .g-2-1,.g2{grid-template-columns:1fr}
   .topbar h1{font-size:22px}
   .search{min-width:0;width:100%}
@@ -365,11 +366,11 @@ svg.i{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stro
             <h3>Cari ahli</h3>
             <div class="scan-box" id="scanBox" hidden><video id="video" playsinline muted></video><div class="frame"></div><div class="laser"></div></div>
             <div class="row" style="margin-bottom:10px">
-              <input class="input mono grow" id="memberIn" placeholder="ID ahli / no. pesanan">
+              <input class="input mono grow" id="memberIn" placeholder="No. telefon / ID ahli / no. pesanan">
               <button class="btn" data-action="findMember">Cari</button>
             </div>
             <button class="btn ghost block" id="scanBtn" data-action="scan"><svg class="i" data-ic="camera"></svg>Imbas QR dengan kamera</button>
-            <p class="note" style="margin:12px 0 0">Cuba ID demo <b class="mono">0012 3456 7890</b> (Aisyah, sama dengan app pelanggan). Imbas QR pesanan atau taip no. pesanan (cth. <b class="mono">F-101</b>) untuk buka pesanan.</p>
+            <p class="note" style="margin:12px 0 0">Cuba ID demo <b class="mono">0012 3456 7890</b> (Aisyah, sama dengan app pelanggan). Ahli baru boleh dicari dengan no. telefon (cth. <b class="mono">012-345 6789</b>). Imbas QR pesanan atau taip no. pesanan (cth. <b class="mono">F-101</b>) untuk buka pesanan.</p>
           </div>
           <div class="tile">
             <h3>Sahkan baucar</h3>
@@ -735,9 +736,9 @@ function findMember(raw){
   if(om){ go("orders"); openOrder(om[1]); return; }
   const id=cleanId(rawS);
   if(!id){toast("Masukkan ID ahli");return;}
-  const m=getMember(id);
+  const m=getMember(id)||(id.startsWith("0")?getMember("6"+id):null)||(!id.startsWith("6")?getMember("60"+id):null);
   if(!m){toast("Ahli tidak dijumpai");$("#memberIn").classList.add("shake");setTimeout(()=>$("#memberIn").classList.remove("shake"),400);return;}
-  counterId=id; qty=1; $("#memberIn").value=fmtId(id); renderCounterMember();
+  counterId=m.id; qty=1; $("#memberIn").value=fmtId(m.id); renderCounterMember();
   if(innerWidth<900) $("#counterMember").scrollIntoView({behavior:"smooth",block:"start"});
 }
 function renderCounterMember(){

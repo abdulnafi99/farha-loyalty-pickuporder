@@ -43,6 +43,8 @@
   --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
   --safe-b:env(safe-area-inset-bottom,0px);
   --safe-t:env(safe-area-inset-top,0px);
+  --safe-l:env(safe-area-inset-left,0px);
+  --safe-r:env(safe-area-inset-right,0px);
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;height:100%}
@@ -67,7 +69,7 @@ svg.i{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stro
 .screens{flex:1;position:relative;overflow:hidden}
 .screen{
   position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;
-  padding:calc(22px + var(--safe-t)) 18px calc(120px + var(--safe-b));
+  padding:calc(22px + var(--safe-t)) max(18px, var(--safe-r)) calc(120px + var(--safe-b)) max(18px, var(--safe-l));
   opacity:0;visibility:hidden;transform:translateY(14px) scale(.985);
   transition:opacity .35s ease,transform .45s cubic-bezier(.2,.8,.2,1),visibility 0s .35s;
   scrollbar-width:none;
@@ -200,7 +202,7 @@ svg.i{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stro
 
 /* ---------- Bottom nav ---------- */
 .nav{
-  position:fixed;left:50%;bottom:calc(16px + var(--safe-b));transform:translateX(-50%);z-index:20;
+  position:fixed;left:50%;bottom:max(16px, calc(8px + var(--safe-b)));transform:translateX(-50%);z-index:20;max-width:calc(100% - 20px - var(--safe-l) - var(--safe-r));
   display:flex;gap:4px;padding:7px;border-radius:999px;
   background:rgba(255,255,255,.78);border:1px solid var(--glass-line);
   backdrop-filter:blur(22px) saturate(180%);-webkit-backdrop-filter:blur(22px) saturate(180%);
@@ -218,8 +220,8 @@ svg.i{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stro
   position:fixed;left:50%;bottom:0;z-index:41;width:100%;max-width:460px;
   transform:translate(-50%,105%);transition:transform .45s cubic-bezier(.2,.9,.2,1);
   background:rgba(255,250,250,.96);border-radius:28px 28px 0 0;
-  padding:12px 22px calc(26px + var(--safe-b));box-shadow:0 -10px 40px -10px rgba(80,0,10,.3);
-  max-height:92vh;overflow-y:auto;
+  padding:12px max(22px, var(--safe-r)) calc(26px + var(--safe-b)) max(22px, var(--safe-l));box-shadow:0 -10px 40px -10px rgba(80,0,10,.3);
+  max-height:92vh;max-height:calc(100dvh - var(--safe-t) - 12px);overflow-y:auto;overscroll-behavior:contain;
 }
 .sheet.show{transform:translate(-50%,0)}
 .sheet .grab{width:42px;height:5px;border-radius:9px;background:rgba(110,74,80,.25);margin:0 auto 18px}
@@ -281,7 +283,7 @@ svg.i{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stro
 .qtyb.big{padding:5px;border-radius:16px;gap:10px}
 .qtyb.big button{width:40px;height:40px;border-radius:12px}
 .qtyb.big b{font-size:15px}
-.cartbar{position:fixed;left:50%;bottom:calc(90px + var(--safe-b));z-index:19;width:calc(100% - 28px);max-width:432px;transform:translate(-50%,150%);opacity:0;visibility:hidden;
+.cartbar{position:fixed;left:50%;bottom:calc(max(16px, calc(8px + var(--safe-b))) + 74px);z-index:19;width:calc(100% - 28px);max-width:432px;transform:translate(-50%,150%);opacity:0;visibility:hidden;
   display:flex;align-items:center;gap:12px;padding:12px 14px 12px 12px;border-radius:20px;color:#fff;text-align:left;
   background:linear-gradient(160deg,var(--brand-2),var(--brand));box-shadow:0 14px 30px -10px rgba(191,3,17,.6);transition:transform .4s cubic-bezier(.2,.9,.2,1),opacity .25s,visibility 0s .4s}
 .cartbar.show{transform:translate(-50%,0);opacity:1;visibility:visible;transition:transform .4s cubic-bezier(.2,.9,.2,1),opacity .25s}
@@ -398,6 +400,43 @@ body[data-screen="cart"] .paybar{display:flex}
 
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 
+/* ---------- Sheet: butang tutup & mod skrin penuh (produk) ---------- */
+.sheet-x{position:absolute;top:12px;right:max(14px, var(--safe-r));z-index:3;width:40px;height:40px;border-radius:12px;display:grid;place-items:center;background:rgba(191,3,17,.07);color:var(--ink)}
+.sheet-x svg.i{width:20px;height:20px}
+.sheet.full{top:0;height:100%;height:100dvh;max-height:none;border-radius:0;padding-top:0;box-shadow:none}
+.sheet.full .grab,.sheet.full .sheet-x{display:none}
+.sheet.full{padding-bottom:0}
+.sheet.full .sheet-foot{bottom:0;margin-bottom:0;background:#FFFAFA}
+.sheet.full .pi-hero{width:auto;height:calc(240px + var(--safe-t));margin:0 calc(-1 * max(22px, var(--safe-r))) 18px calc(-1 * max(22px, var(--safe-l)));padding-top:var(--safe-t);border-radius:0 0 28px 28px}
+.pi-back{position:absolute;top:calc(12px + var(--safe-t));left:max(16px, var(--safe-l));width:44px;height:44px;border-radius:14px;display:grid;place-items:center;
+  color:#fff;background:rgba(255,255,255,.22);border:1px solid rgba(255,255,255,.4);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.pi-hero .pi-back svg.i{width:22px;height:22px;stroke-width:2.2}
+.thumb.peach .pi-back{color:var(--brand-deep);background:rgba(255,255,255,.55)}
+.pi-back:active{transform:scale(.94)}
+
+/* ---------- Log masuk ---------- */
+.auth{position:fixed;inset:0;z-index:90;overflow-y:auto;background:var(--bg)}
+.auth-top{text-align:center;color:#fff;padding:calc(54px + var(--safe-t)) 24px 78px;
+  background:radial-gradient(80% 60% at 50% 40%,#D70A1C 0%,var(--brand) 55%,#8E0712 100%)}
+.auth-top img{width:min(50vw,200px);display:block;margin:0 auto 14px}
+.auth-top p{margin:0;font-size:13.5px;font-weight:600;opacity:.92}
+.auth-card{position:relative;width:calc(100% - 32px - var(--safe-l) - var(--safe-r));max-width:420px;margin:-50px auto calc(28px + var(--safe-b));padding:20px 20px 22px;border-radius:28px;
+  background:rgba(255,250,250,.98);box-shadow:0 30px 60px -24px rgba(80,0,10,.35)}
+.auth-card .seg{margin-bottom:18px}
+.fld{display:block}
+.fld>span:first-child{display:block;font-size:12.5px;font-weight:700;color:var(--ink-2);margin:0 0 6px 2px}
+.phone-in{display:flex;align-items:stretch;border:1px solid rgba(191,3,17,.18);border-radius:14px;background:#fff;margin-bottom:14px;overflow:hidden}
+.phone-in:focus-within{border-color:var(--brand);box-shadow:0 0 0 4px rgba(191,3,17,.1)}
+.phone-in b{display:grid;place-items:center;padding:0 12px 0 16px;font-family:var(--mono);font-size:15px;color:var(--ink-2);border-right:1px solid rgba(191,3,17,.12)}
+.phone-in input{flex:1;min-width:0;border:0;outline:0;background:none;font:inherit;font-family:var(--mono);font-size:16px;padding:14px}
+.pw{position:relative;display:block}
+.pw .input{padding-right:54px}
+.eye{position:absolute;right:6px;top:6px;width:42px;height:42px;border-radius:10px;display:grid;place-items:center;color:var(--ink-2)}
+.auth-err{min-height:18px;margin:0 2px 12px;font-size:12.5px;font-weight:600;line-height:1.45;color:var(--brand)}
+.auth-err.info{color:var(--ink-2)}
+.auth .link{display:block;margin:14px auto 0;padding:6px}
+.auth .demo-note{margin-top:12px}
+
 /* ---------- Toast ---------- */
 .toast{position:fixed;left:50%;top:calc(16px + var(--safe-t));z-index:60;transform:translate(-50%,-140%);opacity:0;visibility:hidden;transition:transform .45s cubic-bezier(.2,.9,.2,1),opacity .3s,visibility 0s .45s;background:var(--brand-deep);color:#fff;padding:12px 18px;border-radius:16px;font-size:13.5px;font-weight:600;box-shadow:0 10px 30px -10px rgba(60,0,8,.6);max-width:90vw;display:flex;gap:10px;align-items:center}
 .toast.show{transform:translate(-50%,0);opacity:1;visibility:visible;transition:transform .45s cubic-bezier(.2,.9,.2,1),opacity .2s}
@@ -478,6 +517,27 @@ body[data-screen="cart"] .paybar{display:flex}
     </div>
     <div class="sp-tag">Rewards</div>
     <div class="sp-load"><b></b></div>
+  </div>
+</div>
+
+<!-- ================= LOG MASUK ================= -->
+<div class="auth" id="auth" hidden>
+  <div class="auth-top"><img class="wm" alt="farha"><p>Kumpul cap, point &amp; order pickup</p></div>
+  <div class="auth-card">
+    <div class="seg" role="tablist" aria-label="Log masuk atau daftar">
+      <button type="button" role="tab" class="on" aria-selected="true" data-auth-tab="login">Log masuk</button>
+      <button type="button" role="tab" aria-selected="false" data-auth-tab="register">Daftar</button>
+    </div>
+    <form id="authForm" novalidate>
+      <label class="fld" id="fName" hidden><span>Nama penuh</span><input class="input" id="aName" autocomplete="name" maxlength="40" placeholder="cth. Aisyah Rahman"></label>
+      <label class="fld"><span>No. telefon</span><span class="phone-in"><b>+60</b><input id="aPhone" type="tel" inputmode="tel" autocomplete="tel-national" placeholder="12-345 6789" maxlength="16"></span></label>
+      <label class="fld"><span>Password</span><span class="pw"><input class="input" id="aPass" type="password" autocomplete="current-password" placeholder="Sekurang-kurangnya 6 aksara"><button type="button" class="eye" id="aEye" aria-label="Tunjuk password"><svg class="i" data-ic="eye"></svg></button></span></label>
+      <label class="fld" id="fPass2" hidden><span>Sahkan password</span><input class="input" id="aPass2" type="password" autocomplete="new-password"></label>
+      <p class="auth-err" id="aErr" role="alert" aria-live="polite"></p>
+      <button class="btn red block" id="aBtn" type="submit">Log masuk</button>
+      <button type="button" class="link" id="aForgot">Lupa password?</button>
+    </form>
+    <p class="demo-note" id="aDemo">Akaun demo: <b class="mono">012-345 6789</b> · password <b class="mono">demo123</b></p>
   </div>
 </div>
 
@@ -662,7 +722,7 @@ body[data-screen="cart"] .paybar{display:flex}
 </div>
 
 <div class="scrim" id="scrim"></div>
-<div class="sheet" id="sheet" role="dialog" aria-modal="true"><div class="grab"></div><div id="sheetBody"></div></div>
+<div class="sheet" id="sheet" role="dialog" aria-modal="true"><div class="grab"></div><button class="sheet-x" data-action="close" aria-label="Tutup"><svg class="i" data-ic="x"></svg></button><div id="sheetBody"></div></div>
 <div class="toast" id="toast"></div>
 
 <script>
@@ -687,6 +747,17 @@ const CONFIG = {
     { id:"set",    name:"Set Sarapan",     desc:"Minuman + roti bakar",        pts:1500, icon:"sparkle", tone:"" },
     { id:"beans",  name:"Biji Kopi 250g",  desc:"Bancuh sendiri di rumah",     pts:2000, icon:"bean",    tone:"warm" },
   ],
+  /* ---------- LOG MASUK ---------- */
+  // Pelanggan log masuk dengan no. telefon + password. Firebase Auth guna e-mel + password,
+  // jadi no. telefon ditukar kepada e-mel dalaman: <no.telefon>@<emailDomain>.
+  auth: {
+    emailDomain: "phone.farha.app",  // domain e-mel dalaman (tidak perlu wujud / tidak terima e-mel)
+    demoPhone: "60123456789",        // akaun demo (mod demo sahaja)
+    demoPassword: "demo123",
+  },
+  // Tampal firebaseConfig dari Firebase console di sini untuk guna Firebase Auth.
+  // null = mod demo (akaun disimpan dalam peranti ini sahaja).
+  firebase: null,
   /* ---------- ORDER PICKUP ---------- */
   store: {                         // cawangan untuk pickup
     name: "Farha — Cawangan Utama",
@@ -775,6 +846,8 @@ const IC = {
   pin:'<path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/>',
   clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
   upload:'<path d="M12 15V3M7 8l5-5 5 5M5 21h14"/>',
+  eye:'<path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+  eyeOff:'<path d="M3 3l18 18M10.6 5.1A10.4 10.4 0 0 1 12 5c6.4 0 10 7 10 7a17.6 17.6 0 0 1-3.3 4.2M6.6 6.6A17.4 17.4 0 0 0 2 12s3.6 7 10 7a9.7 9.7 0 0 0 5.4-1.6M9.9 9.9a3 3 0 0 0 4.2 4.2"/>',
   share:'<path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8M16 6l-4-4-4 4M12 2v13"/>',
 };
 const icon = (n, s) => `<svg class="i" viewBox="0 0 24 24"${s?` style="${s}"`:""}>${IC[n]||""}</svg>`;
@@ -937,7 +1010,7 @@ function render(){
   // PROFIL
   $("#p-av").textContent = firstName()[0].toUpperCase();
   $("#p-name").textContent = S.name;
-  $("#p-id").textContent = fmtId(S.memberId);
+  $("#p-id").textContent = S.phone ? fmtPhone(S.phone) : fmtId(S.memberId);
   $("#p-tier").textContent = tier.name;
   $("#p-tier-bar").style.width = (tier.pct*100)+"%";
   $("#p-tier-txt").textContent = tier.next ? `${fmt(tier.need)} ke ${tier.next.name}` : "Tahap tertinggi";
@@ -968,14 +1041,21 @@ function go(name){
    SHEET, TOAST, CONFETTI
    ========================================================= */
 let timerId=null;
-function openSheet(html){
-  $("#sheetBody").innerHTML = html; hydrateIcons($("#sheetBody"));
-  $("#scrim").classList.add("show"); $("#sheet").classList.add("show");
+/* Sheet. full:true = skrin penuh (halaman produk). Butang back telefon (Android) menutup sheet. */
+let sheetHist=false;
+function openSheet(html, opts={}){
+  const sh=$("#sheet");
+  sh.classList.toggle("full", !!opts.full);
+  $("#sheetBody").innerHTML = html; hydrateIcons($("#sheetBody")); sh.scrollTop=0;
+  $("#scrim").classList.add("show"); sh.classList.add("show");
+  if(!sheetHist){ try{ history.pushState({sheet:1},"",location.href); sheetHist=true; }catch(e){} }
 }
-function closeSheet(){
+function closeSheet(fromPop){
   $("#scrim").classList.remove("show"); $("#sheet").classList.remove("show");
   clearInterval(timerId); currentVoucher=null;
+  if(sheetHist){ sheetHist=false; if(fromPop!==true){ try{ history.back(); }catch(e){} } }
 }
+addEventListener("popstate", ()=>{ if(sheetHist) closeSheet(true); });
 let toastT;
 function toast(msg){
   const t=$("#toast"); t.innerHTML = icon("check","width:18px;height:18px")+`<span>${msg}</span>`;
@@ -1221,7 +1301,7 @@ function openItem(id){
   const optBtn = (g,c,i) => `<button type="button" class="opt ${sel[g.id]===i?"on":""}" data-opt="${g.id}:${i}" aria-pressed="${sel[g.id]===i}">${esc(c.n)}${(c.s||c.p)?`<small>${[c.s,c.p?"+"+money(c.p):""].filter(Boolean).join(" · ")}</small>`:""}</button>`;
   const addBtn = (g,c,i) => `<button type="button" class="addon" data-opt="${g.id}:${i}" aria-pressed="false"><span class="bx">${icon("check")}</span><span class="t">${esc(c.n)}</span><span class="p">+${money(c.p||0)}</span></button>`;
   openSheet(`
-    <div class="thumb pi-hero ${m.tone||""}">${icon(m.icon||"cup")}</div>
+    <div class="thumb pi-hero ${m.tone||""}"><button type="button" class="pi-back" data-action="close" aria-label="Kembali ke menu">${icon("back")}</button>${icon(m.icon||"cup")}</div>
     <div class="pi-head"><h2>${esc(m.name)}</h2><span class="mono">${money(m.price)}</span></div>
     <p style="margin:4px 0 10px">${esc(m.desc)}</p>
     <span class="chip light">+${fmt(ptsFor(1))} point${m.stamp===false?"":" · +1 cap"}</span>
@@ -1232,7 +1312,7 @@ function openItem(id){
     <div class="sheet-foot">
       <div class="qtyb big"><button type="button" data-pq="-1" aria-label="Kurang kuantiti">${icon("minus")}</button><b id="piQty">1</b><button type="button" data-pq="1" aria-label="Tambah kuantiti">${icon("plus")}</button></div>
       <button class="btn red" data-action="addItem"><span>Tambah ke troli</span><span class="mono" id="piTotal">${money(m.price)}</span></button>
-    </div>`);
+    </div>`, { full:true });
   piUpdate();
 }
 function piUnit(){
@@ -1517,6 +1597,174 @@ function orderClick(e){
 document.addEventListener("change", e=>{ if(e.target.id==="slotSel") O.pickupAt = +e.target.value; if(e.target.id==="proofIn"||e.target.id==="proofIn2") onProofPicked(e.target); });
 setInterval(()=>{ const s=document.body.dataset.screen; if(s==="track") renderTrack(); else if(s==="order"||s==="home") renderOrder(); }, 30000);
 
+/* =========================================================
+   LOG MASUK — no. telefon + password
+   Pengguna nampak no. telefon, tetapi Firebase Authentication
+   menggunakan e-mel + password: no. telefon ditukar kepada e-mel
+   dalaman, cth. 60123456789@phone.farha.app (CONFIG.auth.emailDomain).
+   - CONFIG.firebase = null  → mod demo (akaun disimpan dalam peranti)
+   - CONFIG.firebase = {...} → Firebase Auth (Email/Password)
+   ========================================================= */
+const AUTH_KEYS = { session:"farha-session-v1", users:"farha-users-v1" };
+const FB = { auth:null, failed:false };
+let AUTH_MODE = "login";
+
+/* "012-345 6789", "+60 12 345 6789", "123456789" → "60123456789" (atau null jika tidak sah) */
+function normPhone(v){
+  let d = String(v||"").replace(/\D/g,"");
+  if(d.startsWith("60")) {} else if(d.startsWith("0")) d = "6"+d; else d = "60"+d;
+  return /^601\d{8,9}$/.test(d) ? d : null;
+}
+const phoneEmail = p => `${p}@${CONFIG.auth.emailDomain}`;
+const fmtPhone = p => "+" + String(p).replace(/^(60)(1\d)(\d{3,4})(\d{4})$/, "$1 $2-$3 $4");
+async function hashPw(pw){
+  try{ const b = await crypto.subtle.digest("SHA-256", new TextEncoder().encode("farha:"+pw)); return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,"0")).join(""); }
+  catch(e){ let h=0; for(const ch of "farha:"+pw) h=(h*31+ch.charCodeAt(0))|0; return "x"+h; }
+}
+const readUsers = () => { try{ return JSON.parse(localStorage.getItem(AUTH_KEYS.users)) || null; }catch(e){ return null; } };
+const writeUsers = u => { try{ localStorage.setItem(AUTH_KEYS.users, JSON.stringify(u)); }catch(e){} };
+const getSession = () => { try{ return JSON.parse(localStorage.getItem(AUTH_KEYS.session)); }catch(e){ return null; } };
+const setSession = s => { try{ s ? localStorage.setItem(AUTH_KEYS.session, JSON.stringify(s)) : localStorage.removeItem(AUTH_KEYS.session); }catch(e){} };
+async function ensureUsers(){
+  const u = readUsers() || {}, p = CONFIG.auth.demoPhone;
+  if(p && !u[p]){ u[p] = { phone:p, name:CONFIG.demoUser.name, memberId:CONFIG.demoUser.memberId, pass:await hashPw(CONFIG.auth.demoPassword) }; writeUsers(u); }
+  return u;
+}
+function newMember(r){
+  return { name:r.name||"Ahli", memberId:r.memberId, phone:r.phone, points:0, lifetime:0, stamps:0, redeemed:0, history:[], notif:true, offline:true };
+}
+
+/* ---------- Firebase (dimuat hanya bila CONFIG.firebase diisi) ---------- */
+function loadScript(src){ return new Promise((ok,no)=>{ const s=document.createElement("script"); s.src=src; s.onload=ok; s.onerror=()=>no(new Error("Gagal muat "+src)); document.head.appendChild(s); }); }
+async function fbInit(){
+  const base = "https://www.gstatic.com/firebasejs/10.12.2/";
+  await loadScript(base+"firebase-app-compat.js");
+  await loadScript(base+"firebase-auth-compat.js");
+  if(!firebase.apps.length) firebase.initializeApp(CONFIG.firebase);
+  FB.auth = firebase.auth();
+}
+function authMsg(x){
+  const c = x && x.code || "";
+  if(/invalid-credential|wrong-password|user-not-found|invalid-login/.test(c)) return "No. telefon atau password salah.";
+  if(/email-already-in-use/.test(c)) return "No. telefon ini sudah didaftarkan. Sila log masuk.";
+  if(/weak-password/.test(c)) return "Password terlalu lemah. Guna sekurang-kurangnya 6 aksara.";
+  if(/too-many-requests/.test(c)) return "Terlalu banyak cubaan. Cuba lagi sebentar.";
+  if(/network-request-failed/.test(c)) return "Tiada sambungan internet. Cuba lagi.";
+  return "Tidak berjaya. Cuba lagi.";
+}
+async function authLogin(phone, pw){
+  if(CONFIG.firebase){
+    if(!FB.auth) throw { code:"auth/network-request-failed" };
+    const cr = await FB.auth.signInWithEmailAndPassword(phoneEmail(phone), pw);
+    const u = readUsers() || {};
+    return { phone, name:cr.user.displayName || u[phone]?.name || "Ahli", memberId:u[phone]?.memberId || phone };
+  }
+  const u = await ensureUsers(), r = u[phone];
+  if(!r || r.pass !== await hashPw(pw)) throw { code:"auth/invalid-credential" };
+  return { phone, name:r.name, memberId:r.memberId };
+}
+async function authRegister(name, phone, pw){
+  if(CONFIG.firebase){
+    if(!FB.auth) throw { code:"auth/network-request-failed" };
+    const cr = await FB.auth.createUserWithEmailAndPassword(phoneEmail(phone), pw);
+    await cr.user.updateProfile({ displayName:name }).catch(()=>{});
+    return { phone, name, memberId:phone };
+  }
+  const u = await ensureUsers();
+  if(u[phone]) throw { code:"auth/email-already-in-use" };
+  u[phone] = { phone, name, memberId:phone, pass:await hashPw(pw), created:Date.now() }; writeUsers(u);
+  return { phone, name, memberId:phone };
+}
+
+/* Tukar pengguna aktif. Data pengguna aktif disimpan di CONFIG.storageKey (dikongsi dengan admin.html);
+   data pengguna lain disimpan dalam AUTH_KEYS.users sehingga mereka log masuk semula. */
+function enterAs(rec, quiet){
+  const u = readUsers() || {}, sess = getSession();
+  if(S && S.memberId){
+    const owner = (sess && u[sess.phone]) || Object.values(u).find(r=>r.memberId===S.memberId);
+    if(owner && owner.phone!==rec.phone) owner.data = S;
+  }
+  const r = u[rec.phone] = Object.assign(u[rec.phone]||{}, rec);
+  let data = r.data || (S && S.memberId===r.memberId ? S : null);
+  if(!data) data = r.memberId===CONFIG.demoUser.memberId ? structuredClone(CONFIG.demoUser) : newMember(r);
+  delete r.data;
+  S = data; S.phone = r.phone; if(!S.name) S.name = r.name;
+  writeUsers(u); save(); setSession({ phone:r.phone, memberId:r.memberId });
+  Object.keys(seenStatus).forEach(k=>delete seenStatus[k]);
+  myOrders().forEach(o=>{ seenStatus[o.no]=o.status; seenPaid[o.no]=!!o.paid; seenRej[o.no]=!!o.payRejected; });
+  $("#auth").hidden = true; document.body.classList.remove("locked");
+  render();
+  if(!quiet){ go("home"); toast(`Selamat datang, ${esc(firstName())}`); }
+}
+async function authLogout(){
+  const u = readUsers() || {}, sess = getSession();
+  if(sess && u[sess.phone]){ u[sess.phone].data = S; writeUsers(u); }
+  setSession(null);
+  if(FB.auth) await FB.auth.signOut().catch(()=>{});
+  showAuth(sess && sess.phone);
+}
+function showAuth(phone){
+  setAuthTab("login");
+  $("#aPhone").value = phone ? String(phone).slice(2) : "";
+  $("#aPass").value = ""; $("#aPass2").value = "";
+  $("#aDemo").hidden = !!CONFIG.firebase || !CONFIG.auth.demoPhone;
+  $("#auth").hidden = false; document.body.classList.add("locked");
+}
+function setAuthTab(m){
+  AUTH_MODE = m;
+  $$("[data-auth-tab]").forEach(b=>{ const on=b.dataset.authTab===m; b.classList.toggle("on",on); b.setAttribute("aria-selected",on); });
+  $("#fName").hidden = $("#fPass2").hidden = m!=="register";
+  $("#aForgot").hidden = m==="register";
+  $("#aBtn").textContent = m==="register" ? "Daftar akaun" : "Log masuk";
+  $("#aPass").setAttribute("autocomplete", m==="register" ? "new-password" : "current-password");
+  $("#aErr").textContent = ""; $("#aErr").classList.remove("info");
+}
+document.addEventListener("click", e=>{
+  const t = e.target.closest("[data-auth-tab]"); if(t){ setAuthTab(t.dataset.authTab); return; }
+  if(e.target.closest("#aEye")){ const i=$("#aPass"), show=i.type==="password"; i.type=show?"text":"password"; $("#aPass2").type=i.type;
+    $("#aEye").innerHTML = icon(show?"eyeOff":"eye"); $("#aEye").setAttribute("aria-label", show?"Sembunyi password":"Tunjuk password"); return; }
+  if(e.target.closest("#aForgot")){ const el=$("#aErr"); el.classList.add("info");
+    el.textContent = `Untuk reset password, hubungi ${CONFIG.store.name}${CONFIG.store.phone?` di ${CONFIG.store.phone}`:""}. Staf akan bantu set semula password anda.`; }
+});
+$("#authForm").addEventListener("submit", async e=>{
+  e.preventDefault();
+  const err = $("#aErr"); err.textContent = ""; err.classList.remove("info");
+  const phone = normPhone($("#aPhone").value), pw = $("#aPass").value;
+  if(!phone){ err.textContent = "No. telefon tidak sah. Contoh: 012-345 6789"; return; }
+  if(pw.length < 6){ err.textContent = "Password mesti sekurang-kurangnya 6 aksara."; return; }
+  let name = "";
+  if(AUTH_MODE==="register"){
+    name = $("#aName").value.trim();
+    if(name.length < 2){ err.textContent = "Masukkan nama anda."; return; }
+    if(pw !== $("#aPass2").value){ err.textContent = "Password tidak sama."; return; }
+  }
+  const btn = $("#aBtn"), label = btn.textContent; btn.disabled = true; btn.textContent = "Sila tunggu…";
+  try{
+    const rec = AUTH_MODE==="register" ? await authRegister(name, phone, pw) : await authLogin(phone, pw);
+    enterAs(rec);
+    if(AUTH_MODE==="register") setTimeout(()=>toast(`Akaun berjaya didaftar. Selamat datang, ${esc(firstName())}!`), 50);
+  }catch(x){ err.textContent = authMsg(x); }
+  finally{ btn.disabled = false; btn.textContent = label; }
+});
+async function authBoot(){
+  const sess = getSession();
+  if(CONFIG.firebase){
+    try{ await fbInit(); }catch(e){ FB.failed = true; }
+    if(FB.auth){
+      const user = await new Promise(r=>{ const un=FB.auth.onAuthStateChanged(x=>{ un(); r(x); }); });
+      if(user){
+        const phone = (user.email||"").split("@")[0];
+        if(!sess || sess.phone!==phone){ const u=readUsers()||{}; enterAs({ phone, name:user.displayName||"Ahli", memberId:u[phone]?.memberId||phone }, true); }
+        return;
+      }
+      showAuth(sess && sess.phone); return;
+    }
+    // Firebase tidak dapat dimuat (luar talian): kekalkan sesi sedia ada
+  }
+  if(sess && S && S.memberId===sess.memberId){ if(!S.phone){ S.phone=sess.phone; save(); } return; }
+  showAuth();
+}
+
 /* Delegasi klik */
 document.addEventListener("click", e=>{
   const g=e.target.closest("[data-go]"); if(g){ go(g.dataset.go); return; }
@@ -1529,10 +1777,10 @@ document.addEventListener("click", e=>{
     qr:showQR, close:closeSheet, claimStamp, demoBuy, editName, saveName,
     storeInfo, addItem, placeOrder, simStore, duitnowPaid:()=>placeOrder(true),
     delivery:()=>toast("Delivery akan datang. Buat masa ini pickup sahaja."),
-    logout:()=>confirmBox("Log keluar?","Data kad pada peranti ini akan dipadam.","doLogout","Log keluar"),
-    doLogout:()=>{ localStorage.removeItem(CONFIG.storageKey); load(); save(); closeSheet(); render(); go("home"); toast("Anda telah log keluar (data demo dimuat semula)"); },
+    logout:()=>confirmBox("Log keluar?","Anda perlu log masuk semula dengan no. telefon dan password.","doLogout","Log keluar"),
+    doLogout:()=>{ closeSheet(); authLogout(); },
     reset:()=>confirmBox("Set semula data?","Semua point, cap dan sejarah akan kembali ke data demo.","doReset","Set semula"),
-    doReset:()=>{ S=structuredClone(CONFIG.demoUser); save(); closeSheet(); render(); toast("Data demo dipulihkan"); },
+    doReset:()=>{ const ph=S.phone; S = S.memberId===CONFIG.demoUser.memberId ? structuredClone(CONFIG.demoUser) : newMember({name:S.name,memberId:S.memberId,phone:ph}); S.phone=ph; save(); closeSheet(); render(); toast("Data demo dipulihkan"); },
   })[a.dataset.action]?.();
 });
 $("#scrim").addEventListener("click", closeSheet);
@@ -1592,7 +1840,7 @@ function endSplash(){
 /* INIT */
 $$("img.wm").forEach(i=>{ if(!i.src) i.src=WORDMARK; });
 hydrateIcons();
-applyShared(); load(); save(); publishMenu(); myOrders().forEach(o=>{ seenStatus[o.no]=o.status; seenPaid[o.no]=!!o.paid; seenRej[o.no]=!!o.payRejected; }); render(); net();
+applyShared(); load(); save(); publishMenu(); myOrders().forEach(o=>{ seenStatus[o.no]=o.status; seenPaid[o.no]=!!o.paid; seenRej[o.no]=!!o.payRejected; }); render(); net(); authBoot();
 go((location.hash||"#home").slice(1).replace(/[^a-z]/g,"") || "home");
 if(!$(".screen.active")) go("home");
 const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;

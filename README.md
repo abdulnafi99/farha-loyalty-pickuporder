@@ -35,6 +35,15 @@ Ubah menu, harga (harga dalam template ialah contoh), cawangan dan pilihan minum
 
 > Untuk produksi: sambung pesanan ke backend (cth. Firebase) supaya pesanan sampai ke tablet kedai. Dalam mod demo, pesanan disimpan dalam `localStorage` (`farha-orders-v1`).
 
+## Log masuk (no. telefon + password)
+- Skrin **Log masuk / Daftar** selepas splash. Pelanggan guna **no. telefon Malaysia** (cth. `012-345 6789`) dan **password** (minimum 6 aksara).
+- Firebase Authentication guna **e-mel + password**, jadi no. telefon ditukar kepada e-mel dalaman: `60123456789@phone.farha.app` (ubah domain di `CONFIG.auth.emailDomain`). Pelanggan tidak nampak e-mel ini.
+- **ID ahli = no. telefon** (cth. `60123456789`), jadi staf boleh cari ahli di kaunter dengan no. telefon.
+- **Mod demo** (`CONFIG.firebase = null`): akaun disimpan dalam peranti. Akaun demo: `012-345 6789` / `demo123`.
+- **Sambung Firebase:** di Firebase console, hidupkan *Authentication → Sign-in method → Email/Password*, daftar web app, kemudian tampal `firebaseConfig` ke `CONFIG.firebase` dalam `index.html`. Tambah domain hosting anda di *Authentication → Settings → Authorized domains*.
+- **Lupa password:** e-mel dalaman tidak boleh terima e-mel reset, jadi pelanggan diminta hubungi kedai. Staf/owner reset password di Firebase console (*Authentication → Users*).
+- Nota: buat masa ini Firebase digunakan untuk log masuk sahaja. Point, cap dan pesanan masih disimpan dalam peranti sehingga Firestore disambung.
+
 ## Admin dashboard (`admin.html`, demo)
 Buka `/admin` atau `admin.html` dan masukkan PIN demo **1234**.
 - **Ringkasan**: KPI (ahli, pembelian hari ini, point dikeluarkan, tebusan), carta pembelian 14 hari, ganjaran popular, aktiviti terkini dan ahli teratas.
