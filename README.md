@@ -70,7 +70,14 @@ Ubah menu, harga (harga dalam template ialah contoh), cawangan dan pilihan minum
 - Kali pertama admin log masuk, data dari pelayar admin itu dimuat naik jika database masih kosong.
 - Status segerak dipapar di bawah sidebar admin ("Disegerak dengan database").
 - **Pasang peraturan keselamatan (wajib):** Firebase console → *Realtime Database → Rules* → tampal isi fail [`database.rules.json`](database.rules.json) → **Publish**. Semua orang boleh membaca menu; hanya `admin@farha.app` boleh menulis.
-- Belum disegerak (langkah 2): pesanan, point/cap ahli, baucar dan bukti bayaran — masih dalam peranti.
+
+### Langkah 2: akaun ahli, pesanan, bukti bayaran, baucar
+- `/members/{uid}`: nama, no. telefon, point, cap, sejarah. Pelanggan hanya boleh **menolak** point/cap (tebus ganjaran); **admin sahaja** boleh menambah (kredit pesanan, rekod pembelian di kaunter, pelarasan).
+- `/orders/{no}`: pesanan dari telefon pelanggan terus muncul di admin (peranti lain); status dari admin terus muncul di telefon pelanggan. Pelanggan hanya nampak pesanan sendiri.
+- `/proofs/{no}`: bukti DuitNow (dimuat bila staf buka pesanan). `/vouchers/{kod}`: baucar ganjaran yang disahkan di kaunter.
+- `/counters/orderNo`: nombor pesanan unik untuk semua pelanggan.
+- Senarai **Ahli** dan **Ringkasan** di admin kini dari database (ahli sebenar yang mendaftar).
+- Selepas kemas kini, **Publish semula** peraturan dari `database.rules.json`.
 
 ## Backup & eksport data
 - **Admin → Tetapan → Backup & eksport data**: muat turun semua data app dalam pelayar ini sebagai fail `.json` (pilihan: dengan / tanpa gambar), **Kongsi fail** (telefon), dan **Pulihkan dari fail**.

@@ -6,6 +6,69 @@
         ".write": "auth != null && auth.token.email === 'admin@farha.app'",
         ".validate": "newData.hasChildren(['data', 'updatedAt']) && newData.child('data').isString() && newData.child('data').val().length < 9000000"
       }
+    },
+    "members": {
+      ".read": "auth != null && auth.token.email === 'admin@farha.app'",
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && (auth.uid === $uid || auth.token.email === 'admin@farha.app')",
+        "points": {
+          ".validate": "newData.isNumber() && newData.val() >= 0 && (auth.token.email === 'admin@farha.app' || newData.val() <= (data.exists() ? data.val() : 0))"
+        },
+        "lifetime": {
+          ".validate": "newData.isNumber() && newData.val() >= 0 && (auth.token.email === 'admin@farha.app' || newData.val() <= (data.exists() ? data.val() : 0))"
+        },
+        "stamps": {
+          ".validate": "newData.isNumber() && newData.val() >= 0 && (auth.token.email === 'admin@farha.app' || newData.val() <= (data.exists() ? data.val() : 0))"
+        },
+        "redeemed": {
+          ".validate": "newData.isNumber()"
+        },
+        "history": {
+          "$h": {
+            ".validate": "newData.hasChildren(['ts', 't'])"
+          }
+        },
+        "$other": {
+          ".validate": true
+        }
+      }
+    },
+    "orders": {
+      ".read": "auth != null && (auth.token.email === 'admin@farha.app' || (query.orderByChild === 'uid' && query.equalTo === auth.uid))",
+      ".indexOn": [
+        "uid"
+      ],
+      "$no": {
+        ".read": "auth != null && (auth.token.email === 'admin@farha.app' || data.child('uid').val() === auth.uid)",
+        ".write": "auth != null && (auth.token.email === 'admin@farha.app' || (!data.exists() && newData.child('uid').val() === auth.uid && newData.child('status').val() === 'new') || (data.child('uid').val() === auth.uid && newData.child('uid').val() === auth.uid && newData.child('status').val() === data.child('status').val()))",
+        ".validate": "newData.hasChildren(['uid', 'status', 'data']) && newData.child('data').isString()"
+      }
+    },
+    "proofs": {
+      "$no": {
+        ".read": "auth != null && (auth.token.email === 'admin@farha.app' || root.child('orders/' + $no + '/uid').val() === auth.uid)",
+        ".write": "auth != null && (auth.token.email === 'admin@farha.app' || root.child('orders/' + $no + '/uid').val() === auth.uid)",
+        ".validate": "newData.isString() && newData.val().length < 1500000"
+      }
+    },
+    "vouchers": {
+      ".read": "auth != null && (auth.token.email === 'admin@farha.app' || (query.orderByChild === 'uid' && query.equalTo === auth.uid))",
+      ".indexOn": [
+        "uid"
+      ],
+      "$code": {
+        ".read": "auth != null && (auth.token.email === 'admin@farha.app' || data.child('uid').val() === auth.uid)",
+        ".write": "auth != null && (auth.token.email === 'admin@farha.app' || (!data.exists() && newData.child('uid').val() === auth.uid))",
+        ".validate": "newData.hasChildren(['uid', 'data']) && newData.child('data').isString()"
+      }
+    },
+    "counters": {
+      "orderNo": {
+        ".read": "auth != null",
+        ".write": "auth != null",
+        ".validate": "newData.isNumber() && (!data.exists() || newData.val() === data.val() + 1)"
+      }
     }
   }
 }

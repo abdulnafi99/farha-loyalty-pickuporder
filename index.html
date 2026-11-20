@@ -990,7 +990,7 @@ function load(){
   try{ S = JSON.parse(localStorage.getItem(CONFIG.storageKey)); }catch(e){ S=null; }
   if(!S) S = structuredClone(CONFIG.demoUser);
 }
-function save(){ try{ localStorage.setItem(CONFIG.storageKey, JSON.stringify(S)); }catch(e){} }
+function save(){ try{ localStorage.setItem(CONFIG.storageKey, JSON.stringify(S)); }catch(e){} if(typeof pushMember==="function") pushMember(); }
 
 const fmt = n => n.toLocaleString("en-US");
 const fmtId = id => id.replace(/(\d{4})(?=\d)/g,"$1 ");
@@ -1157,7 +1157,7 @@ let currentVoucher=null;
 function voucherSheet(title, sub){
   const code=genCode(); let left=600;
   currentVoucher=code;
-  try{ const list=JSON.parse(localStorage.getItem(SHARED.vouchers)||"[]"); list.unshift({code,reward:title,id:S.memberId,name:S.name,ts:Date.now(),exp:Date.now()+600e3,used:null}); localStorage.setItem(SHARED.vouchers,JSON.stringify(list.slice(0,100))); }catch(e){}
+  try{ const list=JSON.parse(localStorage.getItem(SHARED.vouchers)||"[]"); list.unshift({code,reward:title,id:S.memberId,name:S.name,ts:Date.now(),exp:Date.now()+600e3,used:null}); localStorage.setItem(SHARED.vouchers,JSON.stringify(list.slice(0,100))); }catch(e){} pushMyVouchers();
   openSheet(`
     <div class="center">
       <div class="icon-sq" style="margin:4px auto 14px;background:var(--brand)">${icon("gift")}</div>
@@ -1268,7 +1268,7 @@ let PI = null;
 const money = n => `${CONFIG.order.currency} ${(+n).toFixed(2)}`;
 const hm = ts => new Date(ts).toLocaleTimeString("ms-MY",{hour:"numeric",minute:"2-digit"});
 function readOrders(){ try{ const v=JSON.parse(localStorage.getItem(SHARED.orders)); return Array.isArray(v)?v:[]; }catch(e){ return []; } }
-function writeOrders(list){ try{ localStorage.setItem(SHARED.orders, JSON.stringify(list.slice(0,200))); }catch(e){} }
+function writeOrders(list){ try{ localStorage.setItem(SHARED.orders, JSON.stringify(list.slice(0,200))); }catch(e){} if(!LIVE.remote) pushMyOrders(); }
 function updateOrder(no, fn){ const list=readOrders(), o=list.find(x=>x.no===no); if(!o) return null; fn(o); writeOrders(list); return o; }
 const myOrders = () => readOrders().filter(o=>o.memberId===S.memberId).sort((a,b)=>b.ts-a.ts);
 const activeOrder = () => myOrders().find(o=>ACTIVE.includes(o.status));
@@ -1586,9 +1586,9 @@ function placeOrder(confirmed){
   if(needProof && !PROOF){ toast("Sila muat naik bukti bayaran dahulu"); return; }
   closeSheet();
   O.paying = true; renderCart();
-  setTimeout(()=>{
+  setTimeout(async ()=>{
     const t = totals(), list = readOrders();
-    const no = "F-" + (list.reduce((a,o)=>Math.max(a, parseInt(String(o.no).replace(/\D/g,""),10)||0), 100) + 1);
+    const no = await nextOrderNo(list);
     if(needProof && !saveProof(no, PROOF)){ O.paying=false; renderCart(); toast("Gambar bukti terlalu besar. Cuba screenshot yang lebih kecil."); return; }
     const o = {
       no, ts:Date.now(), memberId:S.memberId, name:S.name, store:CONFIG.store.name,
@@ -1901,8 +1901,10 @@ function enterAs(rec, quiet){
   $("#auth").hidden = true; document.body.classList.remove("locked");
   render();
   if(!quiet){ go("home"); toast(`Selamat datang, ${esc(firstName())}`); }
+  startLive();
 }
 async function authLogout(){
+  stopLive();
   const u = readUsers() || {}, sess = getSession();
   if(sess && u[sess.phone]){ u[sess.phone].data = S; writeUsers(u); }
   setSession(null);
@@ -1961,6 +1963,7 @@ async function authBoot(){
       if(user){
         const phone = (user.email||"").split("@")[0];
         if(!sess || sess.phone!==phone){ const u=readUsers()||{}; enterAs({ phone, name:user.displayName||"Ahli", memberId:u[phone]?.memberId||phone }, true); }
+        startLive();
         return;
       }
       showAuth(sess && sess.phone); return;
@@ -2084,6 +2087,110 @@ async function backupMenu(){
     <p style="font-size:12.5px">Fail <b>.json</b> boleh dihantar kepada pembangun atau disimpan sebagai backup. Password tidak dieksport. Fail ini ada nama dan no. telefon, jadi kongsi dengan berhati-hati.</p>
     <div class="btn-row">${canShare?`<button class="btn ghost" data-action="backupShare">${icon("share","width:18px;height:18px")}Kongsi</button>`:""}<button class="btn red" data-action="backupDownload">${icon("download","width:18px;height:18px")}Muat turun</button></div>`);
 }
+/* =========================================================
+   REALTIME DATABASE (langkah 2): akaun ahli, pesanan, bukti bayaran, baucar
+   /members/{uid}  : name, phone, memberId, points, lifetime, stamps, redeemed, notif, offline, history/{id}
+   /orders/{no}    : { uid, status, data:"<JSON pesanan>", updatedAt }
+   /proofs/{no}    : gambar bukti DuitNow (data URL)
+   /vouchers/{kod} : { uid, data:"<JSON baucar>", updatedAt }
+   /counters/orderNo : nombor pesanan seterusnya
+   Pelanggan hanya boleh MENOLAK point/cap (tebus); admin yang menambah (lihat database.rules.json).
+   ========================================================= */
+const LIVE = { uid:null, offs:[], base:null, ready:false, remote:false, ordersLast:{}, proofSent:{}, vouchLast:{} };
+const dbTS = () => firebase.database.ServerValue.TIMESTAMP;
+const histKey = h => `${h.ts}|${h.t}|${h.p||0}`;
+const cleanHist = h => Object.assign({ ts:h.ts, t:h.t, p:h.p||0 }, h.n?{ n:h.n }:{}, h.k?{ k:h.k }:{});
+function memberFromDb(v){
+  const history = Object.values(v.history||{}).map(cleanHist).sort((a,b)=>b.ts-a.ts);
+  return { name:v.name||S.name, memberId:v.memberId||S.memberId, phone:v.phone||S.phone, points:v.points||0, lifetime:v.lifetime||0,
+    stamps:v.stamps||0, redeemed:v.redeemed||0, notif:v.notif!==false, offline:v.offline!==false, history };
+}
+function liveOn(ref, cb){ ref.on("value", cb, e=>console.warn("Realtime Database:", e && (e.code||e.message))); LIVE.offs.push(()=>ref.off("value", cb)); }
+function stopLive(){ LIVE.offs.forEach(f=>{ try{ f(); }catch(e){} }); Object.assign(LIVE, { uid:null, offs:[], base:null, ready:false, ordersLast:{}, proofSent:{}, vouchLast:{} }); }
+function applyLocal(key, json){
+  if(localStorage.getItem(key) === json) return;
+  LIVE.remote = true; try{ localStorage.setItem(key, json); }catch(e){} LIVE.remote = false;
+  dispatchEvent(new StorageEvent("storage", { key, newValue:json, storageArea:localStorage }));
+}
+async function startLive(){
+  if(!FB.db || !FB.auth || !FB.auth.currentUser) return;
+  const uid = FB.auth.currentUser.uid; if(LIVE.uid === uid) return;
+  stopLive(); LIVE.uid = uid;
+  const mref = FB.db.ref("members/"+uid);
+  try{
+    if(!(await mref.get()).val()) await mref.set({ name:S.name||"Ahli", phone:S.phone||"", memberId:S.memberId, points:0, lifetime:0, stamps:0, redeemed:0, notif:S.notif!==false, offline:S.offline!==false, joined:dbTS() });
+  }catch(e){ console.warn("Cipta akaun ahli:", e && (e.code||e.message)); }
+  if(LIVE.uid !== uid) return;
+  // Akaun ahli: point, cap & sejarah dari database (admin mengkredit selepas pesanan diambil)
+  liveOn(mref, s=>{
+    const v = s.val(); if(!v) return;
+    const before = S.stamps+"/"+S.points;
+    Object.assign(S, memberFromDb(v)); LIVE.base = structuredClone(S);
+    try{ localStorage.setItem(CONFIG.storageKey, JSON.stringify(S)); }catch(e){}
+    render();
+    if(LIVE.ready && before !== S.stamps+"/"+S.points) toast("Kad anda dikemas kini");
+    LIVE.ready = true;
+  });
+  // Pesanan saya
+  liveOn(FB.db.ref("orders").orderByChild("uid").equalTo(uid), s=>{
+    const mine = Object.values(s.val()||{}).map(n=>{ try{ const o = JSON.parse(n.data); o.status = n.status || o.status; return o; }catch(e){ return null; } }).filter(Boolean);
+    mine.forEach(o=>{ LIVE.ordersLast[o.no] = JSON.stringify(o); });
+    applyLocal(SHARED.orders, JSON.stringify(mine.sort((a,b)=>b.ts-a.ts).slice(0,200)));
+  });
+  // Baucar saya (untuk tahu bila staf sahkan)
+  liveOn(FB.db.ref("vouchers").orderByChild("uid").equalTo(uid), s=>{
+    const mine = Object.values(s.val()||{}).map(n=>{ try{ return JSON.parse(n.data); }catch(e){ return null; } }).filter(Boolean);
+    mine.forEach(v=>{ LIVE.vouchLast[v.code] = JSON.stringify(v); });
+    applyLocal(SHARED.vouchers, JSON.stringify(mine.sort((a,b)=>b.ts-a.ts).slice(0,100)));
+  });
+}
+/* Hantar perubahan akaun pelanggan: kiraan sebagai perubahan (+/-) supaya kredit admin tidak ditimpa */
+function pushMember(){
+  if(!LIVE.uid || !LIVE.base || !FB.db) return;
+  const r = FB.db.ref("members/"+LIVE.uid), b = LIVE.base;
+  ["points","lifetime","stamps","redeemed"].forEach(k=>{
+    const d = (S[k]||0) - (b[k]||0);
+    if(d) r.child(k).transaction(c=>(c||0)+d).catch(()=>toast("Gagal kemas kini akaun. Semak internet."));
+  });
+  const up = {}; ["name","phone","notif","offline"].forEach(k=>{ if(S[k]!==b[k] && S[k]!==undefined) up[k] = S[k]; });
+  if(Object.keys(up).length) r.update(up).catch(()=>{});
+  const known = new Set((b.history||[]).map(histKey));
+  (S.history||[]).filter(h=>!known.has(histKey(h))).forEach(h=>r.child("history").push(cleanHist(h)).catch(()=>{}));
+  LIVE.base = structuredClone(S);
+}
+/* Hantar pesanan saya (baru / bukti baru) ke kedai */
+function pushMyOrders(){
+  if(!LIVE.uid || !FB.db) return;
+  readOrders().filter(o=>o.memberId===S.memberId).forEach(o=>{
+    const j = JSON.stringify(o); if(LIVE.ordersLast[o.no] === j){ pushProof(o); return; }
+    LIVE.ordersLast[o.no] = j;
+    FB.db.ref("orders/"+o.no).set({ uid:LIVE.uid, status:o.status, data:j, updatedAt:dbTS() })
+      .then(()=>pushProof(o))
+      .catch(()=>{ delete LIVE.ordersLast[o.no]; toast("Pesanan belum sampai ke kedai. Semak internet dan cuba lagi."); });
+  });
+}
+function pushProof(o){
+  if(!o.proofAt || LIVE.proofSent[o.no] === o.proofAt) return;
+  const p = localStorage.getItem(PROOF_PREFIX+o.no); if(!p) return;
+  LIVE.proofSent[o.no] = o.proofAt;
+  FB.db.ref("proofs/"+o.no).set(p).catch(()=>{ delete LIVE.proofSent[o.no]; toast("Bukti bayaran belum dihantar. Cuba lagi."); });
+}
+function pushMyVouchers(){
+  if(!LIVE.uid || !FB.db) return;
+  let list = []; try{ list = JSON.parse(localStorage.getItem(SHARED.vouchers)||"[]"); }catch(e){}
+  list.filter(v=>v.id===S.memberId && !LIVE.vouchLast[v.code]).forEach(v=>{
+    const j = JSON.stringify(v); LIVE.vouchLast[v.code] = j;
+    FB.db.ref("vouchers/"+v.code).set({ uid:LIVE.uid, data:j, updatedAt:dbTS() }).catch(()=>{ delete LIVE.vouchLast[v.code]; });
+  });
+}
+/* Nombor pesanan unik untuk semua pelanggan */
+async function nextOrderNo(list){
+  const local = list.reduce((a,o)=>Math.max(a, parseInt(String(o.no).replace(/\D/g,""),10)||0), 100) + 1;
+  if(!LIVE.uid || !FB.db) return "F-"+local;
+  try{ const r = await FB.db.ref("counters/orderNo").transaction(c=>(c||100)+1); if(r && r.committed) return "F-"+r.snapshot.val(); }catch(e){}
+  return "F-"+local+"-"+Math.random().toString(36).slice(2,5).toUpperCase();
+}
+
 /* Delegasi klik */
 document.addEventListener("click", e=>{
   const g=e.target.closest("[data-go]"); if(g){ go(g.dataset.go); return; }
