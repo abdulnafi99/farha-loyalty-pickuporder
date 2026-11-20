@@ -805,7 +805,8 @@ function useVoucher(code){
    Point & cap dikreditkan kepada ahli bila staf tekan "Sudah diambil".
    ========================================================= */
 const ORD_LABEL = { new:"Baru", preparing:"Sedang disediakan", ready:"Siap diambil", done:"Selesai", cancelled:"Dibatalkan" };
-const PAY_TXT = { ewallet:"e-Wallet", fpx:"FPX", card:"Kad", counter:"Bayar di kaunter" };
+const PAY_TXT = { counter:"Tunai", duitnow:"DuitNow", ewallet:"e-Wallet", fpx:"FPX", card:"Kad" };
+const needsPayCheck = o => !o.paid && o.pay==="duitnow" && !["done","cancelled"].includes(o.status);
 const readOrders = () => { const v=read(ADMIN.keys.orders,[]); return Array.isArray(v)?v:[]; };
 const writeOrders = l => write(ADMIN.keys.orders, l);
 const rm = n => `RM ${(+n).toFixed(2)}`;
@@ -814,14 +815,21 @@ const freshNos = new Set();
 let knownNos = new Set();
 function orderDue(o){ let end=(o.acceptedAt||o.ts)+(o.prep||SETTINGS.prepMins)*60e3; if(o.pickupAt&&o.pickupAt>end) end=o.pickupAt; return end; }
 function orderActs(o){
-  return {
+  const id = esc(o.no);
+  const verify = needsPayCheck(o) ? `<button class="btn sm" style="background:var(--warn)" data-action="ordPaid" data-no="${id}">${icon("check","width:16px;height:16px")}Sahkan bayaran DuitNow</button></div><div class="row" style="margin-top:8px">` : "";
+  return verify + {
     new:`<button class="btn ghost sm" data-action="ordCancel" data-no="${esc(o.no)}">Tolak</button><button class="btn red sm" data-action="ordSet" data-no="${esc(o.no)}" data-st="preparing">${icon("check","width:16px;height:16px")}Terima &amp; sediakan</button>`,
     preparing:`<button class="btn red sm" data-action="ordSet" data-no="${esc(o.no)}" data-st="ready">${icon("bell","width:16px;height:16px")}Tanda siap</button>`,
-    ready:`<button class="btn sm" data-action="ordSet" data-no="${esc(o.no)}" data-st="done">${icon("check","width:16px;height:16px")}Sudah diambil</button>`,
+    ready:`<button class="btn sm" data-action="ordSet" data-no="${esc(o.no)}" data-st="done">${icon("check","width:16px;height:16px")}${!o.paid&&o.pay!=="duitnow"?"Terima tunai &amp; serah":"Sudah diambil"}</button>`,
   }[o.status] || "";
 }
 const orderItems = o => o.items.map(i=>`<li><b>${i.qty}×</b> ${esc(i.name)}${i.opts?.length?`<span>${esc(i.opts.join(" · "))}</span>`:""}</li>`).join("");
-const payBadge = o => `<span class="badge" ${o.paid?"":'style="background:rgba(199,119,0,.12);color:var(--warn)"'}>${o.paid?`Dibayar · ${PAY_TXT[o.pay]||""}`:"Belum bayar"}</span>`;
+const payBadge = o => `<span class="badge" ${o.paid?'style="background:rgba(20,164,77,.12);color:var(--ok)"':'style="background:rgba(199,119,0,.12);color:var(--warn)"'}>${o.paid?`Dibayar · ${PAY_TXT[o.pay]||""}`:o.pay==="duitnow"?"DuitNow · semak bayaran":"Tunai · bayar di kaunter"}</span>`;
+function markPaid(no){
+  const list = readOrders(), o = list.find(x=>x.no===no); if(!o) return;
+  o.paid = true; o.paidAt = Date.now(); writeOrders(list);
+  toast(`Bayaran DuitNow ${no} disahkan`); closeSheet(); renderOrders();
+}
 function orderCard(o){
   let meta;
   if(o.status==="preparing"){ const left=Math.round((orderDue(o)-Date.now())/60e3); meta=`<span class="due ${left<0?"late":""}">${left<0?`Lewat ${-left} min`:`Siap dalam ${left} min`}</span>`; }
@@ -905,7 +913,7 @@ function cancelOrder(no){
   if(o.perk && getMember(o.memberId)) updateMember(o.memberId, x=>{ x.points+=o.perk.pts; x.redeemed=Math.max(0,x.redeemed-1); },
     { ts:Date.now(), k:"adjust", t:`Refund ${o.perk.name} (order ${no} batal)`, p:o.perk.pts, n:0 });
   o.status = "cancelled"; o.doneAt = Date.now(); writeOrders(list); freshNos.delete(no);
-  toast(`${no} dibatalkan${o.paid?" · pulangkan bayaran pelanggan":""}`); closeSheet(); renderOrders();
+  toast(`${no} dibatalkan${o.paid||o.payClaimed?" · semak & pulangkan bayaran DuitNow pelanggan":""}`); closeSheet(); renderOrders();
 }
 function toggleOpen(){
   SETTINGS.orderOpen = SETTINGS.orderOpen===false; write(ADMIN.keys.settings, SETTINGS);
@@ -1108,7 +1116,7 @@ document.addEventListener("click",e=>{
     exportCSV, newReward:()=>editReward(""), editReward:()=>editReward(d.r), saveReward:()=>saveReward(d.r),
     deleteReward:()=>deleteReward(d.r), toggleReward:()=>toggleReward(d.r),
     saveSettings, resetDemo,
-    ordSet:()=>setOrderStatus(d.no,d.st), ordCancel:()=>cancelOrder(d.no), toggleOpen, toggleStock:()=>toggleStock(d.id),
+    ordSet:()=>setOrderStatus(d.no,d.st), ordPaid:()=>markPaid(d.no), ordCancel:()=>cancelOrder(d.no), toggleOpen, toggleStock:()=>toggleStock(d.id),
     logout:()=>{sessionStorage.removeItem("farha-admin-auth");location.reload();},
   })[d.action]?.();
 });

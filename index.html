@@ -698,6 +698,9 @@ const CONFIG = {
     prepMins: 10,                  // anggaran masa sediakan (minit) — boleh diubah di admin
     pointsMultiplier: 2,           // order dalam app dapat N× point
     currency: "RM",
+    // Bayaran: tunai di kaunter + QR DuitNow kedai
+    duitnowQr: "icons/duitnow-qr.png",   // gambar QR DuitNow kedai anda (PNG/JPG)
+    duitnowName: "[NAMA AKAUN DUITNOW]", // nama yang keluar bila pelanggan imbas
   },
   categories: [                    // "popular" ialah kategori khas (item dengan popular:true)
     { id:"popular",   name:"Popular" },
@@ -1093,8 +1096,10 @@ const SHOP = { open:true };
 let SOLD = [];
 let CART = []; try{ CART = JSON.parse(localStorage.getItem(CART_KEY)) || []; }catch(e){ CART = []; }
 const saveCart = () => { try{ localStorage.setItem(CART_KEY, JSON.stringify(CART)); }catch(e){} };
-const O = { cat:"popular", pickupMode:"asap", pickupAt:null, pay:"ewallet", perk:null, viewing:null, paying:false };
-const seenStatus = {};
+const O = { cat:"popular", pickupMode:"asap", pickupAt:null, pay:"counter", perk:null, viewing:null, paying:false };
+const seenStatus = {}, seenPaid = {};
+const PAY_NAME = { counter:"Tunai di kaunter", duitnow:"QR DuitNow" };
+function payLine(o){ return o.paid ? `Dibayar · ${o.pay==="duitnow"?"DuitNow":"Tunai"}` : o.pay==="duitnow" ? "DuitNow · menunggu pengesahan staf" : "Bayar tunai di kaunter"; }
 let PI = null;
 
 const money = n => `${CONFIG.order.currency} ${(+n).toFixed(2)}`;
@@ -1296,8 +1301,8 @@ function renderCart(){
         <span class="tx"><b>${esc(p.r.name)}</b><small>${p.why?esc(p.why):`${fmt(p.r.pts)} point · jimat ${money(p.val)}`}</small></span><span class="rd"></span></button>`).join("")}
     </div>`:""}
     <div class="card"><h3>Cara bayaran</h3>
-      <div class="opts" style="grid-template-columns:1fr 1fr">${[["ewallet","e-Wallet"],["fpx","FPX"],["card","Kad"],["counter","Bayar di kaunter"]].map(([k,n])=>`<button class="opt ${O.pay===k?"on":""}" data-pay="${k}" aria-pressed="${O.pay===k}">${n}</button>`).join("")}</div>
-      <p class="sub" style="margin:10px 2px 0">Mod demo: tiada caj sebenar.</p>
+      <div class="opts" style="grid-template-columns:1fr 1fr">${[["counter","Tunai di kaunter","Bayar bila ambil"],["duitnow","QR DuitNow","Imbas &amp; bayar sekarang"]].map(([k,n,sub])=>`<button class="opt ${O.pay===k?"on":""}" data-pay="${k}" aria-pressed="${O.pay===k}">${n}<small>${sub}</small></button>`).join("")}</div>
+      <p class="sub" style="margin:10px 2px 0">${O.pay==="duitnow"?"Imbas QR DuitNow kedai dengan app bank atau e-wallet anda. Staf akan sahkan bayaran sebelum pesanan diserahkan.":"Sediakan tunai bila ambil pesanan di kaunter."}</p>
     </div>
     <div class="sum">
       <div><span>Jumlah kecil</span><span class="mono">${money(t.subtotal)}</span></div>
@@ -1306,11 +1311,27 @@ function renderCart(){
     </div>`;
   $("#payTotal").textContent = money(t.total);
   btn.disabled = !SHOP.open || O.paying;
-  btn.textContent = !SHOP.open ? "Kedai tidak terima pesanan" : O.paying ? "Memproses…" : O.pay==="counter" ? "Hantar pesanan" : "Bayar & hantar pesanan";
+  btn.textContent = !SHOP.open ? "Kedai tidak terima pesanan" : O.paying ? "Memproses…" : O.pay==="duitnow" ? "Bayar dengan DuitNow" : "Hantar pesanan";
 }
-function placeOrder(){
+function duitnowSheet(){
+  const t = totals(), q = CONFIG.order;
+  openSheet(`
+    <div class="center">
+      <h2>Bayar dengan DuitNow</h2>
+      <p>Imbas QR di bawah dengan app bank atau e-wallet anda, kemudian masukkan jumlah tepat.</p>
+      <div class="qr-large" style="padding:12px"><img src="${esc(q.duitnowQr)}" alt="QR DuitNow ${esc(q.duitnowName)}" style="width:100%;height:100%;object-fit:contain;display:block;border-radius:12px"
+        onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'sub',style:'height:100%;display:grid;place-items:center;text-align:center;font-size:12px;padding:10px',textContent:'QR DuitNow kedai belum dimasukkan. Letak gambar QR di ${esc(q.duitnowQr)}'}))"></div>
+      <div style="font-size:13px;color:var(--ink-2)">${esc(q.duitnowName)}</div>
+      <div class="code-big" style="letter-spacing:0;font-size:32px">${money(t.total)}</div>
+      <p style="margin:0 0 18px;font-size:12.5px">Tulis <b>nama anda</b> di ruangan rujukan. Tekan butang di bawah selepas bayaran berjaya.</p>
+      <div class="btn-row"><button class="btn ghost" data-action="close">Batal</button><button class="btn red" data-action="duitnowPaid">Saya dah bayar</button></div>
+    </div>`);
+}
+function placeOrder(confirmed){
   if(!CART.length || O.paying) return;
   if(!SHOP.open){ toast("Kedai tidak terima pesanan buat masa ini"); return; }
+  if(O.pay==="duitnow" && confirmed!==true && totals().total>0){ duitnowSheet(); return; }
+  closeSheet();
   O.paying = true; renderCart();
   setTimeout(()=>{
     const t = totals(), list = readOrders();
@@ -1320,15 +1341,15 @@ function placeOrder(){
       items:CART.map(l=>({ name:l.name, opts:l.opts, qty:l.qty, unit:l.unit, stamp:l.stamp })),
       subtotal:t.subtotal, discount:t.discount, total:t.total,
       perk:t.perk ? { id:t.perk.r.id, name:t.perk.r.name, pts:t.perk.r.pts } : null,
-      pay:O.pay, paid:O.pay!=="counter", pickupAt:O.pickupMode==="later"?O.pickupAt:null, prep:CONFIG.order.prepMins,
+      pay:O.pay, paid:false, payClaimed:O.pay==="duitnow", pickupAt:O.pickupMode==="later"?O.pickupAt:null, prep:CONFIG.order.prepMins,
       qty:t.qty, earn:t.earn, stamps:t.drinks, status:"new", credited:false,
     };
     list.unshift(o); writeOrders(list);
     if(o.perk){ S.points -= o.perk.pts; S.redeemed++; S.history.unshift({ ts:o.ts, t:`${o.perk.name} (order ${no})`, p:-o.perk.pts }); save(); }
-    seenStatus[no] = "new";
+    seenStatus[no] = "new"; seenPaid[no] = false;
     CART = []; saveCart(); Object.assign(O, { perk:null, paying:false, pickupMode:"asap", pickupAt:null });
     render(); openTrack(no); confetti(); toast(`Pesanan ${no} dihantar ke kedai`);
-  }, 1100);
+  }, 700);
 }
 
 /* ---------- Status pesanan ---------- */
@@ -1339,7 +1360,7 @@ function renderTrack(){
   if(!o){ box.innerHTML = `<div class="tile center" style="padding:36px 20px"><p class="sub" style="margin:0 0 16px">Belum ada pesanan.</p><button class="btn red" data-go="order">Order sekarang</button></div>`; return; }
   O.viewing = o.no;
   const st = o.status, idx = { new:0, preparing:1, ready:2, done:3, cancelled:-1 }[st];
-  $("#t-head").textContent = st==="cancelled" ? "Pesanan dibatalkan" : o.paid ? "Pesanan dibayar" : "Bayar di kaunter";
+  $("#t-head").textContent = st==="cancelled" ? "Pesanan dibatalkan" : o.paid ? "Pesanan dibayar" : o.pay==="duitnow" ? "Bayaran sedang disemak" : "Bayar tunai di kaunter";
   const right = st==="preparing" ? ["Siap dalam", `~${etaMin(o)} min`] : ["Status", { new:"Menunggu", ready:"Sedia!", done:"Selesai", cancelled:"Batal" }[st]];
   const seg = [idx>=1?"on":idx===0?"run":"", idx>=2?"on":idx===1?"run":"", idx>=2?"on":""];
   box.innerHTML = `<div class="trk">
@@ -1359,7 +1380,7 @@ function renderTrack(){
       <div class="oline" style="font-weight:700;padding-bottom:8px">${esc(o.store||CONFIG.store.name)}<span>${dShort(o.ts)} · ${hm(o.ts)}</span></div>
       ${o.items.map(i=>`<div class="oline"><span>${i.qty}× ${esc(i.name)}<small>${esc(i.opts.join(" · "))}</small></span><span class="mono">${money(i.unit*i.qty)}</span></div>`).join("")}
       ${o.discount?`<div class="oline" style="color:#14833F;font-weight:600"><span>${esc(o.perk?.name||"Diskaun")}</span><span class="mono" style="color:inherit">− ${money(o.discount)}</span></div>`:""}
-      <div class="oline tot"><span>${o.paid?"Dibayar":"Bayar di kaunter"} · ${{ewallet:"e-Wallet",fpx:"FPX",card:"Kad",counter:"Tunai/kad"}[o.pay]||""}</span><span class="mono">${money(o.total)}</span></div>
+      <div class="oline tot"><span>${payLine(o)}</span><span class="mono">${money(o.total)}</span></div>
     </div>
     ${st!=="cancelled" ? `<div class="tile red ord-active" style="margin:0"><span class="ic">${icon("sparkle")}</span>
       <span class="tx"><b>+${fmt(o.earn)} point${o.stamps?` · +${o.stamps} cap`:""}</b><small>${o.credited?"Telah dikreditkan ke akaun anda":"Dikreditkan automatik bila pesanan diambil"}</small></span></div>` : ""}
@@ -1388,7 +1409,10 @@ function simStore(){
   orderNotice(o); render();
 }
 function orderNotice(o){
-  if(!o || seenStatus[o.no]===o.status) return;
+  if(!o) return;
+  if(o.paid && seenPaid[o.no]===false && o.status!=="done"){ seenPaid[o.no]=true; if(seenStatus[o.no]===o.status){ toast(`Bayaran ${o.pay==="duitnow"?"DuitNow":""} untuk ${o.no} disahkan`); return; } }
+  seenPaid[o.no] = !!o.paid;
+  if(seenStatus[o.no]===o.status) return;
   seenStatus[o.no] = o.status;
   const msg = {
     preparing:`Kedai sedang sediakan pesanan ${o.no}`,
@@ -1448,7 +1472,7 @@ document.addEventListener("click", e=>{
   const a=e.target.closest("[data-action]"); if(!a) return;
   ({
     qr:showQR, close:closeSheet, claimStamp, demoBuy, editName, saveName,
-    storeInfo, addItem, placeOrder, simStore,
+    storeInfo, addItem, placeOrder, simStore, duitnowPaid:()=>placeOrder(true),
     delivery:()=>toast("Delivery akan datang. Buat masa ini pickup sahaja."),
     logout:()=>confirmBox("Log keluar?","Data kad pada peranti ini akan dipadam.","doLogout","Log keluar"),
     doLogout:()=>{ localStorage.removeItem(CONFIG.storageKey); load(); save(); closeSheet(); render(); go("home"); toast("Anda telah log keluar (data demo dimuat semula)"); },
@@ -1513,7 +1537,7 @@ function endSplash(){
 /* INIT */
 $$("img.wm").forEach(i=>{ if(!i.src) i.src=WORDMARK; });
 hydrateIcons();
-applyShared(); load(); save(); publishMenu(); myOrders().forEach(o=>{ seenStatus[o.no]=o.status; }); render(); net();
+applyShared(); load(); save(); publishMenu(); myOrders().forEach(o=>{ seenStatus[o.no]=o.status; seenPaid[o.no]=!!o.paid; }); render(); net();
 go((location.hash||"#home").slice(1).replace(/[^a-z]/g,"") || "home");
 if(!$(".screen.active")) go("home");
 const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
