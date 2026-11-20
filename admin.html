@@ -589,11 +589,12 @@ svg.i{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stro
           <p class="note" style="margin-top:12px">Fail <b>.json</b> mengandungi semua data app dalam pelayar ini: ahli, point, pesanan, menu, promosi, tetapan dan bukti bayaran. Password tidak dieksport. Fail ini ada nama dan no. telefon pelanggan, jadi kongsi dengan berhati-hati.</p>
         </div>
         <div class="tile">
-          <h3>Data demo</h3>
-          <p class="note" style="margin-top:0">Semua data dashboard ini adalah data contoh yang disimpan dalam pelayar ini (localStorage). Bila client setuju, data ini akan disambung ke Firebase supaya semua staf dan pelanggan berkongsi data sebenar.</p>
+          <h3>Data ahli &amp; contoh</h3>
+          <p class="note" style="margin-top:0" id="demoNote">—</p>
           <div class="row" style="flex-wrap:wrap">
             <button class="btn ghost" data-action="exportCSV"><svg class="i" data-ic="download"></svg>Eksport ahli (CSV)</button>
-            <button class="btn" data-action="resetDemo"><svg class="i" data-ic="refresh"></svg>Set semula data demo</button>
+            <button class="btn ghost" data-action="clearDemo" id="clearDemoBtn"><svg class="i" data-ic="trash"></svg>Buang ahli &amp; transaksi contoh</button>
+            <button class="btn" data-action="resetDemo" id="resetDemoBtn"><svg class="i" data-ic="refresh"></svg>Set semula SEMUA data</button>
           </div>
         </div>
       </div>
@@ -768,7 +769,7 @@ function seedDB(){
   return {members,tx,v:1};
 }
 function load(){
-  DB=read(ADMIN.keys.db,null); if(!DB||!DB.members){DB=seedDB();write(ADMIN.keys.db,DB);}
+  DB=read(ADMIN.keys.db,null); if(!DB||!DB.members){DB=ADMIN.firebase?{members:[],tx:[],v:1}:seedDB();write(ADMIN.keys.db,DB);}
   CUST=read(ADMIN.keys.customer,null); if(!CUST||!CUST.memberId){CUST=ADMIN.demoCustomer();write(ADMIN.keys.customer,CUST);}
   REWARDS=read(ADMIN.keys.rewards,null); if(!Array.isArray(REWARDS)||!REWARDS.length) REWARDS=structuredClone(ADMIN.defaultRewards);
   SETTINGS=Object.assign({},ADMIN.defaultSettings,read(ADMIN.keys.settings,{}));
@@ -1831,14 +1832,23 @@ function toggleReward(id){ const r=REWARDS.find(x=>x.id===id); r.active=r.active
 /* =========================================================
    TETAPAN
    ========================================================= */
-function renderSettings(){ renderBackup(); $("#setStamp").value=SETTINGS.stampTarget; $("#setPts").value=SETTINGS.pointsPerPurchase; $("#setPrep").value=SETTINGS.prepMins; $("#setMult").value=SETTINGS.pointsMultiplier; $$("[data-open-sw]").forEach(b=>b.classList.toggle("on",SETTINGS.orderOpen!==false)); }
+function renderSettings(){ renderBackup(); $("#resetDemoBtn").hidden=!!ADMIN.firebase; $("#demoNote").textContent=(DB.members||[]).length?`Ada ${DB.members.length} ahli contoh (data palsu untuk demo) dalam dashboard. Buang sebelum guna sebenar. Ahli sebenar muncul bila pelanggan daftar.`:"Tiada ahli contoh. Ahli sebenar muncul bila pelanggan daftar dan order."; $("#setStamp").value=SETTINGS.stampTarget; $("#setPts").value=SETTINGS.pointsPerPurchase; $("#setPrep").value=SETTINGS.prepMins; $("#setMult").value=SETTINGS.pointsMultiplier; $$("[data-open-sw]").forEach(b=>b.classList.toggle("on",SETTINGS.orderOpen!==false)); }
 function saveSettings(){
   const s=parseInt($("#setStamp").value,10), p=parseInt($("#setPts").value,10), pr=parseInt($("#setPrep").value,10), mu=parseInt($("#setMult").value,10);
   if(!(s>=4&&s<=20)||!(p>=1)||!(pr>=1&&pr<=120)||!(mu>=1&&mu<=5)){toast("Nilai tidak sah");return;}
   SETTINGS={...SETTINGS,stampTarget:s,pointsPerPurchase:p,prepMins:pr,pointsMultiplier:mu}; write(ADMIN.keys.settings,SETTINGS); toast("Tetapan disimpan");
 }
+/* Buang 35 ahli & transaksi contoh sahaja. Menu, varian, promosi, pesanan, tetapan & ganjaran TIDAK disentuh. */
+function clearDemo(){
+  const n = (DB.members||[]).length;
+  if(!n && !(DB.tx||[]).length){ toast("Tiada data contoh untuk dibuang"); return; }
+  if(!confirm(`Buang ${n} ahli contoh dan ${DB.tx.length} transaksi contoh?\n\nMenu, varian, promosi, pesanan dan tetapan TIDAK akan disentuh.`)) return;
+  DB = { members:[], tx:[], v:1 }; saveDB(); counterId=null; renderScreen(); toast("Ahli & transaksi contoh dibuang");
+}
+/* Padam SEMUA data app dalam pelayar ini (termasuk menu & promosi). Hanya untuk mod demo. */
 function resetDemo(){
-  if(!confirm("Set semula semua data demo (ahli, transaksi, ganjaran, tetapan & app pelanggan)?")) return;
+  if(ADMIN.firebase){ toast("Tidak tersedia bila Firebase disambung. Guna 'Buang ahli & transaksi contoh'."); return; }
+  if(!confirm("Padam SEMUA data (ahli, transaksi, menu, varian, promosi, pesanan, tetapan) dan kembali ke data contoh?\n\nMuat turun backup dahulu jika perlu.")) return;
   Object.values(ADMIN.keys).forEach(k=>localStorage.removeItem(k)); load(); counterId=null; renderScreen(); toast("Data demo dipulihkan");
 }
 
@@ -1866,7 +1876,7 @@ document.addEventListener("click",e=>{
     adjust:()=>adjust(d.id), toCounter:()=>{closeSheet();go("counter");findMember(d.id);},
     exportCSV, newReward:()=>editReward(""), editReward:()=>editReward(d.r), saveReward:()=>saveReward(d.r),
     deleteReward:()=>deleteReward(d.r), toggleReward:()=>toggleReward(d.r),
-    saveSettings, resetDemo, exportData, shareData,
+    saveSettings, resetDemo, clearDemo, exportData, shareData,
     menuAdd:()=>menuTab==="groups"?editGroup("","one"):editItem(""), editGroup:()=>editGroup(d.id), saveGroup, deleteGroup:()=>deleteGroup(d.id),
     gAdd:()=>{syncChoices();EG.choices.push({n:"",p:0});renderGroupForm();const r=$$("#gChoices .gc-n");r[r.length-1]?.focus();},
     gAllDrinks:()=>$$("#gItems input").forEach(x=>{ if(x.dataset.drink==="1") x.checked=true; }), gNone:()=>$$("#gItems input").forEach(x=>x.checked=false),

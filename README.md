@@ -11,7 +11,8 @@ Ditulis sepenuhnya dalam **HTML, CSS dan JavaScript vanilla**, dalam satu fail `
 - **Tebus ganjaran**: point ditolak, keluar kod baucar 6 aksara dengan pemasa 10 minit, dan animasi konfeti.
 - **Tahap ahli** (Silver / Gold / Platinum) ikut jumlah point terkumpul.
 - **PWA**: boleh dipasang ke skrin utama (Android & iOS) dan dibuka luar talian melalui service worker.
-- **Mod demo**: butang "Simulasi pembelian" dan "Set semula data". Data disimpan dalam `localStorage`.
+- **Mod demo**: butang "Simulasi pembelian" dan "Set semula data". Data disimpan dalam `localStorage`. Bila `CONFIG.firebase` diisi, semua alat demo disorok (pelanggan tidak boleh beri point kepada diri sendiri) dan ahli contoh tidak dijana di admin.
+- **Admin → Tetapan → Buang ahli & transaksi contoh**: buang data palsu sahaja; menu, varian, promosi, pesanan dan tetapan tidak disentuh.
 
 ## Order pickup (baharu)
 Pelanggan boleh order terus dari app dan ambil di kaunter, macam app kopi berantai.
