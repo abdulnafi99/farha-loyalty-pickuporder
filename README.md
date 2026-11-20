@@ -56,6 +56,12 @@ Ubah menu, harga (harga dalam template ialah contoh), cawangan dan pilihan minum
 - Suis **Ada stok** untuk tanda item habis sementara. Perubahan terus muncul dalam app pelanggan.
 - Menu asal dalam `CONFIG.menu` hanya dimasukkan kali pertama app dibuka. Selepas itu menu diurus di admin.
 
+## Promosi (Home)
+- Seksyen **Promosi** di skrin Home app pelanggan: slider banner (bertukar sendiri setiap 5 saat) dengan gambar atau kad warna, lencana, tajuk, keterangan dan butang.
+- **Admin → Promosi**: tambah, edit, buang, susun (naik / turun), tunjuk / sembunyi, dan jadualkan tarikh mula & tamat. Ada pratonton terus semasa edit.
+- Bila ditekan, banner boleh: buka **item istimewa** (terus ke halaman item), buka **kategori**, buka **menu Order**, atau tiada tindakan (banner sahaja).
+- Gambar dimampatkan secara automatik. Saiz disyorkan: landskap, cth. 1200×600. Jika gambar sudah ada tulisan, kosongkan tajuk.
+
 ## Notifikasi push
 - **Pelanggan**: notifikasi bila pesanan diterima, siap, selesai, dibatalkan, bayaran DuitNow disahkan atau bukti ditolak. Hidupkan dari skrin status pesanan atau Profil → Notifikasi push.
 - **Admin**: notifikasi bila pesanan baru masuk atau pelanggan hantar semula bukti DuitNow. Tekan **Hidupkan notifikasi** di skrin Pesanan.

@@ -320,6 +320,36 @@ svg.i{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stro
 .field .chk .gchip.add,.gchips .gchip.add{color:#8A5300}
 .gchips .gchip{margin:0}
 
+/* ---------- Promosi (banner Home) ---------- */
+.promo-wrap{display:flex;flex-direction:column;gap:8px;min-width:0}
+.promo-head{display:flex;justify-content:space-between;align-items:baseline;margin:2px 4px 0}
+.promo-head b{font-size:15px;font-weight:800}
+.promo-head span{font-size:12px;color:var(--ink-2);font-weight:600}
+.promo-track{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;border-radius:var(--radius);-webkit-overflow-scrolling:touch}
+.promo-track::-webkit-scrollbar{display:none}
+.pcard{position:relative;flex:0 0 100%;scroll-snap-align:start;height:176px;border-radius:var(--radius);overflow:hidden;text-align:left;color:#fff;
+  background:radial-gradient(90% 90% at 0% 0%,rgba(255,255,255,.25),transparent 60%),linear-gradient(150deg,#E3192B,#BF0311);box-shadow:0 10px 30px -14px rgba(120,10,20,.35);display:block;width:100%}
+.pcard.dark{background:radial-gradient(120% 140% at 100% 0%,rgba(227,25,43,.85),transparent 55%),linear-gradient(140deg,#2E070C,#5A0710 55%,#8E0712)}
+.pcard.peach{background:linear-gradient(150deg,#FFE6DA,#FFB49F);color:#5A0710}
+.pcard img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+.pcard .pshade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(20,0,4,0) 25%,rgba(20,0,4,.75))}
+.pcard .pdeco{position:absolute;right:-18px;top:-18px;opacity:.16;pointer-events:none}
+.pcard .pdeco svg.i{width:150px;height:150px;stroke-width:1.2}
+.pbody{position:absolute;left:0;right:0;bottom:0;padding:16px 18px;display:flex;flex-direction:column;gap:4px;align-items:flex-start}
+.pbadge{font-size:10.5px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;padding:4px 9px;border-radius:99px;background:rgba(255,255,255,.22);border:1px solid rgba(255,255,255,.35)}
+.pcard.peach .pbadge{background:rgba(90,7,16,.08);border-color:rgba(90,7,16,.16)}
+.pbody b{font-size:19px;font-weight:800;line-height:1.2;letter-spacing:-.01em;text-shadow:0 1px 8px rgba(0,0,0,.12)}
+.pbody small{font-size:12.5px;opacity:.94;line-height:1.35}
+.pcta{margin-top:6px;font-size:12.5px;font-weight:800;padding:7px 13px;border-radius:99px;background:#fff;color:#BF0311}
+.pcard.peach .pcta{background:#BF0311;color:#fff}
+.promo-dots{display:flex;justify-content:center;gap:6px;min-height:6px}
+.promo-dots i{width:6px;height:6px;border-radius:3px;background:rgba(191,3,17,.22);transition:width .3s,background .3s}
+.promo-dots i.on{width:18px;background:#BF0311}
+
+#prGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.prow{display:flex;flex-direction:column;gap:12px}
+.pmini .pcard{height:150px;box-shadow:none}
+
 /* ---------- Sidebar telefon ---------- */
 .mbar,.side-x,.side-scrim{display:none}
 
@@ -374,6 +404,7 @@ svg.i{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stro
     <button class="nav-btn active" data-go="overview"><svg class="i" data-ic="chart"></svg>Ringkasan</button>
     <button class="nav-btn" data-go="orders"><svg class="i" data-ic="bag"></svg>Pesanan<span class="nbadge" data-ordbadge hidden>0</span></button>
     <button class="nav-btn" data-go="menu"><svg class="i" data-ic="cup"></svg>Menu</button>
+    <button class="nav-btn" data-go="promos"><svg class="i" data-ic="sparkle"></svg>Promosi</button>
     <button class="nav-btn" data-go="counter"><svg class="i" data-ic="scan"></svg>Kaunter</button>
     <button class="nav-btn" data-go="members"><svg class="i" data-ic="users"></svg>Ahli</button>
     <button class="nav-btn" data-go="rewards"><svg class="i" data-ic="gift"></svg>Ganjaran</button>
@@ -440,6 +471,16 @@ svg.i{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stro
       <div class="seg" role="tablist" aria-label="Bahagian menu"><button role="tab" data-mtab="items" class="on" aria-selected="true">Item</button><button role="tab" data-mtab="groups" aria-selected="false">Varian &amp; Add-on</button></div>
       <div class="mchips" id="mCats" role="toolbar" aria-label="Tapis kategori"></div>
       <div class="mi-grid" id="miGrid"></div>
+    </section>
+
+    <!-- ========== PROMOSI ========== -->
+    <section class="screen" data-screen="promos">
+      <div class="topbar">
+        <div><small id="prCount">—</small><h1>Promosi</h1></div>
+        <div class="top-actions"><button class="btn red" data-action="newPromo"><svg class="i" data-ic="plus"></svg>Tambah promosi</button></div>
+      </div>
+      <p class="note" style="margin:-8px 0 14px">Banner di skrin Home app pelanggan. Susunan di sini = susunan slider.</p>
+      <div id="prGrid"></div>
     </section>
 
     <!-- ========== KAUNTER ========== -->
@@ -557,6 +598,7 @@ const ADMIN = {
     vouchers: "farha-vouchers-v1",
     menu: "farha-menu-v1",          // katalog menu + item habis (ditulis oleh index.html)
     orders: "farha-orders-v1",      // pesanan pickup dari app
+    promos: "farha-promos-v1",      // banner promosi di Home app pelanggan
   },
   tiers: [{name:"Silver",min:0},{name:"Gold",min:1000},{name:"Platinum",min:2000}],
   defaultSettings: { stampTarget: 10, pointsPerPurchase: 20, prepMins: 10, pointsMultiplier: 2, orderOpen: true },
@@ -611,6 +653,8 @@ const IC = {
   clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
   bell:'<path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.94 1.94 0 0 0 3.4 0"/>',
   menu:'<path d="M4 6h16M4 12h16M4 18h16"/>',
+  up:'<path d="m18 15-6-6-6 6"/>',
+  down:'<path d="m6 9 6 6 6-6"/>',
   ticket:'<path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2zM13 5v2M13 17v2M13 11v2"/>',
 };
 const REWARD_ICONS = ["cup","cake","tag","sparkle","bean","gift","ticket"];
@@ -731,7 +775,7 @@ function go(name){
   history.replaceState(null,"","#"+name);
 }
 function renderScreen(){
-  ({overview:renderOverview,orders:renderOrders,menu:renderMenu,counter:()=>{},members:renderMembers,rewards:renderRewards,settings:renderSettings})[current]?.();
+  ({overview:renderOverview,orders:renderOrders,menu:renderMenu,promos:renderPromoList,counter:()=>{},members:renderMembers,rewards:renderRewards,settings:renderSettings})[current]?.();
 }
 
 /* =========================================================
@@ -1396,6 +1440,150 @@ document.addEventListener("click", e=>{
 });
 document.addEventListener("click", e=>{ const t=e.target.closest("[data-mtab]"); if(t){ menuTab=t.dataset.mtab; menuCat=""; renderMenu(); } });
 
+/* =========================================================
+   PROMOSI — banner di skrin Home app pelanggan
+   ========================================================= */
+const DEFAULT_PROMOS = [
+  { id:"p-2x",  title:"Order dalam app, dapat 2× point", subtitle:"Untuk setiap pesanan pickup", badge:"Promosi", tone:"dark", icon:"sparkle", link:{type:"order"}, cta:"Order sekarang", active:true },
+  { id:"p-sig", title:"Farha Signature", subtitle:"Minuman paling laris kami. Cuba hari ini!", badge:"Item istimewa", tone:"", icon:"cup", link:{type:"item",id:"signature"}, cta:"Order sekarang", active:true },
+];
+const PR_LINKS = { none:"Tiada (banner sahaja)", order:"Buka menu Order", item:"Buka item tertentu", cat:"Buka kategori" };
+const PR_TONES = { "":"Merah", dark:"Merah gelap", peach:"Peach" };
+let EDIT_PR = null;
+const todayStr = () => { const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; };
+const fmtDate = s => { if(!s) return ""; const [y,m,d]=s.split("-"); return `${+d} ${MON[+m-1]} ${y}`; };
+function readPromos(){ const v = read(ADMIN.keys.promos, null); if(Array.isArray(v)) return v; write(ADMIN.keys.promos, DEFAULT_PROMOS); return structuredClone(DEFAULT_PROMOS); }
+function savePromos(list){ try{ localStorage.setItem(ADMIN.keys.promos, JSON.stringify(list)); return true; }catch(e){ toast("Storan penuh. Guna gambar yang lebih kecil."); return false; } }
+function promoStatus(p){
+  const t = todayStr();
+  if(p.active===false) return ["Disembunyi", "warn"];
+  if(p.start && t<p.start) return [`Mula ${fmtDate(p.start)}`, "warn"];
+  if(p.end && t>p.end) return ["Tamat", "bad"];
+  return ["Aktif", "ok"];
+}
+function promoLinkTxt(p){
+  const l = p.link || {}, m = readMenu();
+  if(l.type==="item"){ const it=(m.items||[]).find(x=>x.id===l.id); return `Buka item: ${it?it.name:"(item dibuang)"}`; }
+  if(l.type==="cat"){ const c=menuCats(m).find(x=>x.id===l.id); return `Buka kategori: ${c?c.name:l.id}`; }
+  if(l.type==="order") return "Buka menu Order";
+  return "Banner sahaja";
+}
+function promoCardHTML(p){
+  const l = p.link || {}, cta = l.type && l.type!=="none" ? (p.cta || "Order sekarang") : "", txt = p.title || p.subtitle || p.badge || cta;
+  return `<div class="pcard ${p.image?"":(p.tone||"")}">
+    ${p.image ? `<img src="${esc(p.image)}" alt="">` : `<span class="pdeco">${icon(p.icon||"sparkle")}</span>`}
+    ${p.image && txt ? '<span class="pshade"></span>' : ""}
+    <span class="pbody">${p.badge?`<span class="pbadge">${esc(p.badge)}</span>`:""}${p.title?`<b>${esc(p.title)}</b>`:""}${p.subtitle?`<small>${esc(p.subtitle)}</small>`:""}${cta?`<span class="pcta">${esc(cta)} ›</span>`:""}</span>
+  </div>`;
+}
+function renderPromoList(){
+  const list = readPromos(), live = list.filter(p=>promoStatus(p)[1]==="ok").length;
+  $("#prCount").textContent = `${live} aktif · ${list.length} jumlah`;
+  $("#prGrid").innerHTML = list.map((p,i)=>{ const [st,cls]=promoStatus(p); return `<div class="tile prow">
+      <div class="pmini">${promoCardHTML(p)}</div>
+      <div class="row" style="align-items:flex-start;gap:10px">
+        <div class="grow" style="min-width:0"><b class="mname">${esc(p.title||"(Banner gambar)")}</b>
+          <div class="note">${esc(promoLinkTxt(p))}</div>
+          <div class="row" style="gap:8px;margin-top:6px;flex-wrap:wrap"><span class="status ${cls}">${st}</span>${p.start||p.end?`<span class="note">${p.start?fmtDate(p.start):"…"} – ${p.end?fmtDate(p.end):"…"}</span>`:""}</div></div>
+        <button class="btn ghost sm" data-action="editPromo" data-id="${esc(p.id)}" aria-label="Edit ${esc(p.title||"promosi")}">${icon("edit","width:16px;height:16px")}</button>
+      </div>
+      <div class="row mfoot">
+        <button class="btn ghost sm" data-action="promoMove" data-id="${esc(p.id)}" data-d="-1" ${i===0?"disabled":""} aria-label="Naik">${icon("up","width:16px;height:16px")}</button>
+        <button class="btn ghost sm" data-action="promoMove" data-id="${esc(p.id)}" data-d="1" ${i===list.length-1?"disabled":""} aria-label="Turun">${icon("down","width:16px;height:16px")}</button>
+        <span class="note grow" style="text-align:right">${p.active===false?"Disembunyi":"Ditunjuk"}</span>
+        <button class="switch ${p.active===false?"":"on"}" data-action="togglePromo" data-id="${esc(p.id)}" aria-label="Tunjuk promosi" aria-pressed="${p.active!==false}"></button>
+      </div>
+    </div>`; }).join("") || `<div class="tile empty" style="grid-column:1/-1">Belum ada promosi. Tekan <b>Tambah promosi</b>.</div>`;
+}
+function editPromo(id){
+  const p = readPromos().find(x=>x.id===id);
+  EDIT_PR = p ? structuredClone(p) : { id:"", title:"", subtitle:"", badge:"Promosi", tone:"", icon:"sparkle", link:{type:"order"}, cta:"Order sekarang", active:true, start:"", end:"" };
+  openSheet(`
+    <h2>${id?"Edit promosi":"Promosi baru"}</h2><p class="sub">Dipaparkan sebagai banner di skrin Home app pelanggan.</p>
+    <div class="field" style="margin-bottom:6px"><span>Pratonton</span></div><div id="prPrev" style="margin-bottom:16px"></div>
+    <div class="field"><span>Gambar banner <small style="font-weight:500">(pilihan · landskap, cth. 1200×600)</small></span>
+      <div class="row" style="flex-wrap:wrap"><label class="btn ghost sm" for="prFile">${icon("camera","width:16px;height:16px")}<span id="prFileLbl">${EDIT_PR.image?"Tukar gambar":"Muat naik gambar"}</span></label><input type="file" id="prFile" accept="image/*" class="sr">
+        <button type="button" class="btn ghost sm" data-action="prClearImg" id="prClear" ${EDIT_PR.image?"":"hidden"}>Buang gambar</button></div>
+      <p class="note" style="margin:6px 0 0">Tiada gambar? Kad warna dengan tajuk digunakan. Jika gambar sudah ada tulisan, kosongkan tajuk.</p></div>
+    <label class="field"><span>Tajuk</span><input class="input" id="prTitle" maxlength="50" value="${esc(EDIT_PR.title||"")}" placeholder="cth. Beli 2 percuma 1"></label>
+    <label class="field"><span>Keterangan</span><input class="input" id="prSub" maxlength="90" value="${esc(EDIT_PR.subtitle||"")}" placeholder="cth. Sah sehingga hujung bulan"></label>
+    <div class="grid g2" style="grid-template-columns:1fr 1fr;gap:10px">
+      <label class="field"><span>Lencana</span><input class="input" id="prBadge" maxlength="20" value="${esc(EDIT_PR.badge||"")}" placeholder="cth. Promosi"></label>
+      <label class="field"><span>Warna (tanpa gambar)</span><select class="input" id="prTone">${Object.entries(PR_TONES).map(([k,v])=>`<option value="${k}" ${k===(EDIT_PR.tone||"")?"selected":""}>${v}</option>`).join("")}</select></label>
+    </div>
+    <label class="field"><span>Bila pelanggan tekan</span><select class="input" id="prLink">${Object.entries(PR_LINKS).map(([k,v])=>`<option value="${k}" ${k===(EDIT_PR.link?.type||"none")?"selected":""}>${v}</option>`).join("")}</select></label>
+    <label class="field" id="prTargetF"><span id="prTargetLbl">Item</span><select class="input" id="prTarget"></select></label>
+    <label class="field" id="prCtaF"><span>Teks butang</span><input class="input" id="prCta" maxlength="24" value="${esc(EDIT_PR.cta||"")}" placeholder="Order sekarang"></label>
+    <div class="grid g2" style="grid-template-columns:1fr 1fr;gap:10px">
+      <label class="field"><span>Tarikh mula</span><input class="input" type="date" id="prStart" value="${esc(EDIT_PR.start||"")}"></label>
+      <label class="field"><span>Tarikh tamat</span><input class="input" type="date" id="prEnd" value="${esc(EDIT_PR.end||"")}"></label>
+    </div>
+    <p class="note" style="margin:-6px 0 14px">Kosongkan tarikh untuk papar tanpa had masa. Promosi tamat disorok secara automatik.</p>
+    <div class="row field" style="justify-content:space-between"><span style="margin:0">Tunjuk dalam app</span><button type="button" class="switch ${EDIT_PR.active===false?"":"on"}" data-tgl="prOn" aria-label="Tunjuk dalam app"></button></div>
+    <div class="row" style="margin-top:20px">
+      ${id?`<button class="btn ghost" data-action="deletePromo" data-id="${esc(id)}">${icon("trash")}Buang</button>`:""}
+      <button class="btn red grow" data-action="savePromo">${icon("check")}Simpan promosi</button>
+    </div>`);
+  fillPromoTarget(); refreshPromoPreview();
+}
+function fillPromoTarget(){
+  const type = $("#prLink").value, m = readMenu(), sel = $("#prTarget");
+  $("#prTargetF").hidden = !(type==="item" || type==="cat");
+  $("#prCtaF").hidden = type==="none";
+  if(type==="item"){
+    $("#prTargetLbl").textContent = "Item";
+    sel.innerHTML = (m.items||[]).map(it=>`<option value="${esc(it.id)}" ${EDIT_PR.link?.id===it.id?"selected":""}>${esc(it.name)}${it.hidden?" (tidak dijual)":""}</option>`).join("") || '<option value="">Tiada item</option>';
+  }else if(type==="cat"){
+    $("#prTargetLbl").textContent = "Kategori";
+    sel.innerHTML = [{id:"popular",name:"Popular"}, ...menuCats(m)].map(c=>`<option value="${esc(c.id)}" ${EDIT_PR.link?.id===c.id?"selected":""}>${esc(c.name)}</option>`).join("");
+  }
+}
+function readPromoForm(){
+  const type = $("#prLink").value;
+  Object.assign(EDIT_PR, { title:$("#prTitle").value.trim(), subtitle:$("#prSub").value.trim(), badge:$("#prBadge").value.trim(), tone:$("#prTone").value,
+    cta:$("#prCta").value.trim(), start:$("#prStart").value, end:$("#prEnd").value, active:$('[data-tgl="prOn"]').classList.contains("on"),
+    link: type==="item"||type==="cat" ? { type, id:$("#prTarget").value } : { type } });
+  const it = (readMenu().items||[]).find(x=>x.id===EDIT_PR.link.id);
+  EDIT_PR.icon = EDIT_PR.link.type==="item" ? (it && it.icon==="cake" ? "cake" : "cup") : (EDIT_PR.icon||"sparkle");
+}
+function refreshPromoPreview(){ if(!$("#prPrev")) return; readPromoForm(); $("#prPrev").innerHTML = promoCardHTML(EDIT_PR); }
+function savePromo(){
+  readPromoForm();
+  const p = EDIT_PR;
+  if(!p.image && !p.title){ toast("Masukkan tajuk atau muat naik gambar"); return; }
+  if(p.start && p.end && p.end<p.start){ toast("Tarikh tamat sebelum tarikh mula"); return; }
+  if((p.link.type==="item"||p.link.type==="cat") && !p.link.id){ toast("Pilih item atau kategori"); return; }
+  const list = readPromos();
+  if(!p.id){ p.id = "p"+Date.now().toString(36); list.unshift(p); }
+  else { const i = list.findIndex(x=>x.id===p.id); if(i>=0) list[i] = p; else list.unshift(p); }
+  ["start","end","cta","badge","subtitle","image"].forEach(k=>{ if(!p[k]) delete p[k]; });
+  if(!savePromos(list)) return;
+  closeSheet(); renderPromoList(); toast("Promosi disimpan");
+}
+function deletePromo(id){
+  const list = readPromos(), p = list.find(x=>x.id===id); if(!p) return;
+  if(!confirm(`Buang promosi "${p.title||"banner"}"?`)) return;
+  savePromos(list.filter(x=>x.id!==id)); closeSheet(); renderPromoList(); toast("Promosi dibuang");
+}
+function promoMove(id, d){
+  const list = readPromos(), i = list.findIndex(x=>x.id===id), j = i+d; if(i<0 || j<0 || j>=list.length) return;
+  [list[i], list[j]] = [list[j], list[i]]; savePromos(list); renderPromoList();
+}
+function togglePromo(id){
+  const list = readPromos(), p = list.find(x=>x.id===id); if(!p) return;
+  p.active = p.active===false; savePromos(list); renderPromoList(); toast(p.active?"Promosi ditunjuk":"Promosi disembunyi");
+}
+document.addEventListener("input", e=>{ if(EDIT_PR && e.target.closest && e.target.closest("#sheet") && /^pr/.test(e.target.id||"")) refreshPromoPreview(); });
+document.addEventListener("change", async e=>{
+  if(!EDIT_PR || !$("#prPrev")) return;
+  if(e.target.id==="prLink"){ fillPromoTarget(); refreshPromoPreview(); }
+  else if(e.target.id==="prTone" || e.target.id==="prTarget") refreshPromoPreview();
+  else if(e.target.id==="prFile"){ const f=e.target.files&&e.target.files[0]; if(!f) return;
+    try{ EDIT_PR.image = await compressImage(f, 1200, .76); $("#prClear").hidden=false; $("#prFileLbl").textContent="Tukar gambar"; refreshPromoPreview(); }catch(x){ toast(x.message); }
+    e.target.value=""; }
+});
+document.addEventListener("click", e=>{ if(EDIT_PR && e.target.closest('[data-tgl="prOn"]')) setTimeout(refreshPromoPreview,0); });
+
 /* Imbas QR: BarcodeDetector (Chrome/Android) atau jsQR (fallback, dimuat bila perlu) */
 let stream=null, scanRAF=null;
 async function startScan(){
@@ -1572,6 +1760,8 @@ document.addEventListener("click",e=>{
     gAdd:()=>{syncChoices();EG.choices.push({n:"",p:0});renderGroupForm();const r=$$("#gChoices .gc-n");r[r.length-1]?.focus();},
     gAllDrinks:()=>$$("#gItems input").forEach(x=>{ if(x.dataset.drink==="1") x.checked=true; }), gNone:()=>$$("#gItems input").forEach(x=>x.checked=false),
     toGroups:()=>{closeSheet();menuTab="groups";renderMenu();},
+    newPromo:()=>editPromo(""), editPromo:()=>editPromo(d.id), savePromo, deletePromo:()=>deletePromo(d.id),
+    promoMove:()=>promoMove(d.id,+d.d), togglePromo:()=>togglePromo(d.id), prClearImg:()=>{ delete EDIT_PR.image; $("#prClear").hidden=true; $("#prFileLbl").textContent="Muat naik gambar"; refreshPromoPreview(); },
     newItem:()=>editItem(""), editItem:()=>editItem(d.id), saveItem:()=>saveItem(d.id), deleteItem:()=>deleteItem(d.id),
     clearPhoto:()=>{EDIT_PHOTO=null;refreshPhotoPreview();}, enableNotif, openSide, closeSide,
     ordSet:()=>setOrderStatus(d.no,d.st), ordPaid:()=>markPaid(d.no), ordProof:()=>openOrder(d.no), ordReject:()=>rejectProof(d.no), ordCancel:()=>cancelOrder(d.no), toggleOpen, toggleStock:()=>toggleStock(d.id),
@@ -1608,7 +1798,7 @@ function enter(){
   $("#login").remove(); $("#layout").hidden=false;
   readOrders().forEach(o=>{ knownProof[o.no]=o.proofAt||null; }); renderNotifBtn();
   knownNos=new Set(readOrders().map(o=>o.no)); updateOrderBadge();
-  const h=(location.hash||"").slice(1); go(["overview","orders","menu","counter","members","rewards","settings"].includes(h)?h:"overview");
+  const h=(location.hash||"").slice(1); go(["overview","orders","menu","promos","counter","members","rewards","settings"].includes(h)?h:"overview");
 }
 
 /* INIT */
