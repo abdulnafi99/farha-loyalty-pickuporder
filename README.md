@@ -71,7 +71,10 @@ Ubah menu, harga (harga dalam template ialah contoh), cawangan dan pilihan minum
 - **Had mod demo**: notifikasi keluar bila app/tab terbuka di latar belakang (pelayar yang sama). Untuk notifikasi bila app **ditutup sepenuhnya** dan antara peranti, sambung **Firebase Cloud Messaging** (service worker `sw.js` sudah ada pengendali `push`) dengan Cloud Function yang menghantar push bila status pesanan berubah. iPhone: notifikasi web hanya untuk app yang dipasang ke skrin utama (iOS 16.4+).
 
 ## Admin dashboard (`admin.html`, demo)
-Buka `/admin` atau `admin.html` dan masukkan PIN demo **1234**.
+Buka `/admin` atau `admin.html` dan log masuk dengan **e-mel admin** melalui Firebase Authentication.
+- E-mel yang dibenarkan: `ADMIN.adminEmails` dalam `admin.html` (kini `admin@farha.app`). Akaun pelanggan biasa tidak boleh masuk admin.
+- **Password tidak disimpan dalam kod.** Cipta akaun admin di Firebase console → *Authentication → Users → Add user*. Tukar password di situ juga, atau guna butang **Lupa password?** (pautan reset dihantar ke e-mel admin).
+- Mod demo (`ADMIN.firebase = null`): PIN **1234**.
 - **Ringkasan**: KPI (ahli, pembelian hari ini, point dikeluarkan, tebusan), carta pembelian 14 hari, ganjaran popular, aktiviti terkini dan ahli teratas.
 - **Kaunter**: imbas QR pelanggan dengan kamera (BarcodeDetector, atau jsQR sebagai fallback) atau taip ID ahli. Kemudian rekod pembelian (+cap, +point), tebus kad cap penuh, tebus ganjaran, dan sahkan kod baucar.
 - **Ahli**: cari, tapis ikut tahap, susun. Lihat butiran dan sejarah, laraskan point, eksport CSV.
