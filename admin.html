@@ -365,11 +365,11 @@ svg.i{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stro
             <h3>Cari ahli</h3>
             <div class="scan-box" id="scanBox" hidden><video id="video" playsinline muted></video><div class="frame"></div><div class="laser"></div></div>
             <div class="row" style="margin-bottom:10px">
-              <input class="input mono grow" id="memberIn" placeholder="ID ahli / no. pesanan">
+              <input class="input mono grow" id="memberIn" placeholder="No. telefon / ID ahli / no. pesanan">
               <button class="btn" data-action="findMember">Cari</button>
             </div>
             <button class="btn ghost block" id="scanBtn" data-action="scan"><svg class="i" data-ic="camera"></svg>Imbas QR dengan kamera</button>
-            <p class="note" style="margin:12px 0 0">Cuba ID demo <b class="mono">0012 3456 7890</b> (Aisyah, sama dengan app pelanggan). Imbas QR pesanan atau taip no. pesanan (cth. <b class="mono">F-101</b>) untuk buka pesanan.</p>
+            <p class="note" style="margin:12px 0 0">Cuba ID demo <b class="mono">0012 3456 7890</b> (Aisyah, sama dengan app pelanggan). Ahli baru boleh dicari dengan no. telefon (cth. <b class="mono">012-345 6789</b>). Imbas QR pesanan atau taip no. pesanan (cth. <b class="mono">F-101</b>) untuk buka pesanan.</p>
           </div>
           <div class="tile">
             <h3>Sahkan baucar</h3>
@@ -735,9 +735,9 @@ function findMember(raw){
   if(om){ go("orders"); openOrder(om[1]); return; }
   const id=cleanId(rawS);
   if(!id){toast("Masukkan ID ahli");return;}
-  const m=getMember(id);
+  const m=getMember(id)||(id.startsWith("0")?getMember("6"+id):null)||(!id.startsWith("6")?getMember("60"+id):null);
   if(!m){toast("Ahli tidak dijumpai");$("#memberIn").classList.add("shake");setTimeout(()=>$("#memberIn").classList.remove("shake"),400);return;}
-  counterId=id; qty=1; $("#memberIn").value=fmtId(id); renderCounterMember();
+  counterId=m.id; qty=1; $("#memberIn").value=fmtId(m.id); renderCounterMember();
   if(innerWidth<900) $("#counterMember").scrollIntoView({behavior:"smooth",block:"start"});
 }
 function renderCounterMember(){
