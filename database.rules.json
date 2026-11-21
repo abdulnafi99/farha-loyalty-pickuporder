@@ -63,6 +63,20 @@
         ".validate": "newData.hasChildren(['uid', 'data']) && newData.child('data').isString()"
       }
     },
+    "push": {
+      "$uid": {
+        "$k": {
+          ".write": "auth != null && auth.uid === $uid",
+          ".validate": "newData.hasChildren(['sub']) && newData.child('sub').isString() && newData.child('sub').val().length < 3000"
+        }
+      }
+    },
+    "pushAdmin": {
+      "$k": {
+        ".write": "auth != null && auth.token.email === 'admin@farha.app'",
+        ".validate": "newData.hasChildren(['sub']) && newData.child('sub').isString() && newData.child('sub').val().length < 3000"
+      }
+    },
     "counters": {
       "orderNo": {
         ".read": "auth != null",

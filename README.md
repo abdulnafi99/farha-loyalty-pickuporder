@@ -101,7 +101,22 @@ Ubah menu, harga (harga dalam template ialah contoh), cawangan dan pilihan minum
 - **Pelanggan**: notifikasi bila pesanan diterima, siap, selesai, dibatalkan, bayaran DuitNow disahkan atau bukti ditolak. Hidupkan dari skrin status pesanan atau Profil → Notifikasi push.
 - **Admin**: notifikasi bila pesanan baru masuk atau pelanggan hantar semula bukti DuitNow. Tekan **Hidupkan notifikasi** di skrin Pesanan.
 - Klik notifikasi membuka app di pesanan berkenaan.
-- **Had mod demo**: notifikasi keluar bila app/tab terbuka di latar belakang (pelayar yang sama). Untuk notifikasi bila app **ditutup sepenuhnya** dan antara peranti, sambung **Firebase Cloud Messaging** (service worker `sw.js` sudah ada pengendali `push`) dengan Cloud Function yang menghantar push bila status pesanan berubah. iPhone: notifikasi web hanya untuk app yang dipasang ke skrin utama (iOS 16.4+).
+- **Push walaupun app ditutup** (Web Push melalui fungsi Vercel `api/notify.js`, percuma, tidak perlu pelan Blaze):
+  - Pelanggan buat pesanan → semua peranti admin dapat "Pesanan baru". Pelanggan hantar semula bukti DuitNow → admin dapat "Bukti DuitNow baru".
+  - Admin terima / tanda siap / serah / batal / sahkan bayaran / tolak bukti → telefon pelanggan dapat notifikasi.
+  - Teks notifikasi dibina di pelayan dari data pesanan dalam database (pelanggan tidak boleh hantar teks sendiri). Setiap perubahan hanya dihantar sekali (`/pushLog`).
+  - **Setup sekali sahaja:**
+    1. Firebase console → ⚙ *Project settings → Service accounts → Generate new private key*. Muat turun fail JSON.
+    2. Vercel → projek → *Settings → Environment Variables* (Production), tambah:
+       - `FIREBASE_SERVICE_ACCOUNT` = keseluruhan isi fail JSON tadi
+       - `VAPID_PUBLIC_KEY` dan `VAPID_PRIVATE_KEY` = pasangan kunci Web Push (jana dengan `npx web-push generate-vapid-keys`)
+       - `VAPID_SUBJECT` = `mailto:admin@farha.app` (pilihan)
+    3. *Deployments → Redeploy* supaya pemboleh ubah dibaca.
+    4. Terbitkan `database.rules.json` terkini di Firebase console (ada laluan baru `push` dan `pushAdmin`).
+    5. Setiap peranti buka app sekali dan hidupkan notifikasi (pelanggan: Profil / skrin status pesanan; admin: butang **Hidupkan notifikasi**).
+  - Semak setup: buka `https://<domain>/api/notify`. Jika keluar `{"key":"B..."}` kunci awam sudah ada.
+  - Selagi pelayan belum disetup, notifikasi biasa (app terbuka di latar belakang) terus berfungsi.
+  - **iPhone/iPad**: push web hanya untuk app yang **dipasang ke skrin utama** (iOS 16.4+), dan mesti dibuka dari ikon skrin utama sekali untuk hidupkan notifikasi.
 
 ## Admin dashboard (`admin.html`, demo)
 Buka `/admin` atau `admin.html` dan log masuk dengan **e-mel admin** melalui Firebase Authentication.
