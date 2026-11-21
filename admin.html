@@ -642,6 +642,14 @@ svg.i{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stro
           <p class="note" style="margin-top:12px">Point order = bilangan item × point setiap minuman × gandaan. Cap hanya untuk minuman.</p>
         </div>
         <div class="tile">
+          <h3>Lokasi pickup</h3>
+          <label class="field"><span>Nama cawangan</span><input class="input" id="setStoreName" maxlength="60" placeholder="cth. Farha — Cawangan Utama"></label>
+          <label class="field"><span>Alamat pickup</span><textarea class="input" id="setStoreAddr" rows="3" maxlength="300" placeholder="cth. No. 12, Jalan Mawar 3, Taman Bunga, 43000 Kajang, Selangor"></textarea></label>
+          <label class="field"><span>Pautan Google Maps / Waze (pilihan)</span><input class="input" id="setStoreMap" inputmode="url" maxlength="500" placeholder="https://maps.app.goo.gl/…"></label>
+          <p class="note" style="margin:-4px 0 12px">Pelanggan nampak nama &amp; alamat di troli dan info cawangan. Butang <b>Arah</b> buka pautan peta, atau cari alamat di Google Maps jika pautan kosong.</p>
+          <button class="btn red" data-action="saveStore">Simpan lokasi pickup</button>
+        </div>
+        <div class="tile">
           <h3>Pembayaran &amp; sokongan</h3>
           <div class="field"><span>QR DuitNow kedai</span>
             <div class="qr-set"><div id="setQrPrev" class="qr-prev"></div>
@@ -2183,13 +2191,26 @@ function toggleReward(id){ const r=REWARDS.find(x=>x.id===id); r.active=r.active
 /* =========================================================
    TETAPAN
    ========================================================= */
-function renderSettings(){ renderBackup(); renderPaySupport(); $("#resetDemoBtn").hidden=!!ADMIN.firebase; $("#demoNote").textContent=(DB.members||[]).length?`Ada ${DB.members.length} ahli contoh (data palsu untuk demo) dalam dashboard. Buang sebelum guna sebenar. Ahli sebenar muncul bila pelanggan daftar.`:"Tiada ahli contoh. Ahli sebenar muncul bila pelanggan daftar dan order."; $("#setStamp").value=SETTINGS.stampTarget; $("#setPts").value=SETTINGS.pointsPerPurchase; $("#setMult").value=SETTINGS.pointsMultiplier; $$("[data-open-sw]").forEach(b=>b.classList.toggle("on",SETTINGS.orderOpen!==false)); }
+function renderSettings(){ renderBackup(); renderPaySupport(); renderStore(); $("#resetDemoBtn").hidden=!!ADMIN.firebase; $("#demoNote").textContent=(DB.members||[]).length?`Ada ${DB.members.length} ahli contoh (data palsu untuk demo) dalam dashboard. Buang sebelum guna sebenar. Ahli sebenar muncul bila pelanggan daftar.`:"Tiada ahli contoh. Ahli sebenar muncul bila pelanggan daftar dan order."; $("#setStamp").value=SETTINGS.stampTarget; $("#setPts").value=SETTINGS.pointsPerPurchase; $("#setMult").value=SETTINGS.pointsMultiplier; $$("[data-open-sw]").forEach(b=>b.classList.toggle("on",SETTINGS.orderOpen!==false)); }
 function saveSettings(){
   const s=parseInt($("#setStamp").value,10), p=parseInt($("#setPts").value,10), pr=SETTINGS.prepMins||10, mu=parseInt($("#setMult").value,10);
   if(!(s>=4&&s<=20)||!(p>=1)||!(pr>=1&&pr<=120)||!(mu>=1&&mu<=5)){toast("Nilai tidak sah");return;}
   SETTINGS={...SETTINGS,stampTarget:s,pointsPerPurchase:p,prepMins:pr,pointsMultiplier:mu}; write(ADMIN.keys.settings,SETTINGS); toast("Tetapan disimpan");
 }
 /* ---------- Pembayaran & sokongan: QR DuitNow + WhatsApp ---------- */
+/* ---------- Lokasi pickup ---------- */
+function renderStore(){
+  $("#setStoreName").value = SETTINGS.storeName || "Farha — Cawangan Utama";
+  $("#setStoreAddr").value = SETTINGS.storeAddress || "";
+  $("#setStoreMap").value = SETTINGS.storeMap || "";
+}
+function saveStore(){
+  const name = $("#setStoreName").value.trim(), addr = $("#setStoreAddr").value.trim().replace(/\n{3,}/g,"\n\n"), map = $("#setStoreMap").value.trim();
+  if(!name){ toast("Masukkan nama cawangan"); return; }
+  if(map && !/^https:\/\/\S+$/i.test(map)){ toast("Pautan peta mesti bermula dengan https://"); return; }
+  SETTINGS = { ...SETTINGS, storeName:name, storeAddress:addr, storeMap:map };
+  write(ADMIN.keys.settings, SETTINGS); toast("Lokasi pickup disimpan");
+}
 let PEND_QR;   // undefined = tiada perubahan, "" = dibuang, data URL = gambar baru
 function qrImage(file){
   return new Promise((ok,no)=>{
@@ -2264,7 +2285,7 @@ document.addEventListener("click",e=>{
     exportCSV, newReward:()=>editReward(""), editReward:()=>editReward(d.r), saveReward:()=>saveReward(d.r),
     deleteReward:()=>deleteReward(d.r), toggleReward:()=>toggleReward(d.r),
     saveHours, hrCopy,
-    saveSettings, clearQr, savePaySupport, resetDemo, clearDemo, exportData, shareData,
+    saveSettings, clearQr, savePaySupport, saveStore, resetDemo, clearDemo, exportData, shareData,
     menuAdd:()=>menuTab==="groups"?editGroup("","one"):editItem(""), editGroup:()=>editGroup(d.id), saveGroup, editCats, saveCats, deleteGroup:()=>deleteGroup(d.id),
     gAdd:()=>{syncChoices();EG.choices.push({n:"",p:0});renderGroupForm();const r=$$("#gChoices .gc-n");r[r.length-1]?.focus();},
     gAllDrinks:()=>$$("#gItems input").forEach(x=>{ if(x.dataset.drink==="1") x.checked=true; }), gNone:()=>$$("#gItems input").forEach(x=>x.checked=false),

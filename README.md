@@ -32,6 +32,8 @@ Pelanggan boleh order terus dari app dan ambil di kaunter, macam app kopi berant
 
 **QR DuitNow kedai & WhatsApp support:** admin → Tetapan → **Pembayaran & sokongan**. Muat naik gambar QR DuitNow (tiada QR = pilihan DuitNow dimatikan dalam app) dan isi no. WhatsApp support. Butang WhatsApp keluar di Profil, skrin status pesanan, info cawangan dan helaian DuitNow; kosongkan nombor untuk sembunyi.
 
+**Lokasi pickup:** admin → Tetapan → **Lokasi pickup**. Isi nama cawangan, alamat pickup dan (pilihan) pautan Google Maps / Waze. Nama & alamat keluar di troli dan info cawangan; butang **Arah** buka pautan peta (atau cari alamat di Google Maps).
+
 Ubah menu, harga (harga dalam template ialah contoh), cawangan dan pilihan minuman dalam `CONFIG.store`, `CONFIG.menu`, `CONFIG.categories` dan `OPTION_SETS` dalam `index.html`. Demo tanpa admin: tekan "Demo: simulasi kedai proses pesanan" pada skrin status.
 
 > Untuk produksi: sambung pesanan ke backend (cth. Firebase) supaya pesanan sampai ke tablet kedai. Dalam mod demo, pesanan disimpan dalam `localStorage` (`farha-orders-v1`).
