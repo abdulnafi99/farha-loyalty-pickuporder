@@ -272,6 +272,10 @@ svg.i{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stro
 .mchips::-webkit-scrollbar{display:none}
 .mchips button{flex:none;padding:9px 14px;border-radius:999px;background:rgba(255,255,255,.75);border:1px solid var(--line);font-size:13px;font-weight:600}
 .mchips button span{font-family:var(--mono);font-size:11px;opacity:.7;margin-left:4px}
+.qr-set{display:flex;gap:14px;align-items:flex-start}
+.qr-prev{width:120px;height:120px;flex:none;border-radius:14px;background:#fff;border:1px dashed var(--line);display:grid;place-items:center;overflow:hidden;font-size:12px;color:var(--ink-2)}
+.qr-prev img{width:100%;height:100%;object-fit:contain}
+.qr-act{display:flex;flex-direction:column;align-items:flex-start;gap:8px;min-width:0}
 .mchips button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
 .mchips .mc-edit{display:inline-flex;align-items:center;gap:6px;background:transparent;border-style:dashed;color:var(--brand);font-weight:700}
 .ec-list{display:flex;flex-direction:column;gap:8px}
@@ -624,6 +628,19 @@ svg.i{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stro
           <label class="field"><span>Gandaan point untuk order dalam app</span><input class="input mono" type="number" min="1" max="5" id="setMult"></label>
           <button class="btn red" data-action="saveSettings">Simpan tetapan</button>
           <p class="note" style="margin-top:12px">Point order = bilangan item × point setiap minuman × gandaan. Cap hanya untuk minuman.</p>
+        </div>
+        <div class="tile">
+          <h3>Pembayaran &amp; sokongan</h3>
+          <div class="field"><span>QR DuitNow kedai</span>
+            <div class="qr-set"><div id="setQrPrev" class="qr-prev"></div>
+              <div class="qr-act">
+                <label class="btn ghost sm" for="setQrFile"><svg class="i" data-ic="upload"></svg>Muat naik QR</label><input type="file" id="setQrFile" accept="image/*" class="sr">
+                <button type="button" class="btn ghost sm" data-action="clearQr" id="setQrClear"><svg class="i" data-ic="trash"></svg>Buang</button>
+                <p class="note" style="margin:0">Gambar atau screenshot QR DuitNow kedai. Pelanggan imbas QR ini bila pilih bayar DuitNow. Tanpa QR, pilihan DuitNow dimatikan dalam app.</p>
+              </div></div></div>
+          <label class="field"><span>No. WhatsApp support</span><input class="input mono" id="setWa" inputmode="tel" maxlength="20" placeholder="cth. 012-345 6789"></label>
+          <p class="note" id="setPayNote" style="margin:-4px 0 12px">Kosongkan untuk sembunyi butang WhatsApp dalam app pelanggan.</p>
+          <button class="btn red" data-action="savePaySupport">Simpan pembayaran &amp; sokongan</button>
         </div>
         <div class="tile">
           <h3>Backup &amp; eksport data</h3>
@@ -2119,12 +2136,48 @@ function toggleReward(id){ const r=REWARDS.find(x=>x.id===id); r.active=r.active
 /* =========================================================
    TETAPAN
    ========================================================= */
-function renderSettings(){ renderBackup(); $("#resetDemoBtn").hidden=!!ADMIN.firebase; $("#demoNote").textContent=(DB.members||[]).length?`Ada ${DB.members.length} ahli contoh (data palsu untuk demo) dalam dashboard. Buang sebelum guna sebenar. Ahli sebenar muncul bila pelanggan daftar.`:"Tiada ahli contoh. Ahli sebenar muncul bila pelanggan daftar dan order."; $("#setStamp").value=SETTINGS.stampTarget; $("#setPts").value=SETTINGS.pointsPerPurchase; $("#setMult").value=SETTINGS.pointsMultiplier; $$("[data-open-sw]").forEach(b=>b.classList.toggle("on",SETTINGS.orderOpen!==false)); }
+function renderSettings(){ renderBackup(); renderPaySupport(); $("#resetDemoBtn").hidden=!!ADMIN.firebase; $("#demoNote").textContent=(DB.members||[]).length?`Ada ${DB.members.length} ahli contoh (data palsu untuk demo) dalam dashboard. Buang sebelum guna sebenar. Ahli sebenar muncul bila pelanggan daftar.`:"Tiada ahli contoh. Ahli sebenar muncul bila pelanggan daftar dan order."; $("#setStamp").value=SETTINGS.stampTarget; $("#setPts").value=SETTINGS.pointsPerPurchase; $("#setMult").value=SETTINGS.pointsMultiplier; $$("[data-open-sw]").forEach(b=>b.classList.toggle("on",SETTINGS.orderOpen!==false)); }
 function saveSettings(){
   const s=parseInt($("#setStamp").value,10), p=parseInt($("#setPts").value,10), pr=SETTINGS.prepMins||10, mu=parseInt($("#setMult").value,10);
   if(!(s>=4&&s<=20)||!(p>=1)||!(pr>=1&&pr<=120)||!(mu>=1&&mu<=5)){toast("Nilai tidak sah");return;}
   SETTINGS={...SETTINGS,stampTarget:s,pointsPerPurchase:p,prepMins:pr,pointsMultiplier:mu}; write(ADMIN.keys.settings,SETTINGS); toast("Tetapan disimpan");
 }
+/* ---------- Pembayaran & sokongan: QR DuitNow + WhatsApp ---------- */
+let PEND_QR;   // undefined = tiada perubahan, "" = dibuang, data URL = gambar baru
+function qrImage(file){
+  return new Promise((ok,no)=>{
+    if(!file || !/^image\//.test(file.type)){ no(new Error("Fail mesti gambar (PNG/JPG)")); return; }
+    const url = URL.createObjectURL(file), img = new Image();
+    img.onload = ()=>{ const k = Math.min(1, 900/Math.max(img.width,img.height)), c = document.createElement("canvas");
+      c.width = Math.round(img.width*k); c.height = Math.round(img.height*k);
+      const x = c.getContext("2d"); x.fillStyle = "#fff"; x.fillRect(0,0,c.width,c.height); x.drawImage(img,0,0,c.width,c.height);
+      URL.revokeObjectURL(url); let d = c.toDataURL("image/png"); if(d.length > 700000) d = c.toDataURL("image/jpeg", .92); ok(d); };
+    img.onerror = ()=>{ URL.revokeObjectURL(url); no(new Error("Gambar tidak dapat dibaca")); };
+    img.src = url;
+  });
+}
+const waNorm = v => { let n = String(v||"").replace(/\D/g,""); if(n.startsWith("0")) n = "6"+n; return n; };
+function renderPaySupport(pending=false){
+  const qr = PEND_QR!==undefined ? PEND_QR : (SETTINGS.duitnowQr||"");
+  $("#setQrPrev").innerHTML = qr ? `<img src="${esc(qr)}" alt="QR DuitNow">` : `<span>Tiada QR</span>`;
+  $("#setQrClear").hidden = !qr;
+  if(!pending) $("#setWa").value = SETTINGS.whatsapp ? "+"+SETTINGS.whatsapp : "";
+  $("#setPayNote").innerHTML = PEND_QR!==undefined ? '<b style="color:var(--warn)">QR belum disimpan. Tekan Simpan.</b>' : "Kosongkan untuk sembunyi butang WhatsApp dalam app pelanggan.";
+}
+function clearQr(){ PEND_QR = ""; renderPaySupport(true); }
+function savePaySupport(){
+  const wa = waNorm($("#setWa").value);
+  if(wa && !/^\d{10,15}$/.test(wa)){ toast("No. WhatsApp tidak sah. Cth. 012-345 6789"); return; }
+  const qr = PEND_QR!==undefined ? PEND_QR : (SETTINGS.duitnowQr||"");
+  SETTINGS = { ...SETTINGS, duitnowQr:qr, whatsapp:wa };
+  try{ localStorage.setItem(ADMIN.keys.settings, JSON.stringify(SETTINGS)); }catch(e){ toast("Storan penuh. Guna gambar QR yang lebih kecil."); return; }
+  PEND_QR = undefined; renderPaySupport(); toast("Pembayaran & sokongan disimpan");
+}
+document.addEventListener("change", async e=>{
+  if(e.target.id!=="setQrFile") return;
+  const f = e.target.files && e.target.files[0]; e.target.value = ""; if(!f) return;
+  try{ PEND_QR = await qrImage(f); renderPaySupport(true); }catch(x){ toast(x.message); }
+});
 /* Buang 35 ahli & transaksi contoh sahaja. Menu, varian, promosi, pesanan, tetapan & ganjaran TIDAK disentuh. */
 function clearDemo(){
   const n = (DB.members||[]).length;
@@ -2164,7 +2217,7 @@ document.addEventListener("click",e=>{
     exportCSV, newReward:()=>editReward(""), editReward:()=>editReward(d.r), saveReward:()=>saveReward(d.r),
     deleteReward:()=>deleteReward(d.r), toggleReward:()=>toggleReward(d.r),
     saveHours, hrCopy,
-    saveSettings, resetDemo, clearDemo, exportData, shareData,
+    saveSettings, clearQr, savePaySupport, resetDemo, clearDemo, exportData, shareData,
     menuAdd:()=>menuTab==="groups"?editGroup("","one"):editItem(""), editGroup:()=>editGroup(d.id), saveGroup, editCats, saveCats, deleteGroup:()=>deleteGroup(d.id),
     gAdd:()=>{syncChoices();EG.choices.push({n:"",p:0});renderGroupForm();const r=$$("#gChoices .gc-n");r[r.length-1]?.focus();},
     gAllDrinks:()=>$$("#gItems input").forEach(x=>{ if(x.dataset.drink==="1") x.checked=true; }), gNone:()=>$$("#gItems input").forEach(x=>x.checked=false),
