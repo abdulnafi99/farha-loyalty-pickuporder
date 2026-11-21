@@ -491,6 +491,8 @@ a.btn,#waRow{text-decoration:none}
 #waRow{color:inherit}
 .wa-btn svg.i{width:18px;height:18px}
 
+.tx small.addr{display:block;font-size:11.5px;font-weight:500;color:var(--ink-2);margin-top:2px;line-height:1.35;white-space:normal}
+
 /* ---------- Log masuk ---------- */
 .auth{position:fixed;inset:0;z-index:90;overflow-y:auto;background:var(--bg)}
 .auth-top{text-align:center;color:#fff;padding:calc(54px + var(--safe-t)) 24px 78px;
@@ -868,7 +870,8 @@ const CONFIG = {
   /* ---------- ORDER PICKUP ---------- */
   store: {                         // cawangan untuk pickup
     name: "Farha — Cawangan Utama",
-    address: "[Alamat kedai anda]",
+    address: "",                   // alamat pickup — diisi di admin → Tetapan → Lokasi pickup
+    map: "",                       // pautan Google Maps / Waze (pilihan)
     hours: "8:00 pagi – 10:00 malam",
     phone: "",                     // cth. "+60123456789" (kosong = sembunyi butang telefon)
   },
@@ -1037,7 +1040,7 @@ const DEFAULT_REWARDS = CONFIG.rewards;
 const DEFAULT_MENU = CONFIG.menu, DEFAULT_CATS = CONFIG.categories.filter(c=>c.id!=="popular"), POPULAR_CAT = CONFIG.categories.find(c=>c.id==="popular") || { id:"popular", name:"Popular" };
 function applyShared(){
   try{ const r=JSON.parse(localStorage.getItem(SHARED.rewards)); CONFIG.rewards = (Array.isArray(r)&&r.length) ? r.filter(x=>x.active!==false) : DEFAULT_REWARDS; }catch(e){}
-  try{ const st=JSON.parse(localStorage.getItem(SHARED.settings)); if(st){ if(st.stampTarget) CONFIG.stampTarget=+st.stampTarget; if(st.pointsPerPurchase) CONFIG.pointsPerPurchase=+st.pointsPerPurchase; if(st.prepMins) CONFIG.order.prepMins=+st.prepMins; if(st.hours) CONFIG.order.hours=st.hours; if(st.slotMins) CONFIG.order.slotMins=+st.slotMins; if(st.maxAheadMins) CONFIG.order.maxAheadMins=+st.maxAheadMins; if(st.allowSchedule!==undefined) CONFIG.order.allowSchedule=st.allowSchedule!==false; if(st.preorder!==undefined) CONFIG.order.preorder=st.preorder!==false; if(st.pointsMultiplier) CONFIG.order.pointsMultiplier=+st.pointsMultiplier; SHOP.open = st.orderOpen!==false; if(st.duitnowQr!==undefined) CONFIG.order.duitnowQr = st.duitnowQr||""; if(st.whatsapp!==undefined) CONFIG.support.whatsapp = st.whatsapp||""; } }catch(e){}
+  try{ const st=JSON.parse(localStorage.getItem(SHARED.settings)); if(st){ if(st.stampTarget) CONFIG.stampTarget=+st.stampTarget; if(st.pointsPerPurchase) CONFIG.pointsPerPurchase=+st.pointsPerPurchase; if(st.prepMins) CONFIG.order.prepMins=+st.prepMins; if(st.hours) CONFIG.order.hours=st.hours; if(st.slotMins) CONFIG.order.slotMins=+st.slotMins; if(st.maxAheadMins) CONFIG.order.maxAheadMins=+st.maxAheadMins; if(st.allowSchedule!==undefined) CONFIG.order.allowSchedule=st.allowSchedule!==false; if(st.preorder!==undefined) CONFIG.order.preorder=st.preorder!==false; if(st.pointsMultiplier) CONFIG.order.pointsMultiplier=+st.pointsMultiplier; SHOP.open = st.orderOpen!==false; if(st.duitnowQr!==undefined) CONFIG.order.duitnowQr = st.duitnowQr||""; if(st.whatsapp!==undefined) CONFIG.support.whatsapp = st.whatsapp||""; if(st.storeName) CONFIG.store.name = st.storeName; if(st.storeAddress!==undefined) CONFIG.store.address = st.storeAddress||""; if(st.storeMap!==undefined) CONFIG.store.map = st.storeMap||""; } }catch(e){}
   try{ const mn=JSON.parse(localStorage.getItem(SHARED.menu)); SOLD = (mn&&Array.isArray(mn.soldOut)) ? mn.soldOut : [];
     CONFIG.menu = (mn && mn.v>=2 && Array.isArray(mn.items)) ? mn.items.filter(i=>!i.hidden) : DEFAULT_MENU;
     GROUPS = (mn && Array.isArray(mn.groups)) ? mn.groups : null;
@@ -1632,7 +1635,7 @@ function hrWhen(ts, now=Date.now()){
   return (diff===0 ? "" : diff===1 ? "esok " : HR_DAYS[new Date(ts).getDay()]+" ") + hrTime(ts);
 }
 function hrWeekText(cfg){
-  return [1,2,3,4,5,6,0].map(d=>{ const h=(cfg.hours||{})[d]; return { day:HR_DAYS[d], txt: !h || h.closed ? "Tutup" : `${hrTime(new Date(`2000-01-01T${h.open}`))} – ${hrTime(new Date(`2000-01-01T${h.close}`))}` }; });
+  return [1,2,3,4,5,6,0].map(d=>{ const h=(cfg.hours||{})[d] || { open:"08:00", close:"22:00" }; return { day:HR_DAYS[d], txt: !h || h.closed ? "Tutup" : `${hrTime(new Date(`2000-01-01T${h.open}`))} – ${hrTime(new Date(`2000-01-01T${h.close}`))}` }; });
 }
 const shopCfg = () => ({ open:SHOP.open, hours:CONFIG.order.hours, prepMins:CONFIG.order.prepMins, slotMins:CONFIG.order.slotMins, maxAheadMins:CONFIG.order.maxAheadMins, allowSchedule:CONFIG.order.allowSchedule, preorder:CONFIG.order.preorder });
 function slots(){ return hrSlots(shopCfg()); }
@@ -1664,7 +1667,7 @@ function renderCart(){
   box.innerHTML = `
     <div class="card">
       <div class="rowx"><span class="icon-sq" style="width:38px;height:38px;border-radius:12px">${icon("pin","width:18px;height:18px")}</span>
-        <span class="tx"><small>Pickup di</small><b>${esc(CONFIG.store.name)}</b></span><button class="link" data-action="storeInfo">Info</button></div>
+        <span class="tx"><small>Pickup di</small><b>${esc(CONFIG.store.name)}</b>${CONFIG.store.address?`<small class="addr">${esc(CONFIG.store.address.split("\n").join(", "))}</small>`:""}</span><button class="link" data-action="storeInfo">Info</button></div>
       <div class="opts" style="margin-top:12px;grid-template-columns:1fr 1fr">
         <button class="opt ${O.pickupMode==="asap"?"on":""}" data-pickup="asap" aria-pressed="${O.pickupMode==="asap"}" ${hs.asap?"":"disabled"}>Secepat mungkin<small>${hs.asap?`Siap ~${CONFIG.order.prepMins} min`:"Tidak tersedia sekarang"}</small></button>
         ${schedOn?`<button class="opt ${O.pickupMode==="later"?"on":""}" data-pickup="later" aria-pressed="${O.pickupMode==="later"}" ${sl.length?"":"disabled"}>${!hs.asap&&sl.length&&hrIsPre(sl[0], shopCfg())?"Pre-order":"Jadualkan"}<small>${!sl.length?"Tiada slot":hs.asap?"Pilih masa ambil":`Seawal ${hrWhen(sl[0])}`}</small></button>`:""}
@@ -1917,12 +1920,12 @@ function storeInfo(){
   openSheet(`
     <div class="icon-sq" style="background:var(--brand);margin-bottom:14px">${icon("pin")}</div>
     <h2>${esc(s.name)}</h2>
-    <p>${esc(s.address)}<br>${(()=>{ const t=shopStatusText(); return `<b style="color:${t.ok?"#14833F":"var(--brand)"}">${esc(t.txt)}</b>`; })()}</p>
+    <p>${s.address?`<span style="white-space:pre-line">${esc(s.address)}</span><br>`:""}${(()=>{ const t=shopStatusText(); return `<b style="color:${t.ok?"#14833F":"var(--brand)"}">${esc(t.txt)}</b>`; })()}</p>
     <div class="hr-week">${hrWeekText(shopCfg()).map(r=>`<div class="${r.day===HR_DAYS[new Date().getDay()]?"today":""}"><span>${r.day}</span><span>${r.txt}</span></div>`).join("")}</div>
     <div class="btn-row">
       ${s.phone?`<a class="btn ghost" href="tel:${esc(s.phone)}">Telefon</a>`:""}
       ${waUrl()?`<a class="btn ghost" target="_blank" rel="noopener" href="${esc(waUrl(waHello("")))}">WhatsApp</a>`:""}
-      <a class="btn ghost" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&amp;query=${encodeURIComponent(s.name+" "+s.address)}">Arah</a>
+      ${s.map||s.address?`<a class="btn ghost" target="_blank" rel="noopener" href="${esc(s.map || "https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(s.name+" "+s.address.replace(/\n/g," ")))}">Arah</a>`:""}
       <button class="btn red" data-action="close">OK</button>
     </div>`);
 }
