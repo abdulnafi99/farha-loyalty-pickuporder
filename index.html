@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ms">
+<html lang="ms" class="splashing">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -48,6 +48,8 @@
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;height:100%}
+/* Semasa splash: latar halaman merah supaya kawasan bar status & penunjuk Home di iPhone (app dipasang) tidak nampak putih */
+html.splashing,html.splashing body{background:#8E0712}
 body{
   font-family:var(--font);color:var(--ink);background:var(--bg);
   -webkit-font-smoothing:antialiased;overflow:hidden;
@@ -2649,7 +2651,7 @@ function splashTapDrop(){
 }
 function endSplash(){
   const sp=$("#splash"); if(!sp||sp.classList.contains("out")) return;
-  sp.classList.add("out"); $("#app").classList.add("enter");
+  sp.classList.add("out"); $("#app").classList.add("enter"); document.documentElement.classList.remove("splashing");
   setTimeout(()=>{ sp.remove(); $("#app").classList.remove("enter"); maybeStartTour(); }, 1300);
 }
 
