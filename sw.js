@@ -1,6 +1,6 @@
 /* Service worker — cache app shell supaya boleh dibuka luar talian.
    Naikkan VERSION setiap kali anda kemas kini index.html. */
-const VERSION = "farha-v1.9.8";
+const VERSION = "farha-v1.9.9";
 const SHELL = ["./", "./index.html", "./admin.html", "./manifest.webmanifest",
   "./icons/icon-192.png", "./icons/icon-512.png", "./icons/apple-touch-icon.png"];
 
@@ -28,14 +28,14 @@ self.addEventListener("push", e => {
   try { d = e.data ? e.data.json() : {}; } catch (_) { d = { body: e.data ? e.data.text() : "" }; }
   const n = d.notification || d, data = d.data || d;
   e.waitUntil(self.registration.showNotification(n.title || "Farha", {
-    body: n.body || "", icon: "icons/icon-192.png", badge: "icons/icon-192.png", tag: n.tag || data.tag,
+    body: n.body || "", icon: "icons/icon-192.png", badge: "icons/icon-192.png", tag: n.tag || data.tag, renotify: !!(n.tag || data.tag), vibrate: [90, 50, 90],
     data: { url: data.url || "./", order: data.order || null },
   }));
 });
 
 self.addEventListener("fetch", e => {
   const req = e.request;
-  if (req.method !== "GET") return;
+  if (req.method !== "GET" || new URL(req.url).pathname.startsWith("/api/")) return;
   // Halaman: network dahulu, fallback cache. Aset lain: cache dahulu.
   if (req.mode === "navigate") {
     e.respondWith(fetch(req).then(r => { const copy = r.clone(); caches.open(VERSION).then(c => c.put(req, copy)); return r; })

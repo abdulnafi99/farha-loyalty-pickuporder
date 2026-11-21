@@ -1862,20 +1862,51 @@ function orderNotice(o){
 }
 /* ---------- Notifikasi push (pelanggan) ----------
    Dipaparkan melalui service worker bila app di latar belakang.
-   Untuk push bila app ditutup sepenuhnya: sambung Firebase Cloud Messaging (lihat README). */
+   Bila app ditutup sepenuhnya: Web Push dari pelayan (api/notify.js, lihat README). */
 async function pushNotify(title, body, opts={}){
   if(!("Notification" in window) || Notification.permission!=="granted") return false;
   const o = { body, icon:"icons/icon-192.png", badge:"icons/icon-192.png", tag:opts.tag, renotify:!!opts.tag, vibrate:[90,50,90], data:{ url:opts.url||"index.html#track", order:opts.order||null } };
   try{ const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); if(reg){ await reg.showNotification(title, o); return true; } }catch(e){}
   try{ const n = new Notification(title, o); n.onclick = ()=>{ focus(); if(opts.order) openTrack(opts.order); n.close(); }; return true; }catch(e){ return false; }
 }
-function outNotify(msg, o){ if(S.notif && document.hidden) pushNotify(CONFIG.brand, msg, { tag:"ord-"+o.no, order:o.no }); }
+/* ---------- Web Push: notifikasi walaupun app ditutup ----------
+   Peranti melanggan push (kunci awam dari /api/notify) dan simpan langganan dalam Realtime Database.
+   Selepas pesanan ditulis ke database, app panggil /api/notify; pelayan Vercel hantar push kepada pihak lain.
+   Jika pelayan belum disetup (README → Push walaupun app ditutup), notifikasi biasa (app terbuka) terus digunakan. */
+const PUSHC = { on:false, busy:false };
+const b64u = s => { const p = "=".repeat((4 - s.length % 4) % 4), b = atob((s + p).replace(/-/g,"+").replace(/_/g,"/")); return Uint8Array.from(b, c=>c.charCodeAt(0)); };
+async function pushSubscribe(path){
+  if(PUSHC.busy || !FB.db || !location.protocol.startsWith("http") || !("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window) || Notification.permission!=="granted") return false;
+  PUSHC.busy = true;
+  try{
+    const reg = await navigator.serviceWorker.ready;
+    let sub = await reg.pushManager.getSubscription();
+    if(!sub){
+      const r = await fetch("/api/notify", { cache:"no-store" }), k = r.ok ? ((await r.json()).key || "") : "";
+      if(!k) return false;
+      sub = await reg.pushManager.subscribe({ userVisibleOnly:true, applicationServerKey:b64u(k) });
+    }
+    const dg = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(sub.endpoint));
+    const id = Array.from(new Uint8Array(dg)).slice(0,12).map(x=>x.toString(16).padStart(2,"0")).join("");
+    await FB.db.ref(`${path}/${id}`).set({ sub:JSON.stringify(sub), ua:navigator.userAgent.slice(0,140), ts:firebase.database.ServerValue.TIMESTAMP });
+    PUSHC.on = true; return true;
+  }catch(e){ console.warn("Web push:", e && (e.message || e)); return false; }
+  finally{ PUSHC.busy = false; }
+}
+async function notifyServer(no){
+  try{
+    const u = FB.auth && FB.auth.currentUser; if(!u || !location.protocol.startsWith("http")) return;
+    const t = await u.getIdToken();
+    fetch("/api/notify", { method:"POST", keepalive:true, headers:{ "Content-Type":"application/json", Authorization:"Bearer "+t }, body:JSON.stringify({ no }) }).catch(()=>{});
+  }catch(e){}
+}
+function outNotify(msg, o){ if(S.notif && document.hidden && !PUSHC.on) pushNotify(CONFIG.brand, msg, { tag:"ord-"+o.no, order:o.no }); }
 async function enableNotif(){
   if(!("Notification" in window)){ toast("Peranti ini tidak menyokong notifikasi"); return; }
   if(Notification.permission==="denied"){ toast("Notifikasi disekat. Benarkan dalam tetapan pelayar."); return; }
   try{
     const p = await Notification.requestPermission();
-    if(p==="granted"){ S.notif=true; save(); toast("Notifikasi dihidupkan"); pushNotify(CONFIG.brand, "Anda akan dimaklumkan bila status pesanan berubah.", { tag:"test" }); }
+    if(p==="granted"){ S.notif=true; save(); toast("Notifikasi dihidupkan"); if(LIVE.uid) pushSubscribe("push/"+LIVE.uid); pushNotify(CONFIG.brand, "Anda akan dimaklumkan bila status pesanan berubah.", { tag:"test" }); }
     else toast("Kebenaran notifikasi tidak diberi");
   }catch(e){}
   render();
@@ -2284,6 +2315,7 @@ async function startLive(){
     if(!(await mref.get()).val()) await mref.set({ name:S.name||"Ahli", phone:S.phone||"", memberId:S.memberId, points:0, lifetime:0, stamps:0, redeemed:0, notif:S.notif!==false, offline:S.offline!==false, joined:dbTS() });
   }catch(e){ console.warn("Cipta akaun ahli:", e && (e.code||e.message)); }
   if(LIVE.uid !== uid) return;
+  pushSubscribe("push/"+uid);
   // Akaun ahli: point, cap & sejarah dari database (admin mengkredit selepas pesanan diambil)
   liveOn(mref, s=>{
     const v = s.val(); if(!v) return;
@@ -2328,7 +2360,7 @@ function pushMyOrders(){
     const j = JSON.stringify(o); if(LIVE.ordersLast[o.no] === j){ pushProof(o); return; }
     LIVE.ordersLast[o.no] = j;
     FB.db.ref("orders/"+o.no).set({ uid:LIVE.uid, status:o.status, data:j, updatedAt:dbTS() })
-      .then(()=>pushProof(o))
+      .then(()=>{ pushProof(o); if(ACTIVE.includes(o.status)) notifyServer(o.no); })
       .catch(()=>{ delete LIVE.ordersLast[o.no]; toast("Pesanan belum sampai ke kedai. Semak internet dan cuba lagi."); });
   });
 }
@@ -2336,7 +2368,7 @@ function pushProof(o){
   if(!o.proofAt || LIVE.proofSent[o.no] === o.proofAt) return;
   const p = localStorage.getItem(PROOF_PREFIX+o.no); if(!p) return;
   LIVE.proofSent[o.no] = o.proofAt;
-  FB.db.ref("proofs/"+o.no).set(p).catch(()=>{ delete LIVE.proofSent[o.no]; toast("Bukti bayaran belum dihantar. Cuba lagi."); });
+  FB.db.ref("proofs/"+o.no).set(p).then(()=>notifyServer(o.no)).catch(()=>{ delete LIVE.proofSent[o.no]; toast("Bukti bayaran belum dihantar. Cuba lagi."); });
 }
 function pushMyVouchers(){
   if(!LIVE.uid || !FB.db) return;

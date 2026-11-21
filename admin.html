@@ -1197,7 +1197,7 @@ function checkNewOrders(){
   const list = readOrders(); let added = [];
   list.forEach(o=>{ if(!knownNos.has(o.no)){ knownNos.add(o.no); if(o.status==="new"){ added.push(o.no); freshNos.add(o.no); } } });
   if(added.length){ beep(); toast(`Pesanan baru: ${added.join(", ")}`); if(navigator.vibrate) navigator.vibrate(60);
-    added.forEach(no=>{ const o=list.find(x=>x.no===no); if(o && document.hidden) pushNotify(`Pesanan baru · ${no}`, `${o.name} · ${o.items.reduce((a,i)=>a+i.qty,0)} item · ${rm(o.total)}${o.pay==="duitnow"?" · DuitNow (semak bukti)":" · Tunai"}`, { tag:"ord-"+no, order:no }); }); }
+    added.forEach(no=>{ const o=list.find(x=>x.no===no); if(o && document.hidden && !PUSHC.on) pushNotify(`Pesanan baru · ${no}`, `${o.name} · ${o.items.reduce((a,i)=>a+i.qty,0)} item · ${rm(o.total)}${o.pay==="duitnow"?" · DuitNow (semak bukti)":" · Tunai"}`, { tag:"ord-"+no, order:no }); }); }
   updateOrderBadge();
 }
 setInterval(()=>{ if(current==="orders") renderOrders(); }, 30000);
@@ -1420,7 +1420,7 @@ document.addEventListener("click", e=>{
 /* =========================================================
    NOTIFIKASI PUSH (admin)
    Dipaparkan melalui service worker bila tab admin di latar belakang.
-   Untuk push bila pelayar ditutup: sambung Firebase Cloud Messaging (lihat README).
+   Bila pelayar ditutup: Web Push dari pelayan (api/notify.js, lihat README).
    ========================================================= */
 const knownProof = {};
 async function pushNotify(title, body, opts={}){
@@ -1428,6 +1428,37 @@ async function pushNotify(title, body, opts={}){
   const o = { body, icon:"icons/icon-192.png", badge:"icons/icon-192.png", tag:opts.tag, renotify:!!opts.tag, vibrate:[90,50,90], data:{ url:opts.url||"admin.html#orders", order:opts.order||null } };
   try{ const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); if(reg){ await reg.showNotification(title, o); return true; } }catch(e){}
   try{ const n = new Notification(title, o); n.onclick = ()=>{ focus(); if(opts.order){ go("orders"); openOrder(opts.order); } n.close(); }; return true; }catch(e){ return false; }
+}
+/* ---------- Web Push: notifikasi walaupun app ditutup ----------
+   Peranti melanggan push (kunci awam dari /api/notify) dan simpan langganan dalam Realtime Database.
+   Selepas pesanan ditulis ke database, app panggil /api/notify; pelayan Vercel hantar push kepada pihak lain.
+   Jika pelayan belum disetup (README → Push walaupun app ditutup), notifikasi biasa (app terbuka) terus digunakan. */
+const PUSHC = { on:false, busy:false };
+const b64u = s => { const p = "=".repeat((4 - s.length % 4) % 4), b = atob((s + p).replace(/-/g,"+").replace(/_/g,"/")); return Uint8Array.from(b, c=>c.charCodeAt(0)); };
+async function pushSubscribe(path){
+  if(PUSHC.busy || !FB.db || !location.protocol.startsWith("http") || !("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window) || Notification.permission!=="granted") return false;
+  PUSHC.busy = true;
+  try{
+    const reg = await navigator.serviceWorker.ready;
+    let sub = await reg.pushManager.getSubscription();
+    if(!sub){
+      const r = await fetch("/api/notify", { cache:"no-store" }), k = r.ok ? ((await r.json()).key || "") : "";
+      if(!k) return false;
+      sub = await reg.pushManager.subscribe({ userVisibleOnly:true, applicationServerKey:b64u(k) });
+    }
+    const dg = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(sub.endpoint));
+    const id = Array.from(new Uint8Array(dg)).slice(0,12).map(x=>x.toString(16).padStart(2,"0")).join("");
+    await FB.db.ref(`${path}/${id}`).set({ sub:JSON.stringify(sub), ua:navigator.userAgent.slice(0,140), ts:firebase.database.ServerValue.TIMESTAMP });
+    PUSHC.on = true; return true;
+  }catch(e){ console.warn("Web push:", e && (e.message || e)); return false; }
+  finally{ PUSHC.busy = false; }
+}
+async function notifyServer(no){
+  try{
+    const u = FB.auth && FB.auth.currentUser; if(!u || !location.protocol.startsWith("http")) return;
+    const t = await u.getIdToken();
+    fetch("/api/notify", { method:"POST", keepalive:true, headers:{ "Content-Type":"application/json", Authorization:"Bearer "+t }, body:JSON.stringify({ no }) }).catch(()=>{});
+  }catch(e){}
 }
 function notifState(){
   if(!("Notification" in window)) return "unsupported";
@@ -1442,9 +1473,9 @@ async function enableNotif(){
   const st = notifState();
   if(st==="unsupported"){ toast("Pelayar ini tidak menyokong notifikasi"); return; }
   if(st==="denied"){ toast("Notifikasi disekat. Benarkan dalam tetapan pelayar untuk laman ini."); return; }
-  if(st==="granted"){ pushNotify("Notifikasi aktif", "Anda akan dimaklumkan bila pesanan baru masuk.", { tag:"test" }); return; }
+  if(st==="granted"){ pushSubscribe("pushAdmin"); pushNotify("Notifikasi aktif", "Anda akan dimaklumkan bila pesanan baru masuk.", { tag:"test" }); return; }
   try{ const p = await Notification.requestPermission(); renderNotifBtn();
-    if(p==="granted"){ toast("Notifikasi dihidupkan"); pushNotify("Notifikasi aktif", "Anda akan dimaklumkan bila pesanan baru masuk.", { tag:"test" }); }
+    if(p==="granted"){ toast("Notifikasi dihidupkan"); pushSubscribe("pushAdmin"); pushNotify("Notifikasi aktif", "Anda akan dimaklumkan bila pesanan baru masuk.", { tag:"test" }); }
     else toast("Kebenaran notifikasi tidak diberi");
   }catch(e){}
 }
@@ -1453,7 +1484,7 @@ function notifyOrders(){
   list.forEach(o=>{
     if(o.pay==="duitnow" && o.proofAt && knownProof[o.no] && o.proofAt!==knownProof[o.no] && !o.paid){
       toast(`Bukti DuitNow baru untuk ${o.no}`); beep();
-      if(document.hidden) pushNotify(`Bukti DuitNow baru · ${o.no}`, `${o.name} hantar semula bukti bayaran ${rm(o.total)}. Sila semak.`, { tag:"proof-"+o.no, order:o.no });
+      if(document.hidden && !PUSHC.on) pushNotify(`Bukti DuitNow baru · ${o.no}`, `${o.name} hantar semula bukti bayaran ${rm(o.total)}. Sila semak.`, { tag:"proof-"+o.no, order:o.no });
     }
     knownProof[o.no] = o.proofAt || null;
   });
@@ -1903,7 +1934,7 @@ function pushAdminOrders(){
   readOrders().forEach(o=>{
     const j = JSON.stringify(o); if(LIVEA.ordersLast[o.no] === j || !LIVEA.orderUid[o.no]) return;
     LIVEA.ordersLast[o.no] = j;
-    FB.db.ref("orders/"+o.no).update({ status:o.status, data:j, updatedAt:dbTS() }).catch(err=>{ delete LIVEA.ordersLast[o.no]; onSyncStatus("err", err); toast("Gagal kemas kini pesanan di database"); });
+    FB.db.ref("orders/"+o.no).update({ status:o.status, data:j, updatedAt:dbTS() }).then(()=>notifyServer(o.no)).catch(err=>{ delete LIVEA.ordersLast[o.no]; onSyncStatus("err", err); toast("Gagal kemas kini pesanan di database"); });
   });
 }
 function pushAdminVouchers(){
@@ -2399,7 +2430,7 @@ function enter(){
   $("#login").remove(); $("#layout").hidden=false;
   const u = FB.auth && FB.auth.currentUser;
   $(".side .foot").innerHTML = u ? `Log masuk: ${esc(u.email)}<br><span class="status warn" id="syncState">Tidak disegerak</span>` : "Mod demo · PIN";
-  if(u && FB.db){ startShopSync(true, u.email); startLiveAdmin(); } else if(u) onSyncStatus("err", "Database tidak dapat dimuat");
+  if(u && FB.db){ startShopSync(true, u.email); startLiveAdmin(); pushSubscribe("pushAdmin"); } else if(u) onSyncStatus("err", "Database tidak dapat dimuat");
   readOrders().forEach(o=>{ knownProof[o.no]=o.proofAt||null; }); renderNotifBtn();
   knownNos=new Set(readOrders().map(o=>o.no)); updateOrderBadge();
   const h=(location.hash||"").slice(1); go(["overview","orders","menu","promos","hours","counter","members","rewards","settings"].includes(h)?h:"overview");
