@@ -30,7 +30,7 @@ Pelanggan boleh order terus dari app dan ambil di kaunter, macam app kopi berant
 - Di **Kaunter**, imbas QR pesanan atau taip no. pesanan (cth. `F-101`) untuk buka pesanan.
 - **Tetapan**: anggaran masa sediakan dan gandaan point order app.
 
-**QR DuitNow kedai:** simpan gambar QR DuitNow kedai sebagai `icons/duitnow-qr.png` (atau tukar `CONFIG.order.duitnowQr`) dan isi `CONFIG.order.duitnowName`.
+**QR DuitNow kedai & WhatsApp support:** admin → Tetapan → **Pembayaran & sokongan**. Muat naik gambar QR DuitNow (tiada QR = pilihan DuitNow dimatikan dalam app) dan isi no. WhatsApp support. Butang WhatsApp keluar di Profil, skrin status pesanan, info cawangan dan helaian DuitNow; kosongkan nombor untuk sembunyi.
 
 Ubah menu, harga (harga dalam template ialah contoh), cawangan dan pilihan minuman dalam `CONFIG.store`, `CONFIG.menu`, `CONFIG.categories` dan `OPTION_SETS` dalam `index.html`. Demo tanpa admin: tekan "Demo: simulasi kedai proses pesanan" pada skrin status.
 

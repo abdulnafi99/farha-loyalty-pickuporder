@@ -477,6 +477,11 @@ body[data-screen="cart"] .paybar{display:flex}
 .pre-note svg{flex:none;color:var(--brand);margin-top:1px}
 .pre-note b{color:var(--ink)}
 
+.wa-btn{display:flex;align-items:center;justify-content:center;gap:8px;text-decoration:none}
+a.btn,#waRow{text-decoration:none}
+#waRow{color:inherit}
+.wa-btn svg.i{width:18px;height:18px}
+
 /* ---------- Log masuk ---------- */
 .auth{position:fixed;inset:0;z-index:90;overflow-y:auto;background:var(--bg)}
 .auth-top{text-align:center;color:#fff;padding:calc(54px + var(--safe-t)) 24px 78px;
@@ -770,6 +775,7 @@ body[data-screen="cart"] .paybar{display:flex}
         <div class="tile span2 warm list">
           <div class="row"><svg class="i" data-ic="bell"></svg><div class="txt"><b>Notifikasi push</b><span>Cap, promo &amp; ganjaran</span></div><button class="switch" data-toggle="notif" aria-label="Notifikasi"></button></div>
           <div class="row"><svg class="i" data-ic="wifiOff"></svg><div class="txt"><b>Simpan untuk luar talian</b><span>Pas &amp; sejarah dalam peranti</span></div><button class="switch" data-toggle="offline" aria-label="Luar talian"></button></div>
+          <a class="row" id="waRow" target="_blank" rel="noopener" hidden><svg class="i" data-ic="wa"></svg><div class="txt"><b>WhatsApp support</b><span>Tanya kami tentang pesanan, point atau bayaran</span></div><svg class="i" data-ic="chev" style="width:18px"></svg></a>
           <button class="row" data-action="tour"><svg class="i" data-ic="sparkle"></svg><div class="txt"><b>Panduan app</b><span>Lawatan ringkas cara guna app</span></div><svg class="i" data-ic="chev" style="width:18px"></svg></button>
           <button class="row" data-action="installGuide"><svg class="i" data-ic="download"></svg><div class="txt"><b>Cara pasang app</b><span>Tambah Farha ke skrin utama telefon</span></div><svg class="i" data-ic="chev" style="width:18px"></svg></button>
           <div class="row"><svg class="i" data-ic="refresh"></svg><div class="txt"><b>Versi app</b><span id="p-ver">v1.0 · terkini</span></div><span class="tag-mono">PWA</span></div>
@@ -863,10 +869,10 @@ const CONFIG = {
     hours: null, slotMins: 15, maxAheadMins: 120, allowSchedule: true, preorder: true,
     pointsMultiplier: 2,           // order dalam app dapat N× point
     currency: "RM",
-    // Bayaran: tunai di kaunter + QR DuitNow kedai
-    duitnowQr: "icons/duitnow-qr.png",   // gambar QR DuitNow kedai anda (PNG/JPG)
-    duitnowName: "[NAMA AKAUN DUITNOW]", // nama yang keluar bila pelanggan imbas
+    // Bayaran: tunai di kaunter + QR DuitNow kedai. QR dimuat naik di admin → Tetapan → Pembayaran & sokongan
+    duitnowQr: "",
   },
+  support: { whatsapp: "" },       // no. WhatsApp support (cth. "60123456789") — diisi di admin → Tetapan
   categories: [                    // "popular" ialah kategori khas (item dengan popular:true)
     { id:"popular",   name:"Popular" },
     { id:"kopi",      name:"Kopi" },
@@ -939,6 +945,7 @@ const IC = {
   bag:'<path d="M6 8h12l-1.2 11.2a2 2 0 0 1-2 1.8H9.2a2 2 0 0 1-2-1.8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/>',
   pin:'<path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/>',
   clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  wa:'<path d="M20.5 11.6a8.5 8.5 0 0 1-12.6 7.4L3.5 20.5l1.6-4.2a8.5 8.5 0 1 1 15.4-4.7z"/><path d="M9 8.6c0 3.3 3 6.4 6.4 6.4l1.1-1.4-1.9-1-1 .8a4.5 4.5 0 0 1-2.8-2.8l.8-1-1-1.9z"/>',
   upload:'<path d="M12 15V3M7 8l5-5 5 5M5 21h14"/>',
   eye:'<path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
   eyeOff:'<path d="M3 3l18 18M10.6 5.1A10.4 10.4 0 0 1 12 5c6.4 0 10 7 10 7a17.6 17.6 0 0 1-3.3 4.2M6.6 6.6A17.4 17.4 0 0 0 2 12s3.6 7 10 7a9.7 9.7 0 0 0 5.4-1.6M9.9 9.9a3 3 0 0 0 4.2 4.2"/>',
@@ -1021,7 +1028,7 @@ const DEFAULT_REWARDS = CONFIG.rewards;
 const DEFAULT_MENU = CONFIG.menu, DEFAULT_CATS = CONFIG.categories.filter(c=>c.id!=="popular"), POPULAR_CAT = CONFIG.categories.find(c=>c.id==="popular") || { id:"popular", name:"Popular" };
 function applyShared(){
   try{ const r=JSON.parse(localStorage.getItem(SHARED.rewards)); CONFIG.rewards = (Array.isArray(r)&&r.length) ? r.filter(x=>x.active!==false) : DEFAULT_REWARDS; }catch(e){}
-  try{ const st=JSON.parse(localStorage.getItem(SHARED.settings)); if(st){ if(st.stampTarget) CONFIG.stampTarget=+st.stampTarget; if(st.pointsPerPurchase) CONFIG.pointsPerPurchase=+st.pointsPerPurchase; if(st.prepMins) CONFIG.order.prepMins=+st.prepMins; if(st.hours) CONFIG.order.hours=st.hours; if(st.slotMins) CONFIG.order.slotMins=+st.slotMins; if(st.maxAheadMins) CONFIG.order.maxAheadMins=+st.maxAheadMins; if(st.allowSchedule!==undefined) CONFIG.order.allowSchedule=st.allowSchedule!==false; if(st.preorder!==undefined) CONFIG.order.preorder=st.preorder!==false; if(st.pointsMultiplier) CONFIG.order.pointsMultiplier=+st.pointsMultiplier; SHOP.open = st.orderOpen!==false; } }catch(e){}
+  try{ const st=JSON.parse(localStorage.getItem(SHARED.settings)); if(st){ if(st.stampTarget) CONFIG.stampTarget=+st.stampTarget; if(st.pointsPerPurchase) CONFIG.pointsPerPurchase=+st.pointsPerPurchase; if(st.prepMins) CONFIG.order.prepMins=+st.prepMins; if(st.hours) CONFIG.order.hours=st.hours; if(st.slotMins) CONFIG.order.slotMins=+st.slotMins; if(st.maxAheadMins) CONFIG.order.maxAheadMins=+st.maxAheadMins; if(st.allowSchedule!==undefined) CONFIG.order.allowSchedule=st.allowSchedule!==false; if(st.preorder!==undefined) CONFIG.order.preorder=st.preorder!==false; if(st.pointsMultiplier) CONFIG.order.pointsMultiplier=+st.pointsMultiplier; SHOP.open = st.orderOpen!==false; if(st.duitnowQr!==undefined) CONFIG.order.duitnowQr = st.duitnowQr||""; if(st.whatsapp!==undefined) CONFIG.support.whatsapp = st.whatsapp||""; } }catch(e){}
   try{ const mn=JSON.parse(localStorage.getItem(SHARED.menu)); SOLD = (mn&&Array.isArray(mn.soldOut)) ? mn.soldOut : [];
     CONFIG.menu = (mn && mn.v>=2 && Array.isArray(mn.items)) ? mn.items.filter(i=>!i.hidden) : DEFAULT_MENU;
     GROUPS = (mn && Array.isArray(mn.groups)) ? mn.groups : null;
@@ -1062,6 +1069,7 @@ function countUp(el, to){
   requestAnimationFrame(step);
 }
 function render(){
+  updateSupport();
   const tier=tierInfo(), mp=monthPoints(), T=CONFIG.stampTarget;
   const d=new Date();
   $("#today").textContent = `${DAYS[d.getDay()]} · ${CONFIG.brand}`;
@@ -1613,6 +1621,7 @@ function renderCart(){
   if(!hs.asap && sl.length) O.pickupMode = "later";
   if(!sl.length) O.pickupMode = "asap";
   if(O.pickupMode==="later" && !sl.includes(O.pickupAt)) O.pickupAt = sl[0];
+  const qrOn = !!CONFIG.order.duitnowQr; if(!qrOn && O.pay==="duitnow") O.pay = "counter";
   const t = totals(), ps = perks(t.subtotal);
   box.innerHTML = `
     <div class="card">
@@ -1640,7 +1649,7 @@ function renderCart(){
         <span class="tx"><b>${esc(p.r.name)}</b><small>${p.why?esc(p.why):`${fmt(p.r.pts)} point · jimat ${money(p.val)}`}</small></span><span class="rd"></span></button>`).join("")}
     </div>`:""}
     <div class="card"><h3>Cara bayaran</h3>
-      <div class="opts" style="grid-template-columns:1fr 1fr">${[["counter","Tunai di kaunter","Bayar bila ambil"],["duitnow","QR DuitNow","Imbas &amp; bayar sekarang"]].map(([k,n,sub])=>`<button class="opt ${O.pay===k?"on":""}" data-pay="${k}" aria-pressed="${O.pay===k}">${n}<small>${sub}</small></button>`).join("")}</div>
+      <div class="opts" style="grid-template-columns:1fr 1fr">${[["counter","Tunai di kaunter","Bayar bila ambil"],["duitnow","QR DuitNow",qrOn?"Imbas &amp; bayar sekarang":"Belum tersedia"]].map(([k,n,sub])=>`<button class="opt ${O.pay===k?"on":""}" data-pay="${k}" aria-pressed="${O.pay===k}" ${k==="duitnow"&&!qrOn?"disabled":""}>${n}<small>${sub}</small></button>`).join("")}</div>
       <p class="sub" style="margin:10px 2px 0">${O.pay==="duitnow"?"Imbas QR DuitNow kedai dengan app bank atau e-wallet anda. Staf akan sahkan bayaran sebelum pesanan diserahkan.":"Sediakan tunai bila ambil pesanan di kaunter."}</p>
     </div>
     <div class="sum">
@@ -1653,22 +1662,31 @@ function renderCart(){
   btn.disabled = !canOrder || O.paying;
   btn.textContent = !SHOP.open ? "Kedai tidak terima pesanan" : !canOrder ? (hs.nextOpen ? `Kedai tutup · buka ${hrWhen(hs.nextOpen)}` : "Kedai tutup") : O.paying ? "Memproses…" : O.pay==="duitnow" ? "Bayar dengan DuitNow" : (O.pickupMode==="later" && hrIsPre(O.pickupAt, shopCfg())) ? "Hantar pre-order" : "Hantar pesanan";
 }
+/* WhatsApp support: no. diisi di admin → Tetapan. Kosong = butang disembunyikan. */
+function waUrl(text){
+  const n = String(CONFIG.support.whatsapp||"").replace(/\D/g,""); if(!n) return "";
+  return `https://wa.me/${n}${text?`?text=${encodeURIComponent(text)}`:""}`;
+}
+const waHello = extra => `Hai ${CONFIG.brand}, saya ${S.name} (ahli ${S.memberId}).${extra?" "+extra:""}`;
+function updateSupport(){
+  const r = $("#waRow"); if(!r) return;
+  const u = waUrl(waHello("Saya perlukan bantuan.")); r.hidden = !u; if(u) r.href = u;
+}
 function duitnowSheet(){
   const t = totals(), q = CONFIG.order;
+  if(!q.duitnowQr){ O.pay = "counter"; renderCart(); toast("QR DuitNow belum tersedia. Sila bayar tunai di kaunter."); return; }
   openSheet(`
     <div class="center">
       <h2>Bayar dengan DuitNow</h2>
       <p>Imbas QR di bawah dengan app bank atau e-wallet anda, kemudian masukkan jumlah tepat.</p>
-      <div class="qr-large" style="padding:12px"><img src="${esc(q.duitnowQr)}" alt="QR DuitNow ${esc(q.duitnowName)}" style="width:100%;height:100%;object-fit:contain;display:block;border-radius:12px"
-        onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'sub',style:'height:100%;display:grid;place-items:center;text-align:center;font-size:12px;padding:10px',textContent:'QR DuitNow kedai belum dimasukkan. Letak gambar QR di ${esc(q.duitnowQr)}'}))"></div>
-      <div style="font-size:13px;color:var(--ink-2)">${esc(q.duitnowName)}</div>
+      <div class="qr-large" style="padding:12px"><img src="${esc(q.duitnowQr)}" alt="QR DuitNow ${esc(CONFIG.brand)}" style="width:100%;height:100%;object-fit:contain;display:block;border-radius:12px"></div>
       <div class="code-big" style="letter-spacing:0;font-size:32px">${money(t.total)}</div>
       <p style="margin:0 0 14px;font-size:12.5px">Tulis <b>nama anda</b> di ruangan rujukan. Selepas bayar, <b>muat naik screenshot resit</b> sebagai bukti.</p>
       <label class="btn ghost block" for="proofIn" id="proofLbl" style="margin-bottom:10px">${icon("upload")}Muat naik bukti bayaran</label>
       <input type="file" id="proofIn" accept="image/*" class="sr">
       <div id="proofPrev"></div>
       <div class="btn-row"><button class="btn ghost" data-action="close">Batal</button><button class="btn red" data-action="duitnowPaid" id="proofSend" disabled>Hantar pesanan</button></div>
-      <p class="demo-note" style="margin-top:10px">Pesanan disahkan selepas staf semak bukti bayaran anda.</p>
+      <p class="demo-note" style="margin-top:10px">Pesanan disahkan selepas staf semak bukti bayaran anda.${waUrl()?` Masalah bayaran? <a href="${esc(waUrl("Hai "+CONFIG.brand+", saya ada masalah bayaran DuitNow."))}" target="_blank" rel="noopener">WhatsApp kami</a>.`:""}</p>
     </div>`);
   PROOF = null;
 }
@@ -1755,6 +1773,7 @@ function renderTrack(){
           <label class="btn red block" for="proofIn2">${icon("upload")}Hantar bukti baru</label><input type="file" id="proofIn2" accept="image/*" class="sr"></div>`
       : `<div class="tile" style="display:flex;gap:12px;align-items:center"><span class="icon-sq" style="background:var(--warn,#C77700)">${icon("clock")}</span>
           <div><b style="font-size:14px">Bukti bayaran dihantar</b><div class="sub">Menunggu staf sahkan bayaran DuitNow anda.</div></div></div>`) : ""}
+    ${waUrl() && st!=="done" ? `<a class="btn ghost block wa-btn" target="_blank" rel="noopener" href="${esc(waUrl(waHello(`Tentang pesanan ${o.no}:`)))}">${icon("wa")}WhatsApp kedai tentang pesanan ini</a>` : ""}
     ${ACTIVE.includes(st) && "Notification" in window && Notification.permission!=="granted" ? `<div class="tile" style="display:flex;gap:12px;align-items:center">
         <span class="icon-sq">${icon("bell")}</span><div style="flex:1;min-width:0"><b style="font-size:14px">Tahu bila pesanan siap</b><div class="sub">Hidupkan notifikasi untuk status pesanan.</div></div>
         <button class="btn red" style="padding:10px 14px;font-size:13px" data-action="enableNotif">Hidupkan</button></div>` : ""}
@@ -1833,6 +1852,7 @@ function storeInfo(){
     <div class="hr-week">${hrWeekText(shopCfg()).map(r=>`<div class="${r.day===HR_DAYS[new Date().getDay()]?"today":""}"><span>${r.day}</span><span>${r.txt}</span></div>`).join("")}</div>
     <div class="btn-row">
       ${s.phone?`<a class="btn ghost" href="tel:${esc(s.phone)}">Telefon</a>`:""}
+      ${waUrl()?`<a class="btn ghost" target="_blank" rel="noopener" href="${esc(waUrl(waHello("")))}">WhatsApp</a>`:""}
       <a class="btn ghost" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&amp;query=${encodeURIComponent(s.name+" "+s.address)}">Arah</a>
       <button class="btn red" data-action="close">OK</button>
     </div>`);
