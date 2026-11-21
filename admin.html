@@ -324,6 +324,16 @@ svg.i{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stro
 .gc-def.on{border:7px solid var(--brand)}
 .gc-x{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;color:var(--brand);background:rgba(191,3,17,.07);flex:none}
 .gc-x[disabled]{opacity:.35}
+.gc-q{display:flex;align-items:center;justify-content:space-between;width:104px;flex:none;border:1.5px solid rgba(191,3,17,.25);border-radius:14px;background:rgba(191,3,17,.04);padding:3px}
+.gc-q button{width:28px;height:28px;border-radius:9px;background:#fff;color:var(--brand);font-size:16px;font-weight:800}
+.gc-q button:disabled{opacity:.3}
+.gc-q b{font-family:var(--mono);font-size:13px;text-align:center;line-height:1.05}
+.gc-q b small{display:block;font-family:var(--sans,inherit);font-size:9.5px;font-weight:600;color:var(--ink-2)}
+.gq-head{display:flex;gap:8px;font-size:11px;font-weight:700;color:var(--ink-2);margin:2px 0 6px;padding-right:44px}
+.gq-head span:first-child{flex:1}
+.gq-head span:nth-child(2){width:112px}
+.gq-head span:nth-child(3){width:104px}
+@media (max-width:520px){ .gc{flex-wrap:wrap} .gc-n{flex:1 1 100%} .gq-head{display:none} }
 .chkl{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:14px;background:#fff;max-height:260px;overflow-y:auto}
 .chk{display:flex;align-items:center;gap:12px;padding:11px 14px;cursor:pointer}
 .chk+.chk{border-top:1px solid var(--line)}
@@ -348,6 +358,8 @@ svg.i{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stro
 .field .vp-r>span:first-child{display:block;margin:0;font-size:13.5px;color:var(--ink);font-weight:600}
 .field .gc-pw{display:flex;margin:0;font-size:inherit;color:inherit}
 .field .gc-pw b{font-size:11px}
+.field .gc-q{display:flex;margin:0;font-size:inherit;color:inherit}
+.field .gq-head span{display:block;margin:0;font-size:11px;font-weight:700}
 .field .chk span{display:block;margin:0;font-size:13.5px;font-weight:600;color:var(--ink)}
 .field .chk .gchip,.gchips .gchip{display:inline-block;margin:0 0 0 4px;font-size:10.5px;font-weight:700;color:var(--brand-deep)}
 .field .chk .gchip.add,.gchips .gchip.add{color:#8A5300}
@@ -1500,7 +1512,7 @@ const groupsOfItem = (m, it) => (m.groups||[]).filter(g=>(it.groups||[]).include
 const priceTxt = p => p ? `+RM ${(+p).toFixed(2)}` : "";
 const isVarian = g => g && g.type!=="many";
 /* Teks harga pilihan: varian = harga penuh "RM 14.00" (kosong = ikut harga item); add-on = "+RM 2.00" */
-const choicePrice = (g, c) => isVarian(g) ? (+c.p>0 ? `RM ${(+c.p).toFixed(2)}` : "") : priceTxt(c.p);
+const choicePrice = (g, c) => isVarian(g) ? (+c.p>0 ? `RM ${(+c.p).toFixed(2)}` : "") : priceTxt(c.p) + ((+c.q||1)>1 ? ` · maks ${c.q}` : "");
 /* Harga varian sebenar untuk item: harga khas item → harga varian → harga item */
 const vPrice = (it, g, c) => { const o = it.vprices && it.vprices[g.id] && +it.vprices[g.id][c.n]; return o>0 ? o : (+c.p>0 ? +c.p : +it.price); };
 function itemPriceTxt(m, it){
@@ -1544,6 +1556,7 @@ function editGroup(id, type){
       </div></div>
     <label class="field"><span>Nama</span><input class="input" id="gName" maxlength="30" value="${esc(EG.name)}" placeholder="cth. Saiz, Pilihan susu, Topping"></label>
     <div class="field"><span>Pilihan &amp; harga</span>
+      <div class="gq-head" id="gQHead"><span>Nama pilihan</span><span>Harga tambahan</span><span>Maks kuantiti</span></div>
       <div id="gChoices"></div>
       <button type="button" class="btn ghost sm" data-action="gAdd" style="margin-top:8px">${icon("plus","width:16px;height:16px")}Tambah pilihan</button>
       <p class="note" id="gHint" style="margin:8px 0 0"></p></div>
@@ -1559,7 +1572,7 @@ function editGroup(id, type){
   renderGroupForm();
 }
 function syncChoices(){
-  $$("#gChoices .gc").forEach((row,i)=>{ const c=EG.choices[i]; if(!c) return; c.n=row.querySelector(".gc-n").value; c.p=parseFloat(row.querySelector(".gc-p").value)||0; });
+  $$("#gChoices .gc").forEach((row,i)=>{ const c=EG.choices[i]; if(!c) return; c.n=row.querySelector(".gc-n").value; c.p=parseFloat(row.querySelector(".gc-p").value)||0; });  // c.q diubah terus oleh butang −/+
   EG.name = $("#gName").value; EG.max = parseInt($("#gMax").value,10)||0;
   EG.items = new Set($$("#gItems input:checked").map(x=>x.value));
 }
@@ -1570,13 +1583,15 @@ function renderGroupForm(){
   $("#gMaxF").hidden = one;
   $("#gHint").textContent = one
     ? "Masukkan HARGA JUALAN PENUH setiap pilihan (cth. Biasa RM12, Besar RM14). Kosongkan (“sama”) jika sama dengan harga item (cth. Ais / Panas). Harga boleh diubah untuk setiap item di skrin edit item. Tekan bulatan untuk pilihan asal."
-    : "Add-on ialah caj tambahan: harga ditambah pada harga minuman. Cth. RM12 + Extra shot +RM2 = RM14.";
+    : "Add-on ialah caj tambahan: harga ditambah pada harga minuman. Cth. RM12 + Extra shot +RM2 = RM14. Maks kuantiti = berapa banyak pelanggan boleh ambil pilihan itu dalam satu item (1 = pilih atau tidak sahaja; nak lebih, tambah item lain ke troli).";
   $("#gChoices").innerHTML = EG.choices.map((c,i)=>`<div class="gc">
     ${one?`<button type="button" class="gc-def ${i===(EG.def||0)?"on":""}" data-gdef="${i}" aria-label="Jadikan pilihan asal" aria-pressed="${i===(EG.def||0)}"></button>`:""}
     <input class="input gc-n" maxlength="30" value="${esc(c.n)}" placeholder="Nama pilihan" aria-label="Nama pilihan ${i+1}">
     <span class="gc-pw"><b>${set?"RM":"+RM"}</b><input class="input mono gc-p" type="number" min="0" max="999" step="0.10" inputmode="decimal" value="${c.p?(+c.p).toFixed(2):""}" placeholder="${set?"sama":"0.00"}" aria-label="${set?"Harga penuh":"Harga tambahan"} pilihan ${i+1}"></span>
+    ${one?"":`<span class="gc-q" role="group" aria-label="Maks kuantiti ${esc(c.n||"pilihan "+(i+1))}"><button type="button" data-gq="${i}:-1" aria-label="Kurang maks" ${(c.q||1)<=1?"disabled":""}>−</button><b>${c.q||1}<small>${(c.q||1)===1?"sahaja":"maks"}</small></b><button type="button" data-gq="${i}:1" aria-label="Tambah maks" ${(c.q||1)>=10?"disabled":""}>+</button></span>`}
     <button type="button" class="gc-x" data-gdel="${i}" aria-label="Buang pilihan ${i+1}" ${EG.choices.length<=1?"disabled":""}>${icon("x","width:16px;height:16px")}</button>
   </div>`).join("");
+  $("#gQHead").hidden = one;
 }
 function saveGroup(){
   syncChoices();
@@ -1584,7 +1599,7 @@ function saveGroup(){
   if(!name){ toast("Masukkan nama varian / add-on"); return; }
   if(!choices.length){ toast("Tambah sekurang-kurangnya satu pilihan"); return; }
   if(EG.type!=="many" && choices.length<2){ toast("Varian perlu sekurang-kurangnya 2 pilihan"); return; }
-  choices.forEach(c=>{ if(!c.p) c.p=0; if(!c.s) delete c.s; });
+  choices.forEach(c=>{ if(!c.p) c.p=0; if(!c.s) delete c.s; const q = Math.max(1, Math.min(10, parseInt(c.q,10)||1)); if(EG.type==="many" && q>1) c.q = q; else delete c.q; });
   const m = readMenu(); m.groups = m.groups || [];
   let g = m.groups.find(x=>x.id===EG.id);
   if(!g){ g = { id:"g"+Date.now().toString(36) }; m.groups.push(g); }
@@ -1609,6 +1624,7 @@ function deleteGroup(id){
 document.addEventListener("click", e=>{
   if(!EG || !$("#gChoices")) return;
   const t = e.target.closest("[data-gtype]"); if(t){ syncChoices(); EG.type=t.dataset.gtype; renderGroupForm(); return; }
+  const gq = e.target.closest("[data-gq]"); if(gq){ syncChoices(); const [i,dd] = gq.dataset.gq.split(":").map(Number), c = EG.choices[i]; if(c){ c.q = Math.max(1, Math.min(10, (c.q||1) + dd)); } renderGroupForm(); return; }
   const d = e.target.closest("[data-gdef]"); if(d){ syncChoices(); EG.def=+d.dataset.gdef; renderGroupForm(); return; }
   const x = e.target.closest("[data-gdel]"); if(x){ syncChoices(); EG.choices.splice(+x.dataset.gdel,1); if((EG.def||0)>=EG.choices.length) EG.def=0; renderGroupForm(); return; }
 });

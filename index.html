@@ -324,7 +324,16 @@ body[data-screen="cart"] .nav,body[data-screen="track"] .nav{display:none}
 .addon .bx{width:20px;height:20px;border-radius:6px;border:1.5px solid rgba(191,3,17,.3);display:grid;place-items:center;color:#fff;flex:none}
 .addon .bx svg.i{width:14px;height:14px;stroke-width:3}
 .addon.on .bx{background:var(--brand);border-color:var(--brand)}
-.addon .t{flex:1}
+.addon .t{flex:1;min-width:0}
+.addon .t small{display:block;font-size:11px;font-weight:600;color:var(--ink-2);margin-top:1px}
+.addon.aoq{cursor:default}
+.addon.aoq.on{background:rgba(191,3,17,.04)}
+.aost{display:flex;align-items:center;gap:8px;flex:none}
+.aost button{width:30px;height:30px;border-radius:50%;border:1.5px solid var(--brand);color:var(--brand);background:#fff;display:grid;place-items:center}
+.aost button.plus{background:var(--brand);color:#fff}
+.aost button:disabled{opacity:.25}
+.aost button svg.i{width:15px;height:15px;stroke-width:2.6}
+.aost b{min-width:14px;text-align:center;font-family:var(--mono);font-size:14px}
 .addon .p{font-family:var(--mono);font-size:12.5px;color:var(--ink-2)}
 .sheet-foot{position:sticky;bottom:calc(-26px - var(--safe-b));z-index:2;display:flex;align-items:center;gap:12px;margin:18px -22px calc(-26px - var(--safe-b));padding:14px 22px calc(18px + var(--safe-b));background:rgba(255,250,250,.97);border-top:1px solid rgba(191,3,17,.08)}
 .sheet-foot .btn{flex:1;min-width:0;justify-content:space-between;gap:10px;border-radius:16px;padding:15px 14px}
@@ -1464,14 +1473,13 @@ function openItem(id){
   const sel = {}; groupsFor(m).forEach(g=>{ sel[g.id] = g.multi ? [] : (g.def||0); });
   PI = { id, sel, qty:1 };
   const optBtn = (g,c,i) => `<button type="button" class="opt ${sel[g.id]===i?"on":""}" data-opt="${g.id}:${i}" aria-pressed="${sel[g.id]===i}">${esc(c.n)}${(c.s||c.p)?`<small>${[c.s,c.p?(g.set?money(c.p):"+"+money(c.p)):""].filter(Boolean).join(" · ")}</small>`:""}</button>`;
-  const addBtn = (g,c,i) => `<button type="button" class="addon" data-opt="${g.id}:${i}" aria-pressed="false"><span class="bx">${icon("check")}</span><span class="t">${esc(c.n)}</span><span class="p">+${money(c.p||0)}</span></button>`;
   openSheet(`
     <div class="thumb pi-hero ${m.tone||""}"><button type="button" class="pi-back" data-action="close" aria-label="Kembali ke menu">${icon("back")}</button>${thumbInner(m)}</div>
     <div class="pi-head"><h2>${esc(m.name)}</h2><span class="mono">${priceLabel(m)}</span></div>
     <p style="margin:4px 0 10px">${esc(m.desc)}</p>
     <span class="chip light">+${fmt(ptsFor(1))} point${m.stamp===false?"":" · +1 cap"}</span>
     ${groupsFor(m).map(g=>`<div class="opt-g"><div class="gh"><b>${esc(g.name)}</b><span>${g.multi?(g.max?`Pilih hingga ${g.max}`:"Pilihan"):"Wajib"}</span></div>
-      ${g.multi ? `<div class="addons">${g.choices.map((c,i)=>addBtn(g,c,i)).join("")}</div>` : `<div class="opts">${g.choices.map((c,i)=>optBtn(g,c,i)).join("")}</div>`}</div>`).join("")}
+      ${g.multi ? `<div class="addons" data-addons="${esc(g.id)}">${addonRows(g)}</div>` : `<div class="opts">${g.choices.map((c,i)=>optBtn(g,c,i)).join("")}</div>`}</div>`).join("")}
     <div class="opt-g"><div class="gh"><label for="piNote"><b>Nota untuk barista</b></label><span>Pilihan</span></div>
       <input class="input note" id="piNote" maxlength="60" placeholder="cth. kurang ais"></div>
     <div class="sheet-foot">
@@ -1479,6 +1487,36 @@ function openItem(id){
       <button class="btn red" data-action="addItem"><span>Tambah ke troli</span><span class="mono" id="piTotal">${money(m.price)}</span></button>
     </div>`, { full:true });
   piUpdate();
+}
+/* Add-on: setiap pilihan ada had kuantiti (c.q, lalai 1). PI.sel[gid] = senarai indeks (boleh berulang, cth. [1,1,0]). */
+const aoMax = c => Math.max(1, Math.min(10, parseInt(c.q,10) || 1));
+const aoCount = (gid, i) => (PI?.sel[gid] || []).filter(x=>x===i).length;
+function addonRows(g){
+  return g.choices.map((c,i)=>{ const n = aoCount(g.id, i), mx = aoMax(c);
+    if(mx === 1) return `<button type="button" class="addon ${n?"on":""}" data-opt="${esc(g.id)}:${i}" aria-pressed="${!!n}"><span class="bx">${icon("check")}</span><span class="t">${esc(c.n)}<small>pilih 1 sahaja</small></span><span class="p">+${money(c.p||0)}</span></button>`;
+    const full = g.max && (PI?.sel[g.id]||[]).length >= g.max;
+    return `<div class="addon aoq ${n?"on":""}"><span class="t">${esc(c.n)}<small>+${money(c.p||0)} · maks ${mx}</small></span>
+      <span class="aost"><button type="button" data-aq="${esc(g.id)}:${i}:-1" aria-label="Kurang ${esc(c.n)}" ${n?"":"disabled"}>${icon("minus")}</button><b>${n}</b><button type="button" class="plus" data-aq="${esc(g.id)}:${i}:1" aria-label="Tambah ${esc(c.n)}" ${n>=mx||full?"disabled":""}>${icon("plus")}</button></span></div>`;
+  }).join("");
+}
+function piAddonQty(gid, i, d){
+  if(!PI) return;
+  const g = groupsFor(menuItem(PI.id)).find(x=>x.id===gid); if(!g || !g.multi) return;
+  const a = PI.sel[gid], n = aoCount(gid, i), mx = aoMax(g.choices[i] || {});
+  if(d > 0){
+    if(n >= mx){ toast(`Maks ${mx} untuk ${esc(g.choices[i].n)}. Nak lagi? Tambah item lain ke troli.`); return; }
+    if(g.max && a.length >= g.max){ toast(`Maksimum ${g.max} pilihan untuk ${esc(g.name)}`); return; }
+    a.push(i); a.sort((x,y)=>x-y);
+    if(n+1 === mx && mx > 1) toast(`Maks ${mx} untuk ${esc(g.choices[i].n)}`);
+  } else { const k = a.indexOf(i); if(k >= 0) a.splice(k,1); }
+  piRenderAddons(g); piUpdate();
+}
+function piRenderAddons(g){ const box = $(`#sheetBody [data-addons="${g.id}"]`); if(box){ box.innerHTML = addonRows(g); hydrateIcons(box); } }
+/* Label pilihan untuk troli: "2× Fish Ball" */
+function selLabels(g, s){
+  if(!g.multi) return [g.choices[s].n];
+  const cnt = {}; s.forEach(i=>{ cnt[i] = (cnt[i]||0) + 1; });
+  return Object.keys(cnt).map(Number).sort((a,b)=>a-b).map(i=>(cnt[i]>1 ? `${cnt[i]}× ` : "") + g.choices[i].n);
 }
 /* Harga seunit. Varian "harga penuh" (g.set) menggantikan harga item; pilihan lain ditambah. */
 function unitFor(m, sel){
@@ -1501,8 +1539,8 @@ function priceLabel(m){
 function piPick(gid, i){
   if(!PI) return;
   const g = groupsFor(menuItem(PI.id)).find(x=>x.id===gid); if(!g) return;
-  if(g.multi){ const a=PI.sel[gid], k=a.indexOf(i); if(k>=0) a.splice(k,1); else { if(g.max && a.length>=g.max){ toast(`Maksimum ${g.max} pilihan untuk ${esc(g.name)}`); return; } a.push(i); } a.sort(); }
-  else PI.sel[gid] = i;
+  if(g.multi){ const a=PI.sel[gid], k=a.indexOf(i); if(k>=0) a.splice(k,1); else { if(g.max && a.length>=g.max){ toast(`Maksimum ${g.max} pilihan untuk ${esc(g.name)}`); return; } a.push(i); } a.sort((x,y)=>x-y); piRenderAddons(g); piUpdate(); return; }
+  PI.sel[gid] = i;
   $$(`#sheetBody [data-opt^="${gid}:"]`).forEach(b=>{
     const j = +b.dataset.opt.split(":")[1], on = g.multi ? PI.sel[gid].includes(j) : PI.sel[gid]===j;
     b.classList.toggle("on", on); b.setAttribute("aria-pressed", on);
@@ -1513,7 +1551,7 @@ function piUpdate(){ $("#piQty").textContent = PI.qty; $("#piTotal").textContent
 function addItem(){
   if(!PI) return;
   const m = menuItem(PI.id), labels = [];
-  groupsFor(m).forEach(g=>{ const s=PI.sel[g.id]; (g.multi?s:[s]).forEach(i=>labels.push(g.choices[i].n)); });
+  groupsFor(m).forEach(g=>{ labels.push(...selLabels(g, PI.sel[g.id])); });
   const note = ($("#piNote")?.value||"").trim(); if(note) labels.push(`Nota: ${note}`);
   const key = PI.id+"|"+labels.join("|"), ex = CART.find(l=>l.key===key);
   if(ex) ex.qty = Math.min(20, ex.qty+PI.qty);
@@ -1863,6 +1901,7 @@ function orderClick(e){
   let el;
   if((el=q("[data-promo]"))){ openPromo(el.dataset.promo); return true; }
   if((el=q("[data-item]"))){ openItem(el.dataset.item); return true; }
+  if((el=q("[data-aq]"))){ const [g,i,d]=el.dataset.aq.split(":"); piAddonQty(g,+i,+d); return true; }
   if((el=q("[data-opt]"))){ const [g,i]=el.dataset.opt.split(":"); piPick(g,+i); return true; }
   if((el=q("[data-pq]"))){ if(PI){ PI.qty=Math.max(1,Math.min(20,PI.qty+ +el.dataset.pq)); piUpdate(); } return true; }
   if((el=q("[data-cat]"))){ O.cat=el.dataset.cat; renderOrder(); return true; }

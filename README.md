@@ -56,6 +56,7 @@ Ubah menu, harga (harga dalam template ialah contoh), cawangan dan pilihan minum
     - Harga varian boleh diubah **untuk setiap item** di skrin edit item (cth. Besar Latte RM12.90, Besar Signature RM14.90).
     - Hanya satu varian patut ada harga (cth. Saiz). Caj tambahan seperti susu oat → guna **Add-on** (+RM).
   - **Add-on** = pelanggan boleh pilih banyak, setiap satu dengan harga, cth. Extra shot +RM2.00. Boleh hadkan bilangan maksimum.
+    - **Maks kuantiti setiap pilihan** (butang − / + di sebelah harga): 1 = pelanggan pilih atau tidak sahaja (kotak tanda); 2 ke atas = pelanggan guna butang − / + hingga had itu (cth. Fish Ball maks 3). Nak lebih, pelanggan tambah item lain ke troli. Troli & pesanan tunjuk "2× Fish Ball". Had jumlah semua add-on masih guna "Maksimum pilihan".
   - Sambung ke item dari skrin varian/add-on (butang **Semua minuman**) atau dari skrin edit item.
 - Suis **Ada stok** untuk tanda item habis sementara. Perubahan terus muncul dalam app pelanggan.
 - Menu asal dalam `CONFIG.menu` hanya dimasukkan kali pertama app dibuka. Selepas itu menu diurus di admin.
